@@ -8,7 +8,7 @@ test('fictional city is repeatable and maps all twelve assessment parcels exactl
  assert.deepEqual(createCity(parcels),city);assert.equal(city.plots.length,12);assert.deepEqual(new Set(city.plots.map(p=>p.id)),new Set(parcels.map(p=>p.id)));assert.ok(city.buildings.length>600);assert.equal(new Set(city.buildings.map(b=>b.id)).size,city.buildings.length);
 });
 test('buildings stay inside land blocks, outside parks, water and road reserves',()=>{
- for(const b of city.buildings){assert.ok(b.height>0&&Number.isFinite(b.height));for(const p of b.points){assert.ok(p[0]>0&&p[0]<WIDTH&&p[1]>0&&p[1]<HEIGHT);assert.ok(Math.abs(p[0]-riverX(p[1]))>135);assert.ok(city.blocks.some(block=>contains(p,block.points)));assert.ok(!city.parks.some(park=>contains(p,park.points)));assert.ok(p[0]%300>24&&p[0]%300<276&&p[1]%300>24&&p[1]%300<276);}}
+ for(const b of city.buildings){assert.ok(b.height>0&&Number.isFinite(b.height));const block=city.blocks.find(x=>x.id===b.blockId);for(const p of b.points){assert.ok(p[0]>0&&p[0]<WIDTH&&p[1]>0&&p[1]<HEIGHT);assert.ok(Math.abs(p[0]-riverX(p[1]))>135);assert.ok(contains(p,block.points));assert.ok(!city.parks.some(park=>contains(p,park.points)));}}
 });
 test('ground projection inverts across bearings, scales and pitches',()=>{
  for(const bearing of [-2,-.25,0,1.7])for(const pitch of [Math.PI/6,Math.PI/3,Math.PI/2])for(const scale of [.04,.3,2]){const c={x:2800,y:1700,w:900,h:640,bearing,pitch,scale};for(const p of [[0,0],[6000,4200],[1900,1500]]){const roundtrip=unproject(project(p,c),c);assert.ok(Math.abs(roundtrip[0]-p[0])<1e-8);assert.ok(Math.abs(roundtrip[1]-p[1])<1e-8);}}

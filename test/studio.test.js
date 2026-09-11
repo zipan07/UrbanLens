@@ -28,7 +28,7 @@ test('architectural batches have finite transforms and remain associated with th
  // Construct geometry only, without claiming to exercise a browser or GPU context.
  const scene=Object.create(RealCityScene.prototype);Object.assign(scene,{data:createCity(parcels),materials:new Map(),batches:new Map(),groups:{},scene:new THREE.Scene(),pickables:[],buildingRefs:[],boxGeo:new THREE.BoxGeometry(1,1,1),gableGeo:new THREE.BoxGeometry(1,1,1)});
  for(const key of ['buildings','detail'])scene.groups[key]=new THREE.Group();
- scene.buildArchitecture();scene.flush();assert.equal(new Set(scene.buildingRefs.map(r=>r.item.id)).size,720);
+ scene.buildArchitecture();scene.flush();assert.equal(new Set(scene.buildingRefs.map(r=>r.item.id)).size,scene.data.buildings.length);assert.ok(scene.data.buildings.length>3000);
  for(const group of Object.values(scene.groups))for(const mesh of group.children){assert.ok([...mesh.instanceMatrix.array].every(Number.isFinite));assert.ok(mesh.boundingSphere.radius>0);}
  const fake={vertexShader:'#include <common>\n#include <begin_vertex>',fragmentShader:'#include <common>\n#include <color_fragment>'};scene.materials.get('facade-office').onBeforeCompile(fake);assert.ok(fake.fragmentShader.includes('cityPosition'));assert.ok(fake.vertexShader.includes('instanceMatrix'));
 });

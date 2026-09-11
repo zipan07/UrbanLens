@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {WIDTH,HEIGHT,USES,riverX,rect} from '../dist/city-data.js';
+import {WIDTH,HEIGHT,USES,riverX,rect,contains,rotatePoint} from '../dist/city-data.js';
 
 // All coordinates and materials are fictional. Geometry is not assessment evidence.
 const natural={housing:['#e4dac6','#dddfe1','#d4c9b6'],office:['#7399ab','#719fa6','#99adbd'],industry:['#b77c65','#a69180','#c59071'],civic:['#ddcbbc','#e3ddca','#c1bdcc']};
@@ -55,7 +55,7 @@ export class RealCityScene {
   for(const key of ['buildings','land','roads','green','facilities','plots','detail']){const g=new THREE.Group();this.groups[key]=g;this.scene.add(g);}
   this.scene.add(new THREE.HemisphereLight('#dcefff','#968f76',2.2));
   this.sun=new THREE.DirectionalLight('#fff3d8',3.2);this.sun.position.set(-1800,4300,3500);this.sun.target.position.set(2800,0,-2000);this.scene.add(this.sun,this.sun.target);
-  this.sun.castShadow=true;Object.assign(this.sun.shadow.camera,{left:-4800,right:4800,top:4800,bottom:-4800,near:1,far:16000});
+  this.sun.castShadow=true;Object.assign(this.sun.shadow.camera,{left:-9500,right:9500,top:9500,bottom:-9500,near:1,far:26000});
   this.sun.shadow.mapSize.set(4096,4096);this.sun.shadow.bias=-.00012;this.sun.shadow.normalBias=2;
   this.boxGeo=new THREE.BoxGeometry(1,1,1);this.gableGeo=gable();this.treeGeo=new THREE.IcosahedronGeometry(1,1);
   this.materials=new Map();this.raycaster=new THREE.Raycaster();this.buildTerrain();this.buildArchitecture();this.buildLandscape();this.flush();
@@ -64,6 +64,7 @@ export class RealCityScene {
  material(color,roughness=.88){const key=color+roughness;if(!this.materials.has(key))this.materials.set(key,new THREE.MeshStandardMaterial({color,roughness}));return this.materials.get(key);}
  shape(points,color,group='land',height=.1){const s=new THREE.Shape(points.map(([x,y])=>new THREE.Vector2(x,y))),geo=new THREE.ShapeGeometry(s);geo.rotateX(-Math.PI/2);const mesh=new THREE.Mesh(geo,this.material(color));mesh.position.y=height;mesh.receiveShadow=true;this.groups[group].add(mesh);return mesh;}
  addInstance(key,geometry,material,group,pos,size,rotation=0,item=null,color=null){
+  if(this.buildingTransform){const t=this.buildingTransform,[x,y]=rotatePoint([pos[0],-pos[2]],t.x,t.y,t.angle);pos=[x,pos[1],-y];rotation+=t.angle;}
   if(!this.batches.has(key))this.batches.set(key,{geometry,material,group,items:[]});
   this.batches.get(key).items.push({pos,size,rotation,item,color});
  }
@@ -77,14 +78,14 @@ export class RealCityScene {
   // City base, parcel paving and asphalt are separate surfaces.
   const ground=new THREE.Mesh(new THREE.PlaneGeometry(WIDTH,HEIGHT),this.material('#d1d8cd'));ground.rotation.x=-Math.PI/2;ground.position.set(WIDTH/2,-.8,-HEIGHT/2);ground.receiveShadow=true;this.scene.add(ground);
   for(const b of this.data.blocks)this.shape(b.points,landColors[b.use],'land',0);
-  for(const r of this.data.roads){const [[x,y],[xx,yy]]=r.points;this.shape(x===xx?rect(x-(r.major?17:10),0,r.major?34:20,HEIGHT):rect(0,y-(r.major?17:10),WIDTH,r.major?34:20),'#68787b','roads',.5);
-   if(r.major)for(let k=35;k<(x===xx?HEIGHT:WIDTH);k+=70){this.box('road-dashes','#e8e7cc','roads',x===xx?x:k,.7,x===xx?-k:-y,x===xx?1:22,.15,x===xx?22:1);}
+  for(const r of this.data.roads){const [[x,y],[xx,yy]]=r.points,len=Math.hypot(xx-x,yy-y);if(len<1)continue;const half=r.major?15:9,nx=-(yy-y)/len*half,ny=(xx-x)/len*half;this.shape([[x+nx,y+ny],[xx+nx,yy+ny],[xx-nx,yy-ny],[x-nx,y-ny]],'#68787b','roads',.5);
   }
   const bank=[],water=[];for(let y=0;y<=HEIGHT;y+=35){bank.push([riverX(y)-197,y]);water.push([riverX(y)-135,y]);}for(let y=HEIGHT;y>=0;y-=35){bank.push([riverX(y)+197,y]);water.push([riverX(y)+135,y]);}
   // Water always occludes roads; green switch controls bank vegetation, not a fake road through the river.
   this.shape(bank,'#a1b88e','green',1.2);const river=this.shape(water,'#4caaa9','green',1.8);river.material=new THREE.MeshStandardMaterial({color:'#409f9f',roughness:.22,metalness:.38});
   for(const y of [900,1800,2700,3600]){const x=riverX(y);this.box('bridge-deck','#a9b3ae','roads',x,7,-y,440,5,36);for(const side of [-1,1])this.box('bridge-edge','#e8dfca','roads',x,10.4,-y+side*17,440,2.2,1.8);for(const dx of [-135,0,135])this.box('bridge-pier','#a1ada5','roads',x+dx,3,-y,10,10,25);}
-  for(const p of this.data.parks){this.shape(p.points,'#91b78b','green',.2);const [x,y]=p.points[0];this.shape(rect(x+118,y,12,252),'#dbcfae','green',.4);this.shape(rect(x,y+118,252,12),'#dbcfae','green',.4);}
+  for(const p of this.data.parks)this.shape(p.points,'#91b78b','green',.2);
+  for(const lake of this.data.lakes||[])this.shape(lake,'#439f9f','green',1.5);
   for(const p of this.data.plots){const mesh=this.shape(p.points,'#d9ea8a','plots',2.2);mesh.material=new THREE.MeshBasicMaterial({color:'#d9ea8a',transparent:true,opacity:.16,depthWrite:false});mesh.userData.plot=p;this.plotMeshes.push(mesh);
    const lineGeo=new THREE.BufferGeometry().setFromPoints([...p.points,p.points[0]].map(([x,y])=>new THREE.Vector3(x,2.7,-y)));const line=new THREE.Line(lineGeo,new THREE.LineBasicMaterial({color:'#dae88c'}));this.groups.plots.add(line);mesh.userData.line=line;
   }
@@ -93,7 +94,7 @@ export class RealCityScene {
  }
  buildArchitecture(){
   for(const use of Object.keys(USES))this.materials.set(`facade-${use}`,facadeMaterial(use));
-  for(const b of this.data.buildings){const [x,y]=b.points[0],w=b.points[1][0]-x,d=b.points[3][1]-y,cx=x+w/2,cz=-y-d/2,h=b.height,col=natural[b.use][b.variant];
+  for(const b of this.data.buildings){const x=b.x??b.points[0][0],y=b.y??b.points[0][1],w=b.width??b.points[1][0]-x,d=b.depth??b.points[3][1]-y,cx=x+w/2,cz=-y-d/2,h=b.height,col=natural[b.use][b.variant];this.buildingTransform={x:cx,y:-cz,angle:b.angle||0};
    const add=(xx,zz,ww,dd,bottom,hh)=>this.addInstance(`body-${b.use}`,this.boxGeo,this.materials.get(`facade-${b.use}`),'buildings',[xx,bottom+hh/2,zz],[ww,hh,dd],0,b,col);
    if(b.use==='office'){
     add(cx,cz,w,d,0,Math.min(12,h*.18));add(cx,cz,w*.72,d*.73,10,h-10);
@@ -113,12 +114,12 @@ export class RealCityScene {
     for(let floor=3;floor<b.floors;floor+=3)this.box('balcony','#c6c9bd','detail',cx,floor*3.3,cz+d/2+1,w*.8,.6,4);
    }
    if(b.use!=='industry'&&b.use!=='office')this.box('entry-canopies','#778f91','detail',cx,4,cz+d/2+3,12,.7,6);
-  }
+  }this.buildingTransform=null;
  }
  buildLandscape(){
   const tree=(x,y,size,variant)=>{if(Math.abs(x-riverX(y))<148)return;this.box('tree-trunks','#827c62','green',x,size*.32,-y,1.6,size*.65,1.6);this.addInstance(`tree-${variant%3}`,this.treeGeo,this.material(['#4e886c','#719861','#8aab68'][variant%3]),'green',[x,size*.8,-y],[size*.46,size*.57,size*.46]);};
-  for(const p of this.data.parks){const [x,y]=p.points[0];for(let i=0;i<5;i++)for(let j=0;j<5;j++){if(i===2||j===2)continue;tree(x+26+i*49,y+28+j*48,14+(i+j)%4*3,i+j);}}
-  for(const block of this.data.blocks){const [x,y]=block.points[0];for(let i=0;i<4;i++)tree(x+12+i*64,y+241,13+i%2*3,i);}
+  for(const p of this.data.parks){const xs=p.points.map(q=>q[0]),ys=p.points.map(q=>q[1]);for(let x=Math.min(...xs)+25;x<Math.max(...xs);x+=58)for(let y=Math.min(...ys)+25;y<Math.max(...ys);y+=58)if(contains([x,y],p.points))tree(x,y,16+(Math.round(x+y)%4)*2,Math.round(x+y));}
+  for(const block of this.data.blocks)for(const [x,y] of block.points)tree(x,y,15,Math.round(x+y));
   for(let y=30;y<HEIGHT;y+=65)for(const side of [-1,1])tree(riverX(y)+side*168,y,17,Math.floor(y/65));
   // Parked vehicles and station pavilions provide recognizable scale cues.
   for(let y=70;y<HEIGHT;y+=190)for(const x of [900,1800,4500,5400]){if(Math.abs(x-riverX(y))<230)continue;const color=['#d6b370','#f1e8d7','#637986'][Math.floor(y/190)%3];this.box(`car-${color}`,color,'detail',x+11,1.4,-y,3.4,2.8,6.6);this.box('car-glass','#567e8e','detail',x+11,3,-y+.4,2.8,.6,3.5);}
