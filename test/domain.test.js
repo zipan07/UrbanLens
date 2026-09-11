@@ -1,0 +1,13 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {parcels,evaluate,filterParcels,explanation,reportMarkdown,DIMENSIONS} from '../dist/domain.js';
+test('independent reference calculation for UL-001',()=>{const r=evaluate(parcels[0]);assert.equal(r.ratio,.8);assert.deepEqual(r.scores,[28,60,80,100,62]);assert.equal(r.total,66);assert.equal(r.coverage,100);});
+test('missing vacancy and building survey prevent a total',()=>{const r=evaluate(parcels[3]);assert.equal(r.total,null);assert.equal(r.coverage,60);assert.deepEqual(r.missing,['建筑状况','使用状态']);});
+test('a measured zero vacancy remains valid',()=>{const r=evaluate(parcels[7]);assert.equal(r.scores[4],0);assert.equal(r.coverage,100);assert.notEqual(r.total,null);});
+test('zero denominator cannot produce a ratio or total',()=>{const r=evaluate({...parcels[0],area:0});assert.equal(r.ratio,null);assert.equal(r.scores[1],null);assert.equal(r.total,null);});
+test('out-of-range, fractional survey and nonnumeric fields are missing',()=>{const r=evaluate({...parcels[0],vacancy:101,condition:2.5,distance:'420'});assert.equal(r.coverage,40);assert.equal(r.total,null);});
+test('unverified industry label cannot receive a fabricated score',()=>{const r=evaluate(parcels[9]);assert.equal(r.scores[2],null);assert.equal(r.coverage,80);});
+test('filters intersect, ignore case, and handle no result',()=>{assert.equal(filterParcels(' ul-001 ','工业').length,1);assert.equal(filterParcels('UL-001','商业').length,0);assert.equal(filterParcels('不存在').length,0);assert.equal(filterParcels().length,12);});
+test('explanation requires a completed evaluation and refuses unsupported questions',()=>{assert.match(explanation(parcels[0],null,'为什么值得关注'),/尚未运行/);assert.match(explanation(parcels[0],evaluate(parcels[0]),'明天会下雨吗'),/无法给出/);});
+test('export uses the evaluated snapshot and is explicitly a demo',()=>{const p=parcels[0],r=evaluate(p),md=reportMarkdown(p,r);assert.match(md,/66 \/ 100/);assert.match(md,/未复核/);assert.match(md,/DEMO-0.1/);assert.match(md,/UL-001/);DIMENSIONS.forEach(d=>assert.ok(md.includes(d)));assert.throws(()=>reportMarkdown(p,null),/先运行/);});
+test('all sample identifiers are unique and score outputs remain bounded',()=>{assert.equal(new Set(parcels.map(p=>p.id)).size,12);for(const p of parcels){const r=evaluate(p);r.scores.forEach(x=>assert.ok(x===null||(x>=0&&x<=100)));assert.ok(r.total===null||Number.isFinite(r.total));}});

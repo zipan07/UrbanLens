@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>UrbanLens · 城市更新用地智能评估交互系统</title>
+  <meta name="description" content="UrbanLens V0.1 交互原型：地图选地、地块档案、多维评估与地块比较。所有地块均为虚构演示数据。">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23141f36'/%3E%3Ccircle cx='14' cy='14' r='8' fill='none' stroke='%23a5b4fc' stroke-width='3'/%3E%3Cpath d='M20 20l7 7' stroke='%23a5b4fc' stroke-width='3'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./styles.css"><script type="module" src="./app.js"></script>
+</head>
+<body>
+  <aside class="rail"><a class="brand" href="./" aria-label="UrbanLens 首页"><span class="brand-mark">U<span></span></span><span>UrbanLens<small>城市更新 · 空间智能</small></span></a>
+    <div class="rail-caption">项目工作空间</div>
+    <nav aria-label="主导航"><button class="nav active" data-page="workbench"><span>▦</span> 地图工作台</button><button class="nav" data-page="compare"><span>▥</span> 地块比较 <b id="compare-count">0</b></button><button class="nav" data-page="report"><span>▤</span> 报告预览</button></nav>
+    <div class="project-note"><span class="small-label">当前项目</span><strong>滨河更新示范片区</strong><p>虚构样例 · 非真实地籍</p><span class="outline-tag">V0.1 交互原型</span></div>
+    <div class="rail-bottom"><span class="avatar">规</span><div>规划研究工作台<small>演示会话 · 刷新后重置</small></div></div>
+  </aside>
+  <main><header class="topbar"><div><span class="eyebrow">URBAN RENEWAL INTELLIGENCE</span><h1>城市更新用地智能评估交互系统</h1></div><button class="quiet" id="about-btn">原型说明 ↗</button></header>
+    <div class="project-heading"><div><div class="breadcrumb">项目 / 滨河更新示范片区</div><h2 id="page-title">从地块，理解更新机会。</h2></div><span class="demo-tag">演示数据与规则</span></div>
+    <section id="workbench-page" class="page"><div class="metrics" id="metrics"></div>
+      <div class="workspace"><section class="map-panel" aria-label="地图与地块筛选"><div class="map-toolbar"><div class="search-wrap"><label class="sr-only" for="search">搜索地块编号或名称</label><input id="search" type="search" placeholder="搜索地块编号或名称"></div><label class="sr-only" for="use-filter">现状用途</label><select id="use-filter"><option value="">全部用途</option><option>工业</option><option>商业</option><option>居住</option><option>公共服务</option></select><button class="quiet" id="reset">重置</button></div>
+        <div class="map-canvas"><svg id="map" viewBox="0 0 1000 740" role="group" aria-label="虚构示范片区地块示意图，可通过地块列表选中"><g id="map-world"></g></svg><div class="map-caption"><strong>滨河更新示范片区</strong><span>空间示意图 / 非测绘成果</span></div><div class="map-controls"><button id="zoom-in" aria-label="放大地图">+</button><button id="zoom-out" aria-label="缩小地图">−</button><button id="zoom-fit" aria-label="恢复地图全景">⌖</button></div><div class="map-legend"><span><i class="legend-dot purple"></i>当前选中</span><span><i class="legend-dot amber"></i>关注度较高</span><span><i class="legend-dot blue"></i>已评估</span><span><i class="legend-dot gray"></i>未评估</span></div></div>
+        <div class="list-heading"><strong>地块清单 <span id="result-count"></span></strong><span>地图与列表同步筛选</span></div><div class="parcel-list" id="parcel-list" aria-label="地块清单"></div>
+      </section>
+      <aside class="detail-panel" aria-label="地块详情"><div id="detail"></div><section class="assistant-panel"><div class="section-title"><h3><span class="ai-symbol">✧</span> 评估解释助手</h3><span class="small-tag">规则演示</span></div><p class="muted helper-note">基于当前地块的演示字段和计算结果解释，尚未接入大模型。</p><div class="suggestions"><button data-question="为什么值得关注？">为什么值得关注？</button><button data-question="哪些资料需要补充？">需补充哪些资料？</button><button data-question="评分依据是什么？">查看评分依据</button></div><div id="answer" class="answer" aria-live="polite">选择地块并运行评估，查看每项结论的依据。</div><form id="question-form"><label for="question" class="sr-only">询问当前地块</label><input id="question" maxlength="300" placeholder="询问当前地块…" required><button type="submit" aria-label="发送问题">↑</button></form></section></aside></div>
+    </section>
+    <section id="compare-page" class="page" hidden><div class="view-card"><div class="view-heading"><div><h2>把差异放在同一张表里</h2><p>比较 2–3 宗地块，统一使用 DEMO-0.1 规则。</p></div><button class="primary" id="evaluate-compare">评估所选地块</button></div><div id="comparison"></div></div></section>
+    <section id="report-page" class="page" hidden><div class="report-actions"><p>当前地块的演示评估摘要 · 未复核</p><button class="quiet" id="download-report">下载 Markdown 摘要</button><button class="primary" id="print-report">打印 / 另存 PDF</button></div><article id="report" class="report-paper"></article></section>
+    <footer class="app-footer">UrbanLens <span>V0.1 / 所有地块、数值和结论仅用于交互演示</span></footer>
+  </main><div id="toast" role="status" class="toast" hidden></div>
+  <dialog id="info-dialog"><div class="dialog-top"><h2 id="dialog-title"></h2><button id="close-dialog" class="quiet" aria-label="关闭对话框">×</button></div><div id="dialog-content"></div></dialog>
+</body></html>
