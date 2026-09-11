@@ -1,5 +1,6 @@
 import {createCity,project,unproject,contains,USES,WIDTH,HEIGHT,rect,riverX} from './city-data.js';
 import {RealCityScene} from './scene.js';
+import {touchFrame,touchDelta} from './gestures.js';
 const $=s=>document.querySelector(s);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export class CityView {
@@ -10,19 +11,19 @@ export class CityView {
   if(window.WebGL2RenderingContext){try{this.gpu=new RealCityScene($('#city-gl'),this.data);}catch(error){console.warn('UrbanLens: WebGL unavailable; using schematic renderer.',error);}}
   $('#city-render-status').textContent=this.gpu?'材质场景 · 模拟城市':'兼容模式 · 示意体量';
   if(this.gpu){$('#city-gl').addEventListener('webglcontextlost',e=>{e.preventDefault();this.gpu=null;$('#city-gl').hidden=true;$('#city-render-status').textContent='图形设备中断 · 已切换兼容模式';this.drawSoon();});}
-  $('#city-count').textContent=`6.0 × 4.2 km · ${this.data.buildings.length} 栋建筑 · ${this.data.facilities.length} 处设施`;
+  $('#city-count').textContent=`${WIDTH/1000} × ${HEIGHT/1000} km · ${this.data.buildings.length} 栋建筑 · ${this.data.facilities.length} 处设施`;
   this.bind();this.observer=new ResizeObserver(()=>this.resize());this.observer.observe(canvas.parentElement);this.resize();
   if(this.gpu){this.scope='district';Object.assign(this.camera,{x:3000,y:1850,scale:Math.min(this.camera.w/4400,this.camera.h/3200)});this.drawSoon();}
  }
  pixelRatio(){const c=this.camera,target=this.quality==='high'?Math.max(2,Math.min(window.devicePixelRatio||1,3)):1;return Math.min(target,Math.sqrt(8000000/(c.w*c.h)));}
  resize(){const box=this.canvas.getBoundingClientRect();if(!box.width||!box.height)return;const oldW=this.camera.w;this.camera.w=box.width;this.camera.h=box.height;const dpr=this.pixelRatio();this.canvas.width=Math.round(box.width*dpr);this.canvas.height=Math.round(box.height*dpr);this.ctx.setTransform(dpr,0,0,dpr,0,0);this.gpu?.setSize(box.width,box.height,dpr);if(this.scope==='city')this.fitScale();else this.camera.scale*=box.width/oldW;this.drawSoon();}
  fitScale(){const c=this.camera;const cos=Math.abs(Math.cos(c.bearing)),sin=Math.abs(Math.sin(c.bearing));c.scale=Math.min(c.w/(WIDTH*cos+HEIGHT*sin+700),Math.max(100,c.h-160)/((WIDTH*sin+HEIGHT*cos)*Math.sin(c.pitch)+600));}
- overview(){Object.assign(this.camera,{x:3000,y:2100,bearing:this.mode==='3d'?-.25:0});this.scope='city';this.fitScale();this.drawSoon();}
+ overview(){Object.assign(this.camera,{x:WIDTH/2,y:HEIGHT/2,bearing:this.mode==='3d'?-.25:0});this.scope='city';this.fitScale();this.drawSoon();}
  focus(id){const p=this.data.plots.find(p=>p.id===id);if(!p)return;this.scope='parcel';Object.assign(this.camera,{x:p.x,y:p.y,scale:Math.min(this.camera.w/1300,this.camera.h/1150)});this.drawSoon();}
  update({selected,visible,results}){this.selected=selected;this.visible=visible;this.results=results;this.drawSoon();}
  drawSoon(){if(this.frame)return;this.frame=requestAnimationFrame(()=>{this.frame=0;this.draw();});}
  setMode(mode){this.mode=mode;this.camera.pitch=mode==='2d'?Math.PI/2:Number($('#city-pitch').value)*Math.PI/180;$('#city-pitch').disabled=mode==='2d';document.querySelectorAll('[data-city-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.cityMode===mode)));if(this.scope==='city')this.fitScale();this.drawSoon();}
- zoom(factor,at=[this.camera.w/2,this.camera.h/2]){const before=unproject(at,this.camera);this.camera.scale=clamp(this.camera.scale*factor,.035,2.2);const after=unproject(at,this.camera);this.camera.x+=before[0]-after[0];this.camera.y+=before[1]-after[1];this.scope='custom';this.bound();this.drawSoon();}
+ zoom(factor,at=[this.camera.w/2,this.camera.h/2]){const before=unproject(at,this.camera);this.camera.scale=clamp(this.camera.scale*factor,.008,2.2);const after=unproject(at,this.camera);this.camera.x+=before[0]-after[0];this.camera.y+=before[1]-after[1];this.scope='custom';this.bound();this.drawSoon();}
  bound(){this.camera.x=clamp(this.camera.x,-500,WIDTH+500);this.camera.y=clamp(this.camera.y,-500,HEIGHT+500);}
  bind(){
   document.querySelectorAll('[data-city-mode]').forEach(b=>b.addEventListener('click',()=>this.setMode(b.dataset.cityMode)));
@@ -39,10 +40,10 @@ export class CityView {
   $('#city-inspector-close').addEventListener('click',()=>this.clearInspection());
   const pos=e=>{const r=this.canvas.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top];};
   this.canvas.addEventListener('contextmenu',e=>e.preventDefault());
-  this.canvas.addEventListener('pointerdown',e=>{const p=pos(e);this.canvas.setPointerCapture(e.pointerId);this.pointers.set(e.pointerId,p);this.drag={start:p,last:p,moved:false,rotate:e.shiftKey||e.button===2};if(this.pointers.size>1){this.drag.moved=true;this.pinch=null;}});
+  this.canvas.addEventListener('pointerdown',e=>{const p=pos(e);this.canvas.setPointerCapture(e.pointerId);this.pointers.set(e.pointerId,p);this.drag={start:p,last:p,moved:false,rotate:e.shiftKey||e.button===2};if(this.pointers.size>1){this.drag.moved=true;this.pinch=touchFrame([...this.pointers.values()]);}});
   this.canvas.addEventListener('pointermove',e=>{
-   if(!this.pointers.has(e.pointerId))return;const p=pos(e);this.pointers.set(e.pointerId,p);
-   if(this.pointers.size===2){const [a,b]=[...this.pointers.values()],dist=Math.hypot(a[0]-b[0],a[1]-b[1]);if(this.pinch)this.zoom(dist/this.pinch,[(a[0]+b[0])/2,(a[1]+b[1])/2]);this.pinch=dist;this.drag.moved=true;return;}
+   if(!this.pointers.has(e.pointerId)||this.pointers.size>2)return;const p=pos(e);this.pointers.set(e.pointerId,p);
+   if(this.pointers.size===2){const next=touchFrame([...this.pointers.values()]);if(this.pinch){const delta=touchDelta(this.pinch,next),anchor=unproject(this.pinch.center,this.camera);this.camera.scale=clamp(this.camera.scale*delta.scale,.008,2.2);this.camera.bearing+=delta.rotation;const moved=unproject(next.center,this.camera);this.camera.x+=anchor[0]-moved[0];this.camera.y+=anchor[1]-moved[1];this.scope='custom';this.bound();this.drawSoon();}this.pinch=next;this.drag.moved=true;return;}
    const d=this.drag;if(!d)return;const dx=p[0]-d.last[0],dy=p[1]-d.last[1];if(Math.hypot(p[0]-d.start[0],p[1]-d.start[1])>4)d.moved=true;
    if(d.rotate)this.camera.bearing+=dx*.006;else{const a=unproject(d.last,this.camera),b=unproject(p,this.camera);this.camera.x+=a[0]-b[0];this.camera.y+=a[1]-b[1];}
    d.last=p;this.scope='custom';this.bound();this.drawSoon();
@@ -92,7 +93,7 @@ export class CityView {
   this.world(rect(0,0,WIDTH,HEIGHT),'#293b46','#536571');
   for(const b of d.blocks)this.world(b.points,this.layers.land?{housing:'#394c57',office:'#474559',industry:'#304e50',civic:'#555248'}[b.use]:'#30424d');
   if(this.layers.roads){for(const r of d.roads){this.line(r.points,r.major?'#64717a':'#4e616c',Math.max(.5,(r.major?25:11)*c.scale));if(r.major&&c.scale>.16)this.line(r.points,'#9ba6a6',.6,[4,5]);}}
-  if(this.layers.green){for(const p of d.parks){this.world(p.points,'#456559');if(c.scale>.13){const [x,y]=p.points[0];for(let i=0;i<4;i++)for(let j=0;j<4;j++){const s=project([x+32+i*57,y+32+j*57,5],c);ctx.beginPath();ctx.ellipse(s[0],s[1],Math.max(1,14*c.scale),Math.max(1,12*c.scale),0,0,Math.PI*2);ctx.fillStyle='#73927b';ctx.fill();}}}const bank=[];for(let y=0;y<=HEIGHT;y+=70)bank.push([riverX(y)-192,y]);for(let y=HEIGHT;y>=0;y-=70)bank.push([riverX(y)+192,y]);this.world(bank,'#3f625a');this.world(d.water,'#32647a');}
+  if(this.layers.green){for(const p of d.parks){this.world(p.points,'#456559');if(c.scale>.13){const [x,y]=p.points[0];for(let i=0;i<4;i++)for(let j=0;j<4;j++){const s=project([x+32+i*57,y+32+j*57,5],c);ctx.beginPath();ctx.ellipse(s[0],s[1],Math.max(1,14*c.scale),Math.max(1,12*c.scale),0,0,Math.PI*2);ctx.fillStyle='#73927b';ctx.fill();}}}const bank=[];for(let y=0;y<=HEIGHT;y+=70)bank.push([riverX(y)-192,y]);for(let y=HEIGHT;y>=0;y-=70)bank.push([riverX(y)+192,y]);this.world(bank,'#3f625a');this.world(d.water,'#32647a');for(const lake of d.lakes||[])this.world(lake,'#32647a');}
   if(this.layers.roads){for(const y of [900,1800,2700,3600]){this.line([[riverX(y)-230,y],[riverX(y)+230,y]],'#87969d',Math.max(2,35*c.scale));}this.line(d.metro.points,'#d6b2f3',Math.max(1.3,9*c.scale),[7,4]);}
   if(this.layers.plots)for(const p of d.plots){if(!this.visible.has(p.id))continue;const color=p.id===this.selected?'#dbff73':this.results.get(p.id)?.total>=60?'#c5a5f0':this.results.has(p.id)?'#83cac4':'#a7b995';this.world(p.points,p.id===this.selected?'#647643':null,color,p.id===this.selected?2.5:1.2);}
   if(this.layers.buildings){
@@ -113,7 +114,7 @@ export class CityView {
   }
   if(this.layers.facilities)for(const f of d.facilities){const p=project([f.x,f.y,this.mode==='3d'?f.z:0],c);if(p[0]<16||p[0]>c.w-16||p[1]<16||p[1]>c.h-16)continue;const r=f.kind==='M'?8:10;ctx.beginPath();ctx.arc(...p,r,0,Math.PI*2);ctx.fillStyle=f.kind==='M'?'#7256b0':'#885244';ctx.fill();ctx.fillStyle='#fff';ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.fillText(f.kind,p[0],p[1]+4);this.hits.push({shape:rect(p[0]-r,p[1]-r,r*2,r*2),item:f});}
   ctx.textAlign='center';ctx.font='11px sans-serif';
-  if(c.scale<.2)for(const [name,x,y] of [['西港产业区',700,1600],['滨河更新片区',1900,1650],['江东中央商务区',4600,1200],['东山生态区',5350,500],['南城居住区',4300,3550]]){const p=project([x,y,180],c);ctx.fillStyle='#14232ddd';ctx.fillRect(p[0]-name.length*6-8,p[1]-13,name.length*12+16,22);ctx.fillStyle='#e1e9e7';ctx.fillText(name,...p);}
+  if(c.scale<.2)for(const [name,x,y] of [['西港产业区',700,1600],['滨河更新片区',1900,1650],['江东中央商务区',8400,4800],['东山湖生态区',10100,2050],['南城居住区',8300,7200]]){const p=project([x,y,180],c);ctx.fillStyle='#14232ddd';ctx.fillRect(p[0]-name.length*6-8,p[1]-13,name.length*12+16,22);ctx.fillStyle='#e1e9e7';ctx.fillText(name,...p);}
   if(this.layers.plots&&c.scale>=.2)for(const p of d.plots){if(!this.visible.has(p.id))continue;const s=project([p.x,p.y,0],c);ctx.fillStyle='#111f29df';ctx.fillRect(s[0]-30,s[1]+10,60,17);ctx.fillStyle=p.id===this.selected?'#dbff73':'#e0e8e8';ctx.fillText(p.id,s[0],s[1]+22);}
   $('#city-north').style.transform=`rotate(${Math.atan2(Math.sin(c.bearing),Math.cos(c.bearing)*Math.sin(c.pitch))*180/Math.PI}deg)`;
   const meters=c.scale<.15?1000:c.scale<.4?500:100;$('#city-scale-bar').style.width=`${meters*c.scale}px`;$('#city-scale-label').textContent=meters===1000?'1 km':`${meters} m`;$('#city-camera-state').textContent=`${this.mode==='3d'?'3D 体量':'2D 平面'} · ${Math.round(c.pitch*180/Math.PI)}°`;
