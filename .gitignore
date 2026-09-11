@@ -1,0 +1,8 @@
+.env
+.env.*
+!.env.example
+node_modules/
+.sites-runtime/
+.sites-artifacts/
+.DS_Store
+coverage/
