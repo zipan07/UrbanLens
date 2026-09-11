@@ -1,15 +1,21 @@
 import {createCity,project,unproject,contains,USES,WIDTH,HEIGHT,rect,riverX} from './city-data.js';
+import {RealCityScene} from './scene.js';
 const $=s=>document.querySelector(s);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export class CityView {
  constructor(canvas,parcels,onSelect){
   this.canvas=canvas;this.ctx=canvas.getContext('2d');this.data=createCity(parcels);this.onSelect=onSelect;
-  this.camera={x:3000,y:2100,bearing:-.25,pitch:Math.PI/3,scale:.13,w:800,h:600};
-  this.mode='3d';this.layers={buildings:true,land:true,roads:true,green:true,facilities:true,plots:true};this.color='use';this.visible=new Set(parcels.map(p=>p.id));this.results=new Map();this.hits=[];this.pointers=new Map();this.scope='city';
+  this.camera={x:3000,y:2100,bearing:-.25,pitch:50*Math.PI/180,scale:.13,w:800,h:600};
+  this.mode='3d';this.layers={buildings:true,land:true,roads:true,green:true,facilities:true,plots:true};this.color='natural';this.quality='high';this.lighting='day';this.visible=new Set(parcels.map(p=>p.id));this.results=new Map();this.hits=[];this.pointers=new Map();this.scope='city';
+  if(window.WebGL2RenderingContext){try{this.gpu=new RealCityScene($('#city-gl'),this.data);}catch(error){console.warn('UrbanLens: WebGL unavailable; using schematic renderer.',error);}}
+  $('#city-render-status').textContent=this.gpu?'材质场景 · 模拟城市':'兼容模式 · 示意体量';
+  if(this.gpu){$('#city-gl').addEventListener('webglcontextlost',e=>{e.preventDefault();this.gpu=null;$('#city-gl').hidden=true;$('#city-render-status').textContent='图形设备中断 · 已切换兼容模式';this.drawSoon();});}
   $('#city-count').textContent=`6.0 × 4.2 km · ${this.data.buildings.length} 栋建筑 · ${this.data.facilities.length} 处设施`;
   this.bind();this.observer=new ResizeObserver(()=>this.resize());this.observer.observe(canvas.parentElement);this.resize();
+  if(this.gpu){this.scope='district';Object.assign(this.camera,{x:3000,y:1850,scale:Math.min(this.camera.w/4400,this.camera.h/3200)});this.drawSoon();}
  }
- resize(){const box=this.canvas.getBoundingClientRect();if(!box.width||!box.height)return;const oldW=this.camera.w;this.camera.w=box.width;this.camera.h=box.height;const dpr=Math.min(window.devicePixelRatio||1,2);this.canvas.width=Math.round(box.width*dpr);this.canvas.height=Math.round(box.height*dpr);this.ctx.setTransform(dpr,0,0,dpr,0,0);if(this.scope==='city')this.fitScale();else this.camera.scale*=box.width/oldW;this.drawSoon();}
+ pixelRatio(){const c=this.camera,target=this.quality==='high'?Math.max(2,Math.min(window.devicePixelRatio||1,3)):1;return Math.min(target,Math.sqrt(8000000/(c.w*c.h)));}
+ resize(){const box=this.canvas.getBoundingClientRect();if(!box.width||!box.height)return;const oldW=this.camera.w;this.camera.w=box.width;this.camera.h=box.height;const dpr=this.pixelRatio();this.canvas.width=Math.round(box.width*dpr);this.canvas.height=Math.round(box.height*dpr);this.ctx.setTransform(dpr,0,0,dpr,0,0);this.gpu?.setSize(box.width,box.height,dpr);if(this.scope==='city')this.fitScale();else this.camera.scale*=box.width/oldW;this.drawSoon();}
  fitScale(){const c=this.camera;const cos=Math.abs(Math.cos(c.bearing)),sin=Math.abs(Math.sin(c.bearing));c.scale=Math.min(c.w/(WIDTH*cos+HEIGHT*sin+700),Math.max(100,c.h-160)/((WIDTH*sin+HEIGHT*cos)*Math.sin(c.pitch)+600));}
  overview(){Object.assign(this.camera,{x:3000,y:2100,bearing:this.mode==='3d'?-.25:0});this.scope='city';this.fitScale();this.drawSoon();}
  focus(id){const p=this.data.plots.find(p=>p.id===id);if(!p)return;this.scope='parcel';Object.assign(this.camera,{x:p.x,y:p.y,scale:Math.min(this.camera.w/1300,this.camera.h/1150)});this.drawSoon();}
@@ -21,7 +27,11 @@ export class CityView {
  bind(){
   document.querySelectorAll('[data-city-mode]').forEach(b=>b.addEventListener('click',()=>this.setMode(b.dataset.cityMode)));
   document.querySelectorAll('[data-layer]').forEach(b=>b.addEventListener('change',()=>{this.layers[b.dataset.layer]=b.checked;if(!b.checked)this.clearInspection();this.drawSoon();}));
-  $('#city-color').addEventListener('change',e=>{this.color=e.target.value;$('#city-use-legend').hidden=this.color!=='use';$('#city-height-legend').hidden=this.color!=='height';this.drawSoon();});
+  $('#city-color').addEventListener('change',e=>{this.color=e.target.value;$('#city-use-legend').hidden=this.color!=='use';$('#city-natural-legend').hidden=this.color!=='natural';$('#city-height-legend').hidden=this.color!=='height';this.drawSoon();});
+  $('#city-quality').addEventListener('change',e=>{this.quality=e.target.value;this.resize();});
+  $('#city-lighting').addEventListener('change',e=>{this.lighting=e.target.value;this.drawSoon();});
+  $('#city-export').addEventListener('click',()=>this.exportImage());
+  $('#city-district').addEventListener('click',()=>{this.scope='district';Object.assign(this.camera,{x:2300,y:1800,scale:Math.min(this.camera.w/2850,this.camera.h/2100),bearing:-.4});this.drawSoon();});
   $('#city-pitch').addEventListener('input',e=>{this.camera.pitch=Number(e.target.value)*Math.PI/180;this.scope='custom';this.drawSoon();});
   $('#zoom-in').addEventListener('click',()=>this.zoom(1.3));$('#zoom-out').addEventListener('click',()=>this.zoom(1/1.3));$('#zoom-fit').addEventListener('click',()=>this.overview());$('#city-focus').addEventListener('click',()=>this.focus(this.selected));
   $('#city-rotate').addEventListener('click',()=>{this.camera.bearing+=Math.PI/6;this.drawSoon();});
@@ -44,19 +54,41 @@ export class CityView {
  }
  clearInspection(){this.inspected=null;$('#city-inspector').hidden=true;this.drawSoon();}
  pick(p){
-  const hit=[...this.hits].reverse().find(h=>contains(p,h.shape));
+  const overlay=[...this.hits].reverse().find(h=>contains(p,h.shape));
+  const gpuItem=this.gpu?.pick(p,this.camera);
+  const hit=overlay?.item.kind?overlay:gpuItem?{item:gpuItem}:overlay;
   if(hit?.item.kind){this.inspect(hit.item);return;}
   if(hit?.item.parcelId&&this.layers.plots&&this.visible.has(hit.item.parcelId)){this.clearInspection();this.onSelect(hit.item.parcelId);return;}
+  if(hit){this.inspect(hit.item);return;}
   const ground=unproject(p,this.camera),plot=this.layers.plots&&this.data.plots.find(q=>this.visible.has(q.id)&&contains(ground,q.points));
   if(plot){this.clearInspection();this.onSelect(plot.id);return;}
-  if(hit){this.inspect(hit.item);return;}this.clearInspection();
+  this.clearInspection();
  }
- inspect(item){this.inspected=item.id;$('#city-inspector').hidden=false;$('#city-object-name').textContent=item.name;$('#city-object-detail').textContent=item.kind?`${item.kind==='M'?'轨道交通站点':'公共服务设施'} · 虚构城市设施`:`${USES[item.use].name} · ${item.floors} 层 · ${item.height.toFixed(1)} m 高`;$('#city-object-note').textContent=item.parcelId?'关联更新地块；开启更新地块图层并清除筛选后可选地评估。':'城市背景对象 · 不纳入地块评分';this.drawSoon();}
+ inspect(item){this.inspected=item.id;$('#city-inspector').hidden=false;$('#city-object-name').textContent=item.name;$('#city-object-detail').textContent=item.kind?`${item.kind==='M'?'轨道交通站点':'公共服务设施'} · 虚构城市设施`:`${USES[item.use].name} · ${item.floors} 层 · ${item.height.toFixed(1)} m 高\n${item.material} · ${item.roof}`;$('#city-object-note').textContent=item.parcelId?'关联更新地块；开启更新地块图层并清除筛选后可选地评估。':'城市背景对象 · 不纳入地块评分';this.drawSoon();}
+ async exportImage(){
+  const button=$('#city-export');if(button.disabled)return;button.disabled=true;button.textContent='正在生成…';
+  const c=this.camera,ratio=Math.min(3840/Math.max(c.w,c.h),this.gpu?this.gpu.renderer.capabilities.maxTextureSize/Math.max(c.w,c.h):4),normal=this.pixelRatio();
+  try{
+   const image=document.createElement('canvas');image.width=Math.round(c.w*ratio);image.height=Math.round(c.h*ratio)+180;const ctx=image.getContext('2d');
+   this.canvas.width=Math.round(c.w*ratio);this.canvas.height=Math.round(c.h*ratio);this.ctx.setTransform(ratio,0,0,ratio,0,0);this.gpu?.setSize(c.w,c.h,ratio);this.draw();
+   ctx.fillStyle='#172731';ctx.fillRect(0,0,image.width,image.height);if(this.gpu)ctx.drawImage(this.gpu.renderer.domElement,0,0,image.width,image.height-180);ctx.drawImage(this.canvas,0,0,image.width,image.height-180);
+   const meters=c.scale<.15?1000:c.scale<.4?500:100,bar=meters*c.scale*ratio,sx=image.width-bar-40,sy=image.height-215;
+   ctx.strokeStyle='#20343d';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(sx,sy-10);ctx.lineTo(sx,sy);ctx.lineTo(sx+bar,sy);ctx.lineTo(sx+bar,sy-10);ctx.stroke();ctx.fillStyle='#20343d';ctx.font='22px sans-serif';ctx.fillText(`${meters} m`,sx,sy-16);
+   ctx.save();ctx.translate(image.width-70,80);ctx.rotate(Math.atan2(Math.sin(c.bearing),Math.cos(c.bearing)*Math.sin(c.pitch)));ctx.fillText('N',-9,-28);ctx.beginPath();ctx.moveTo(0,-18);ctx.lineTo(-8,12);ctx.lineTo(8,12);ctx.closePath();ctx.fill();ctx.restore();
+   const y=image.height-140;ctx.fillStyle='#edf5ef';ctx.font='bold 28px sans-serif';ctx.fillText(`UrbanLens / ${this.mode.toUpperCase()} · 滨河虚拟城市`,32,y);ctx.font='22px sans-serif';ctx.fillStyle='#c2d2d4';ctx.fillText('模拟几何与材质 · 非真实测绘成果 · 城市体量不作为评估依据',32,y+40);
+   ctx.font='20px sans-serif';ctx.fillText(`当前地块 ${this.selected} · ${this.color==='natural'?'自然材质':this.color==='height'?'建筑高度：浅绿 ≤45 m / 蓝 45–90 m / 紫 ＞90 m':'用途：沙金 居住 / 蓝 商务 / 砖红 工业 / 紫 公服'} · 青柠边界：当前地块`,32,y+77);
+   ctx.fillText(`图层：${Object.entries(this.layers).filter(([,v])=>v).map(([k])=>({buildings:'建筑',land:'用地',roads:'交通',green:'蓝绿空间',facilities:'设施',plots:'更新地块'}[k])).join('、')} · ${image.width} × ${image.height} px`,32,y+110);
+   const blob=await new Promise(resolve=>image.toBlob(resolve,'image/png'));if(!blob)throw new Error('图像生成失败');const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`UrbanLens_${this.mode}_${this.selected}_模拟城市.png`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);$('#city-render-status').textContent=`已导出 ${image.width} × ${image.height} px`;
+  }catch(error){$('#city-render-status').textContent='导出失败，请降低画质后重试';console.warn(error);}
+  finally{this.canvas.width=Math.round(c.w*normal);this.canvas.height=Math.round(c.h*normal);this.ctx.setTransform(normal,0,0,normal,0,0);this.gpu?.setSize(c.w,c.h,normal);this.drawSoon();button.disabled=false;button.textContent='导出高清地图';}
+ }
  polygon(points,fill,stroke,width=1){const ctx=this.ctx;ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();if(fill){ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.stroke();}}
  world(points,fill,stroke,width=1,z=0){const p=points.map(([x,y])=>project([x,y,z],this.camera));this.polygon(p,fill,stroke,width);return p;}
  line(points,color,width,dash=[]){const ctx=this.ctx;ctx.beginPath();points.map(p=>project(p,this.camera)).forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.strokeStyle=color;ctx.lineWidth=width;ctx.setLineDash(dash);ctx.stroke();ctx.setLineDash([]);}
  draw(){
-  const ctx=this.ctx,c=this.camera,d=this.data;ctx.clearRect(0,0,c.w,c.h);ctx.fillStyle='#14232d';ctx.fillRect(0,0,c.w,c.h);this.hits=[];
+  const ctx=this.ctx,c=this.camera,d=this.data;ctx.clearRect(0,0,c.w,c.h);this.hits=[];
+  if(this.gpu)this.gpu.render(c,this);
+  else {ctx.fillStyle='#14232d';ctx.fillRect(0,0,c.w,c.h);
   this.world(rect(0,0,WIDTH,HEIGHT),'#293b46','#536571');
   for(const b of d.blocks)this.world(b.points,this.layers.land?{housing:'#394c57',office:'#474559',industry:'#304e50',civic:'#555248'}[b.use]:'#30424d');
   if(this.layers.roads){for(const r of d.roads){this.line(r.points,r.major?'#64717a':'#4e616c',Math.max(.5,(r.major?25:11)*c.scale));if(r.major&&c.scale>.16)this.line(r.points,'#9ba6a6',.6,[4,5]);}}
@@ -78,7 +110,8 @@ export class CityView {
     this.polygon(roof,color,b.id===this.inspected?'#ffffff':'#20344155',b.id===this.inspected?2:.6);this.hits.push({shape:roof,item:b});
    }
   }
-  if(this.layers.facilities)for(const f of d.facilities){const p=project([f.x,f.y,this.mode==='3d'?f.z:0],c);if(p[0]<16||p[0]>c.w-16||p[1]<16||p[1]>c.h-16)continue;const r=f.kind==='M'?7:9;ctx.beginPath();ctx.arc(...p,r,0,Math.PI*2);ctx.fillStyle=f.kind==='M'?'#ccaff0':'#eed1a8';ctx.fill();ctx.fillStyle='#18262f';ctx.font='bold 10px sans-serif';ctx.textAlign='center';ctx.fillText(f.kind,p[0],p[1]+3.5);this.hits.push({shape:rect(p[0]-r,p[1]-r,r*2,r*2),item:f});}
+  }
+  if(this.layers.facilities)for(const f of d.facilities){const p=project([f.x,f.y,this.mode==='3d'?f.z:0],c);if(p[0]<16||p[0]>c.w-16||p[1]<16||p[1]>c.h-16)continue;const r=f.kind==='M'?8:10;ctx.beginPath();ctx.arc(...p,r,0,Math.PI*2);ctx.fillStyle=f.kind==='M'?'#7256b0':'#885244';ctx.fill();ctx.fillStyle='#fff';ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.fillText(f.kind,p[0],p[1]+4);this.hits.push({shape:rect(p[0]-r,p[1]-r,r*2,r*2),item:f});}
   ctx.textAlign='center';ctx.font='11px sans-serif';
   if(c.scale<.2)for(const [name,x,y] of [['西港产业区',700,1600],['滨河更新片区',1900,1650],['江东中央商务区',4600,1200],['东山生态区',5350,500],['南城居住区',4300,3550]]){const p=project([x,y,180],c);ctx.fillStyle='#14232ddd';ctx.fillRect(p[0]-name.length*6-8,p[1]-13,name.length*12+16,22);ctx.fillStyle='#e1e9e7';ctx.fillText(name,...p);}
   if(this.layers.plots&&c.scale>=.2)for(const p of d.plots){if(!this.visible.has(p.id))continue;const s=project([p.x,p.y,0],c);ctx.fillStyle='#111f29df';ctx.fillRect(s[0]-30,s[1]+10,60,17);ctx.fillStyle=p.id===this.selected?'#dbff73':'#e0e8e8';ctx.fillText(p.id,s[0],s[1]+22);}

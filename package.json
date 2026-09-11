@@ -4,6 +4,19 @@
   "private": true,
   "type": "module",
   "description": "城市更新用地智能评估交互系统 — V0.1 interaction prototype",
-  "engines": { "node": ">=22" },
-  "scripts": { "start": "node scripts/serve.mjs", "test": "node --test", "check": "node --check dist/app.js && node --check dist/domain.js && node --check dist/city-data.js && node --check dist/city-view.js" }
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "esbuild src/city-webgl.js --bundle --minify --format=esm --target=es2022 --outfile=dist/scene.js --legal-comments=eof",
+    "start": "node scripts/serve.mjs",
+    "test": "node --test",
+    "check": "node --check dist/app.js && node --check dist/domain.js && node --check dist/city-data.js && node --check dist/city-view.js && node --check src/city-webgl.js"
+  },
+  "dependencies": {
+    "three": "0.180.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.9"
+  }
 }

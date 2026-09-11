@@ -23,7 +23,18 @@ export function evaluate(p){
   const validCount=scores.filter(v=>v!==null).length;
   return {parcelId:p.id,ruleVersion:RULE_VERSION,dataVersion:p.dataVersion,ratio,scores:scores.map(v=>v===null?null:Math.round(v*10)/10),coverage:validCount*20,total:validCount===5?Math.round(scores.reduce((a,b)=>a+b,0)/5*10)/10:null,missing:DIMENSIONS.filter((_,i)=>scores[i]===null)};
 }
-export function filterParcels(query='',use=''){const q=query.trim().toLowerCase();return parcels.filter(p=>(!use||p.use===use)&&(!q||`${p.id} ${p.name}`.toLowerCase().includes(q)));}
+export function filterParcels(query='',use='',options={},results=new Map()){
+  const q=query.trim().toLowerCase(),{minArea=0,maxArea=Infinity,status='',quality=''}=options;
+  if(!Number.isFinite(minArea)||!(Number.isFinite(maxArea)||maxArea===Infinity)||minArea<0||maxArea<0)return [];
+  return parcels.filter(p=>{
+    if((use&&p.use!==use)||(q&&!`${p.id} ${p.name}`.toLowerCase().includes(q)))return false;
+    if(p.area<minArea||p.area>maxArea||minArea>maxArea)return false;
+    const r=results.get(p.id);
+    if(status==='todo'&&r||status==='done'&&!r||status==='high'&&!(r?.total>=60))return false;
+    const complete=evaluate(p).coverage===100;
+    return !(quality==='full'&&!complete||quality==='missing'&&complete);
+  });
+}
 export function explanation(p,result,question){
   if(/补充|缺|资料/.test(question)){const r=result||evaluate(p);return r.missing.length?`需补充：${r.missing.join('、')}相关资料。缺失数据未按0分处理，综合分暂不输出。\n来源：${p.source}；数据版本 ${p.dataVersion}。`:`演示指标字段齐全。实际业务还需核验规划条件、权属资料、建筑调查与数据时点；字段齐全不代表已具备实施条件。\n来源：${p.source}。`;}
   if(!/关注|评分|依据|为什么|空置|容积率|评估/.test(question))return '当前演示助手支持关注度解释、评分依据和缺失资料查询。该问题未被演示逻辑覆盖，无法给出有依据的回答。';
