@@ -1,6 +1,6 @@
 // Deterministic fictional geometry; deliberately independent of assessment attributes.
 export const WIDTH=6000, HEIGHT=4200;
-export const USES={housing:{name:'居住',color:'#a8bbc6'},office:{name:'商务',color:'#b6a6db'},industry:{name:'工业',color:'#79aaa6'},civic:{name:'公共服务',color:'#e0bc91'}};
+export const USES={housing:{name:'居住',color:'#e7bc89'},office:{name:'商务',color:'#6ebfda'},industry:{name:'工业',color:'#cd8d82'},civic:{name:'公共服务',color:'#ab9cda'}};
 export const riverX=y=>3350+180*Math.sin(y/850);
 export const rect=(x,y,w,h)=>[[x,y],[x+w,y],[x+w,y+h],[x,y+h]];
 export function createCity(parcelData=[]){
@@ -20,10 +20,10 @@ export function createCity(parcelData=[]){
   if(p)plots.push({...block,id:p.id,name:p.name,x:x+w/2,y:y+h/2});
   const count=use==='industry'?2:4;
   for(let i=0;i<count;i++){
-   const bw=use==='industry'?204:65+rand()*27,bh=use==='industry'?82:65+rand()*27;
+   const bw=use==='industry'?204:use==='housing'?38+rand()*14:58+rand()*29,bh=use==='industry'?82:70+rand()*22;
    const bx=x+18+(i%2)*(use==='industry'?0:124),by=y+18+(use==='industry'?i:i>>1)*117;
    const floors=use==='office'?14+Math.floor(rand()*30):use==='housing'?4+Math.floor(rand()*14):use==='industry'?2+Math.floor(rand()*3):3+Math.floor(rand()*5);
-   buildings.push({id:`BLD-${col}-${row}-${i}`,name:`${USES[use].name}建筑 ${col+1}－${row+1}－${i+1}`,points:rect(bx,by,bw,bh),height:floors*(use==='industry'?4.5:3.3),floors,use,parcelId:p?.id});
+   buildings.push({id:`BLD-${col}-${row}-${i}`,name:`${USES[use].name}建筑 ${col+1}－${row+1}－${i+1}`,points:rect(bx,by,bw,bh),height:floors*(use==='industry'?4.5:3.3),floors,use,variant:(col+row+i)%3,roof:use==='industry'?'厂房坡屋顶':use==='housing'&&floors<10?'住宅坡屋顶':use==='office'?'退台与设备屋面':'平屋顶',material:{housing:'浅色抹灰 / 深灰窗框',office:'玻璃幕墙 / 金属框架',industry:'红砖 / 金属屋面',civic:'石材 / 玻璃'}[use],parcelId:p?.id});
   }
   if(use==='civic')facilities.push({id:`P-${col}-${row}`,name:(col+row)%2?'社区医院':'城市学校',kind:(col+row)%2?'H':'学',x:x+w/2,y:y+h/2,z:36});
  }
