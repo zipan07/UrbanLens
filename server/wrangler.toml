@@ -1,0 +1,10 @@
+name = "urbanlens-assistant"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+
+[vars]
+ALLOWED_ORIGIN = "https://zipan07.github.io"
+DEEPSEEK_MODEL = "deepseek-flash"
+
+# Configure DEEPSEEK_API_KEY and URBANLENS_ACCESS_TOKEN using the host's secret store.
+# Never add either secret here or under dist/.
