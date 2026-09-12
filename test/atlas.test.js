@@ -5,9 +5,9 @@ import {validateStyleMin} from '@maplibre/maplibre-gl-style-spec';
 import {heightOf,distanceMeters,inGeometry,validateImport,coordinates} from '../src/geo.js';
 import {makeStyle} from '../src/atlas-style.js';
 const data=Object.fromEntries(['boundary','land','water','roads','buildings','pois'].map(k=>[k,JSON.parse(fs.readFileSync(new URL(`../dist/data/${k}.geojson`,import.meta.url)))]));
-const boundary=data.boundary.features[0].geometry;
+const boundary=data.boundary.features.find(f=>f.properties.osm_id==='relation/2138698').geometry;
 test('Xuanwu is real geographic data, includes SEU and Xuanwu Lake, not local virtual coordinates',()=>{
- assert.equal(data.boundary.features[0].properties.osm_id,'relation/2138698');
+ assert.equal(data.boundary.features.length,6);assert.equal(new Set(data.boundary.features.map(f=>f.properties.division_code)).size,6);
  assert(inGeometry([118.7986,32.0568],boundary));assert(!inGeometry([116.4,39.9],boundary));
  assert(data.pois.features.some(f=>f.properties.name==='玄武湖'));
  assert(data.pois.features.some(f=>f.properties.name==='东南大学(四牌楼校区)'));

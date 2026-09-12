@@ -11,6 +11,15 @@ export const SERVICE_NAMES={transit:'交通点位',education:'教育设施',heal
 const utm=proj4('EPSG:4326','+proj=utm +zone=50 +datum=WGS84 +units=m +no_defs');
 const finite=n=>typeof n==='number'&&Number.isFinite(n);
 const rounded=n=>Math.round(n*10)/10;
+const buildingCenterCache=new WeakMap();
+function buildingCenters(collection){
+ let cached=buildingCenterCache.get(collection);
+ if(!cached||cached.features!==collection.features||cached.size!==collection.features.length){
+  cached={features:collection.features,size:collection.features.length,entries:collection.features.filter(f=>!f.properties['building:part']).map(feature=>({feature,point:centerOf(feature.geometry)}))};
+  buildingCenterCache.set(collection,cached);
+ }
+ return cached.entries;
+}
 export function projectedArea(g){
  const ringArea=r=>{const xy=r.map(p=>utm.forward(p.slice(0,2)));const [ox,oy]=xy[0];let a=0;for(let i=0,j=xy.length-1;i<xy.length;j=i++)a+=(xy[j][0]-ox)*(xy[i][1]-oy)-(xy[i][0]-ox)*(xy[j][1]-oy);return Math.abs(a)/2;};
  const polygons=g.type==='Polygon'?[g.coordinates]:g.type==='MultiPolygon'?g.coordinates:[];
@@ -23,7 +32,8 @@ export function analyzeUnit(unit,data,services){
  const nearby=services.features.map(f=>({...f,distance:distanceMeters(point,f.geometry.coordinates)})).sort((a,b)=>a.distance-b.distance);
  const nearest=Object.fromEntries(Object.keys(SERVICE_NAMES).map(k=>[k,nearby.find(f=>f.properties.category===k)||null]));
  const counts=Object.fromEntries(Object.keys(SERVICE_NAMES).map(k=>[k,nearby.filter(f=>f.distance<=600&&f.properties.category===k).length]));
- const buildings=data.buildings.features.filter(f=>!f.properties['building:part']&&inGeometry(centerOf(f.geometry),unit.geometry));
+ const box=boundsOf(unit.geometry);
+ const buildings=buildingCenters(data.buildings).filter(({point:[x,y]})=>x>=box[0]&&x<=box[2]&&y>=box[1]&&y<=box[3]&&inGeometry([x,y],unit.geometry)).map(({feature})=>feature);
  return {point,area:area===null?null:Math.round(area),nearest,counts,nearby:nearby.filter(f=>f.distance<=600),buildingCount:buildings.length,heightKnown:buildings.filter(f=>f.properties.height_m!==null).length,spatialDate:services.metadata.snapshotAt,geometryDate:unit.properties.source_date||data.land.metadata.snapshotAt,method:'面积：WGS84 / UTM 50N（EPSG:32650）投影平面面积；区位：面内参考点至设施参考点的球面直线距离；600m为演示观察半径，非步行可达性或法定服务标准。'};
 }
 const demoRows=[{far:1.05,vacancy:48,industry:'待调整',condition:3},{far:1.8,vacancy:18,industry:'符合',condition:2},{far:1.55,vacancy:9,industry:'符合',condition:3},{far:1.25,vacancy:32,industry:'待调整',condition:4},{far:2.1,vacancy:14,industry:'符合',condition:2},{far:.95,vacancy:56,industry:'待调整',condition:3},{far:1.35,vacancy:null,industry:'待核实',condition:null},{far:1.65,vacancy:0,industry:'符合',condition:1}];
@@ -43,7 +53,7 @@ export function computeAssessment(unit,analysis,{mode='observed',profile='balanc
  const raw=[input.distance===null?'缺失':`${Math.round(input.distance)} m`,legacy.ratio===null?'缺失':legacy.ratio.toFixed(2),input.industry,input.condition===null?'缺失':`${input.condition} 级`,input.vacancy===null?'缺失':`${input.vacancy}%`];
  const methods=['min(100, 交通直线距离 ÷ 15)','max(0, min(100, (2 − 容积率) ÷ 2 × 100))；2 为演示基准','符合 = 20；待调整 = 80；待核实 = 缺失','演示等级 1–4 线性映射为 0–100；不等于安全鉴定','使用状态得分 = 空置率（%）'];
  const dimensions=DIMENSIONS.map((name,i)=>({name,raw:raw[i],score:scores[i],weight:weights[i],method:methods[i],status:scores[i]===null?'资料不足':i===0?'开放数据计算':mode==='demo'?'虚构演示':mode==='uploaded'?'用户填报待核实':'资料不足',sourceId:i===0?'spatial':'business',date:i===0?analysis.spatialDate:input.date}));
- return {unitId:unit.id,name:unit.properties.name,mode,profile,ruleVersion:`DEMO-VALUE-07-${profile}`,ruleStatus:'演示规则，未获业务核准',dataVersion:input.dataVersion,geometryDate:analysis.geometryDate,spatialDate:analysis.spatialDate,input,ratio:legacy.ratio,scores,coverage,total,dimensions,missing:dimensions.filter(d=>d.score===null).map(d=>d.name),fingerprint:fingerprint(input,profile,analysis),sources:fieldSources,limitations:['研究轮廓不是地籍宗地或官方更新边界','综合分仅为更新研究关注度，不表示地价、投资回报或实施可行性','权属、法定规划条件、建筑安全与经营台账尚未核验','开放设施点位覆盖不完整，未检索到不代表不存在']};
+ return {unitId:unit.id,name:unit.properties.name,districtName:unit.properties.district_name||'',divisionCode:String(unit.properties.division_code||''),mode,profile,ruleVersion:`DEMO-VALUE-07-${profile}`,ruleStatus:'演示规则，未获业务核准',dataVersion:input.dataVersion,geometryDate:analysis.geometryDate,spatialDate:analysis.spatialDate,input,ratio:legacy.ratio,scores,coverage,total,dimensions,missing:dimensions.filter(d=>d.score===null).map(d=>d.name),fingerprint:fingerprint(input,profile,analysis),sources:fieldSources,limitations:['研究轮廓不是地籍宗地或官方更新边界','综合分仅为更新研究关注度，不表示地价、投资回报或实施可行性','权属、法定规划条件、建筑安全与经营台账尚未核验','开放设施点位覆盖不完整，未检索到不代表不存在']};
 }
 export function createRun(unit,analysis,options){const result=computeAssessment(unit,analysis,options);return {...structuredClone(result),id:`RUN-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,createdAt:new Date().toISOString(),review:{status:'未复核',note:'',name:'',date:null}};}
 export function compareRuns(runs){
@@ -91,17 +101,17 @@ export function answerQuestion(question,{units,analyses,selectedId,compared=[],s
  const inScope=scope==='project'?units:scope==='compare'?units.filter(u=>compared.includes(u.id)):[selected].filter(Boolean);
  const source=(id,title,text,url,date)=>({id,title,text,url,date});
  if(scope==='compare'&&inScope.length<2)return {text:'请先选择 2–3 个研究单元，再用比较清单提问。',sources:[],actions:[]};
- const explicit=clean.match(/XW-R\d{2,}|UL-\d{3}/gi)||[];
+ const explicit=clean.match(/[A-Z]{2,5}-R\d{2,}|UL-\d{3}/gi)||[];
  const namedOut=units.some(u=>clean.includes(u.properties.name)&&!inScope.includes(u));
  if(explicit.some(id=>!inScope.some(u=>u.id===id.toUpperCase()))||namedOut)return {text:'问题涉及当前范围之外的对象。请切换到“比较清单”或“整个研究项目”，再明确选择需要比较的对象。旧版 UL 地块请打开历史样例。',sources:[],actions:[]};
  const sources=[],actions=[];const add=s=>{sources.push(s);return ` [${s.id}]`;};
  const policy=/政策|案例|百子亭|印刷厂|红山片区|长江路|更新规划|保护/.test(clean);
  if(/地价|成交|市场|多少钱|价值.*元|楼面价|估价/.test(clean)){
   const text=evidence.market.map((m,i)=>{const calc=marketMeasures(m);return `${m.id}（${m.date}）：${m.area_m2} m²，容积率上限 ${m.far_max}，成交 ${m.deal_wan} 万元；按面积×容积率上限折算楼面地价约 ${calc.floorPrice} 元/m²。${add(source('M'+(i+1),m.title,m.note,m.url,m.date))}`;}).join('\n\n');
-  return {text:text+'\n\n这两笔不同年份、不同用途与位置的交易只作市场背景，不能直接套用于当前研究单元。缺少权属、规划条件、完整可比成交和时点修正，当前不输出该单元的市场价值。原站正文暂不可达，成交字段经官方检索索引核对。',sources,actions:[{type:'market',label:'打开市场与案例'}]};
+  return {text:text+'\n\n这些不同年份、不同用途与位置的交易只作市场背景，不能直接套用于当前研究单元。缺少权属、规划条件、完整可比成交和时点修正，当前不输出该单元的市场价值。原站正文暂不可达，成交字段经官方检索索引核对。',sources,actions:[{type:'market',label:'打开市场与案例'}]};
  }
- if(policy){const words=clean.match(/百子亭|印刷厂|红山|长江路|锁金|规划|保护/g)||[];const docs=evidence.documents.map(d=>({d,n:words.filter(w=>(d.title+d.summary).includes(w)).length})).sort((a,b)=>b.n-a.n).slice(0,3);return {text:docs.map(({d},i)=>d.title+'\n'+d.summary+add(source('P'+(i+1),d.title,d.summary,d.url,d.date))).join('\n\n')+'\n\n上述资料是片区政策和公开项目参考，不证明当前所选轮廓位于法定控制线内，也不替代项目审批。资料反映各自发布时点。',sources,actions:[{type:'market',label:'查看完整资料卡'}]};}
- if(/筛选|找出|找一下|寻找/.test(clean)){const type=clean.includes('居住')?'居住社区':clean.includes('产业')?'产业空间':clean.includes('商业')?'商业文旅':'';const maxTransit=/600|六百/.test(clean)?600:/500|五百/.test(clean)?500:null;return {text:`已整理可编辑筛选条件：${type||'全部类型'}${maxTransit?'；交通点位直线距离 ≤ '+maxTransit+' m':''}。点击按钮后应用。距离来自开放地图，不等于步行时间。`,sources:[],actions:[{type:'filter',label:'应用筛选条件',filter:{type,maxTransit}}]};}
+ if(policy){const words=clean.match(/鼓楼|玄武|秦淮|雨花台|建邺|栖霞|百子亭|印刷厂|红山|长江路|锁金|规划|保护/g)||[];const requestedDistricts=clean.match(/鼓楼|玄武|秦淮|雨花台|建邺|栖霞/g)||[];const eligible=requestedDistricts.length?evidence.documents.filter(d=>requestedDistricts.some(n=>(d.title+d.summary+(d.district_name||'')).includes(n))):evidence.documents;if(!eligible.length)return {text:`当前资料库尚未收录可核对的${requestedDistricts.join('、')}区更新案例。地图覆盖范围已扩展到南京核心六区，公开案例仍按实际收录范围提供；可打开资料卡查看来源与适用范围。`,sources:[],actions:[{type:'market',label:'查看已收录资料'}]};const docs=eligible.map(d=>({d,n:words.filter(w=>(d.title+d.summary).includes(w)).length})).sort((a,b)=>b.n-a.n).slice(0,3);return {text:docs.map(({d},i)=>d.title+'\n'+d.summary+add(source('P'+(i+1),d.title,d.summary,d.url,d.date))).join('\n\n')+'\n\n上述资料是片区政策和公开项目参考，不证明当前所选轮廓位于法定控制线内，也不替代项目审批。资料反映各自发布时点。',sources,actions:[{type:'market',label:'查看完整资料卡'}]};}
+ if(/筛选|找出|找一下|寻找/.test(clean)){const districtUnit=units.find(u=>u.properties.district_name&&clean.includes(u.properties.district_name.replace(/区$/,''))),district=districtUnit?String(districtUnit.properties.division_code||''):'';const type=clean.includes('居住')?'居住社区':clean.includes('产业')?'产业空间':clean.includes('商业')?'商业文旅':'';const maxTransit=/600|六百/.test(clean)?600:/500|五百/.test(clean)?500:null;return {text:`已整理可编辑筛选条件：${districtUnit?districtUnit.properties.district_name+'；':''}${type||'全部类型'}${maxTransit?'；交通点位直线距离 ≤ '+maxTransit+' m':''}。点击按钮后应用。距离来自开放地图，不等于步行时间。`,sources:[],actions:[{type:'filter',label:'应用筛选条件',filter:{type,maxTransit,...(district?{district}:{})}}]};}
  if(!selected)return {text:'请先选择研究单元。',sources:[],actions:[]};
  if(/^(运行|开始|重新).*(评估|分析)/.test(clean))return {text:'将使用当前数据口径与权重配置生成一份可追溯的评估快照。',sources:[],actions:[{type:'evaluate',label:'运行当前评估'}]};
  if(/导出|报告/.test(clean))return {text:'报告引用确定的评估运行，保留数据口径、规则、缺失项和复核状态。请先运行评估，再预览与导出。',sources:[],actions:[{type:'report',label:'打开报告预览'}]};
@@ -112,7 +122,7 @@ export function answerQuestion(question,{units,analyses,selectedId,compared=[],s
   const a=analyses.get(u.id),r=computeAssessment(u,a,{mode,profile,uploaded});
   const saved=[...runs].reverse().find(x=>x.unitId===u.id&&x.fingerprint===r.fingerprint);
   const sid='U'+(i+1);add(source(sid,u.properties.name+' / '+u.id,`${a.method}\n边界日期 ${a.geometryDate}；设施日期 ${a.spatialDate}。业务来源：${r.input.source}；日期 ${r.input.date||'缺失'}。`,u.properties.source_url,a.spatialDate));
-  let text=`${u.properties.name}（${u.id}）· ${MODE_NAMES[mode]}\n`;
+  let text=`${u.properties.district_name?u.properties.district_name+' · ':''}${u.properties.name}（${u.id}）· ${MODE_NAMES[mode]}\n`;
   if(/交通|地铁|公交|教育|医疗|公园|配套|距离/.test(clean)){text+=Object.entries(a.nearest).map(([k,f])=>`${SERVICE_NAMES[k]}：${f?f.properties.name+'，参考点直线距离约 '+Math.round(f.distance)+' m':'未收录'}`).join('\n');text+='\n600 m 内收录 '+Object.values(a.counts).reduce((s,n)=>s+n,0)+' 个设施参考点；未核实实际入口和开放状态。';}
   else if(/缺|补|权属|资料/.test(clean)){text+=`当前五维有效覆盖率 ${r.coverage}%。缺失：${r.missing.join('、')||'演示指标字段齐全'}。真实权属、规划条件、计容建筑面积、经营与空置调查、建筑安全鉴定仍需补充。完整演示台账不是实测事实。`;}
   else {text+=`研究轮廓投影面积 ${a.area?.toLocaleString('zh-CN')||'不可算'} m²。${saved?'已保存运行 '+saved.id:'尚无当前口径运行；下列为即时校算'}。\n${r.dimensions.map(d=>`${d.name}：${d.raw} → ${d.score===null?'资料不足':d.score+' 分'}（${d.status}）`).join('\n')}\n${r.total===null?'资料不全，不合成综合分':'演示更新研究关注度 '+r.total+' / 100'}；覆盖率 ${r.coverage}%。`;}

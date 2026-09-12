@@ -1,0 +1,117 @@
+{
+  "repository": "https://github.com/zipan07/UrbanLens",
+  "build_command": "npm run build",
+  "source_commit": "69427f4",
+  "contents": "esbuild bundle of the UrbanLens frontend source and locked public npm dependencies; no uploaded user records, account credentials or server secrets",
+  "decompressed_sha256": "dae4bcde3097e925e6b0fe058f3b9af62e99a5f6d462e6580ed6a8e737912d6d",
+  "bytes": 1253293,
+  "parts": [
+    {
+      "path": "dist/packed/atlas-d85f8b81a9d3-01.bin",
+      "sha256": "ac6241b2acd9ec78f108d562b96b62733b3f34dfd4968a2c2355b67c19ffeb24",
+      "git_blob_sha": "18120fcfd793d956da098706c149d93411fe7026"
+    },
+    {
+      "path": "dist/packed/atlas-d85f8b81a9d3-02.bin",
+      "sha256": "ccd9085e6e9c6b1ee3941de97f6cde4ff64afb29ff845e8479d4ea374f0e4079",
+      "git_blob_sha": "3494e390bfd26eb4812ccef62ff64dfec0043226"
+    },
+    {
+      "path": "dist/packed/atlas-d85f8b81a9d3-03.bin",
+      "sha256": "67b61122a86da086f883db1f5e9abd1876ed36f123690739d68e20d22ce24479",
+      "git_blob_sha": "794df3c4dec2ddd1873d152c277294b9acc50e1a"
+    },
+    {
+      "path": "dist/packed/atlas-d85f8b81a9d3-04.bin",
+      "sha256": "1aebd63c64e3b37daa9bdfd51498b6a3f8d12a1a1ed905bb91b165ce65d772f6",
+      "git_blob_sha": "2b221262ead040b97c4937ccf918a35ced1999da"
+    }
+  ],
+  "source_files": [
+    {
+      "path": "src/city-webgl.js",
+      "sha256": "874a316409639ba0c1af0be5321eae057ea20f5534710a26014802d01706c751",
+      "git_blob_sha": "5118cbb4ceb979a65eb904f794faa5c6cb28cbb1"
+    },
+    {
+      "path": "src/local-fonts.js",
+      "sha256": "099da2d027c4d0277e167d533f012b95ad1d25cdbb635b94d0ad800909d912b8",
+      "git_blob_sha": "9377e3fed1a1441e40ad45cc2149fd23248daad9"
+    },
+    {
+      "path": "src/value-report.js",
+      "sha256": "ce9be595f159ee14dae88e21ccc4242189167b76096cc5586c9f06f777fbb546",
+      "git_blob_sha": "b5ca549ccbe9d367c903e832bd0806fadd004eae"
+    },
+    {
+      "path": "src/map-details.js",
+      "sha256": "60be819e38538bd815f24d806a2742813fe11e1b3f36bc811db00c7282ed88b7",
+      "git_blob_sha": "b5128d7cd89d86830f615fa72d730fbeb748fae9"
+    },
+    {
+      "path": "src/value-domain.js",
+      "sha256": "2dc480d9994384828e720b68c8fca2fb05168c28d435543b3cd043f20ddd3788",
+      "git_blob_sha": "b30b5092bd84d3c822ca6b8520a692310761675c"
+    },
+    {
+      "path": "src/atlas-bootstrap.js",
+      "sha256": "321132bdcffba773d662d1d45a6e9146dfba3baa6af0756fd9eb2daf57e88416",
+      "git_blob_sha": "7d706d3feb74298ee7a82babeeb6deefcfed85f4"
+    },
+    {
+      "path": "src/atlas-style.js",
+      "sha256": "9229142179d3dcb8cdcc84f059a4b1c35e6fc02b72d3cedaa74d19fdee70ac13",
+      "git_blob_sha": "ed3e11b64e0754519cd54d1af0b5f541de10123b"
+    },
+    {
+      "path": "src/geo.js",
+      "sha256": "5eb878549d1842355e1cd37954df6cb06fa387d6fa4b34188c5451837710ae61",
+      "git_blob_sha": "e28f58bf73434c1bd1742b60996a203388bcea54"
+    },
+    {
+      "path": "src/atlas-app.js",
+      "sha256": "3a3bcbfab8321b792144651d573f22947dbac1cc6126d74d8c0cdb0589af1a38",
+      "git_blob_sha": "b5cd2416e09deaed22b2728a98e6ae1480bd41f8"
+    },
+    {
+      "path": "src/packed-data.js",
+      "sha256": "f32d7b5b09ba5cff60d3873c0d9f1958cf46b9dbceee84bed362aaea7debabf9",
+      "git_blob_sha": "1caf85fff7a1baeff4b88539b7f744c5fc6072f9"
+    },
+    {
+      "path": "src/map-gestures.js",
+      "sha256": "ba88b8e84e124dcb6204349aa3e6ef16730edc82ec1202f5fca38cdc86fe9e41",
+      "git_blob_sha": "1ac2a6c0b0a74a4d87f897ab78319661ae1f6ee5"
+    },
+    {
+      "path": "src/value-studio.js",
+      "sha256": "817f53082f23877115e717731b8b70f21834eacb70db42a20ffee20e7fa2c787",
+      "git_blob_sha": "311a7a272679a7353d0c2b38e40f2a14e561bb96"
+    },
+    {
+      "path": "src/canvas-atlas.js",
+      "sha256": "f7a08bb03462171cb220f7cbf092e71019d93bb2a86c92d055f7482380405932",
+      "git_blob_sha": "9178c073662c1b43dd765cc89fa5a9e8c3af3293"
+    },
+    {
+      "path": "src/studio-shell.js",
+      "sha256": "1d618e55afd301604b61d10b9542634866d1f5d9e950a87e91ace291bc98cff5",
+      "git_blob_sha": "e39f9aa5e81c2a7a4f52f1662259dd2bc3382c90"
+    },
+    {
+      "path": "dist/domain.js",
+      "sha256": "c051d39b618affb15b2f780d165a356fbaef772d4b392e90dbd98cb231d60c09",
+      "git_blob_sha": "67cc177a7b8ea6bc74317ff081eee112ae893571"
+    },
+    {
+      "path": "dist/assistant.js",
+      "sha256": "d3f9eebd3c1fde2458621e0970e34febc82de04a2982b1cb4d09b984506e4a27",
+      "git_blob_sha": "2310f6fa478e0c948c937d442b0f1777d9f829a2"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "d1e04c61e0b71d7a984136ab81b3ec54f9e2e2737269af8430feaaf2972ebc29",
+      "git_blob_sha": "05777fb6dcbfc03319bb48f01ac6a08ce5c56f83"
+    }
+  ]
+}

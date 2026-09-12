@@ -1,34 +1,41 @@
 {
-  "version": "XUANWU-06",
-  "title": "南京市玄武区",
-  "divisionCode": "320102",
+  "version": "NANJING-09",
+  "title": "南京市核心城区 · 六区",
+  "divisionCode": "320100",
   "coordinateSystem": "WGS84 / EPSG:4326",
-  "snapshotAt": "2026-09-11T23:34:33Z",
-  "areaSnapshotAt": "2026-09-11T03:06:20Z",
-  "downloadedAt": "2026-09-11",
+  "snapshotAt": "2026-09-12T06:54:05Z",
+  "areaSnapshotAt": "2026-09-11T14:41:21Z",
+  "downloadedAt": "2026-09-12",
   "boundary": {
-    "osmId": "relation/2138698",
+    "osmIds": [
+      "relation/2139790",
+      "relation/2138698",
+      "relation/2140011",
+      "relation/2139830",
+      "relation/2139809",
+      "relation/2140010"
+    ],
     "bbox": [
-      118.7786581,
-      32.0168191,
-      118.9032696,
-      32.1082971
+      118.5843581,
+      31.8676515,
+      119.2395068,
+      32.2470622
     ]
   },
   "counts": {
-    "buildings": 3845,
-    "land": 684,
-    "roads": 3868,
-    "water": 123,
-    "pois": 640
+    "buildings": 46515,
+    "land": 6743,
+    "roads": 29994,
+    "water": 999,
+    "pois": 4071
   },
   "heights": {
-    "osm": 187,
-    "levels": 94,
-    "unknown": 3564
+    "osm": 9658,
+    "levels": 2008,
+    "unknown": 34849
   },
   "skipped": {
-    "underground": 30,
+    "underground": 147,
     "invalid": 0
   },
   "landmarks": [
@@ -143,13 +150,173 @@
         118.7928317,
         32.0892851
       ]
+    },
+    {
+      "id": "way/590937998",
+      "name": "夫子庙",
+      "center": [
+        118.7835814,
+        32.02036815
+      ],
+      "bbox": [
+        118.7774637,
+        32.0150628,
+        118.7896991,
+        32.0256735
+      ],
+      "divisionCode": "320104",
+      "districtName": "秦淮区"
+    },
+    {
+      "id": "way/318052307",
+      "name": "中华门城堡",
+      "center": [
+        118.77654355,
+        32.01465895
+      ],
+      "bbox": [
+        118.7757991,
+        32.0139434,
+        118.777288,
+        32.0153745
+      ],
+      "divisionCode": "320104",
+      "districtName": "秦淮区"
+    },
+    {
+      "id": "way/94496398",
+      "name": "南京奥林匹克体育中心体育场",
+      "center": [
+        118.7197559,
+        32.01060475
+      ],
+      "bbox": [
+        118.7183332,
+        32.0093998,
+        118.7211786,
+        32.0118097
+      ],
+      "divisionCode": "320105",
+      "districtName": "建邺区"
+    },
+    {
+      "id": "way/883813030",
+      "name": "南京鱼嘴湿地公园",
+      "center": [
+        118.67013725,
+        31.979487300000002
+      ],
+      "bbox": [
+        118.6531886,
+        31.9684148,
+        118.6870859,
+        31.9905598
+      ],
+      "divisionCode": "320105",
+      "districtName": "建邺区"
+    },
+    {
+      "id": "way/140809508",
+      "name": "紫峰大厦",
+      "center": [
+        118.77798849999999,
+        32.062686150000005
+      ],
+      "bbox": [
+        118.7777183,
+        32.0624179,
+        118.7782587,
+        32.0629544
+      ],
+      "divisionCode": "320106",
+      "districtName": "鼓楼区"
+    },
+    {
+      "id": "way/88779953",
+      "name": "南京大学(鼓楼校区)",
+      "center": [
+        118.7736127,
+        32.05664025
+      ],
+      "bbox": [
+        118.7689592,
+        32.0522188,
+        118.7782662,
+        32.0610617
+      ],
+      "divisionCode": "320106",
+      "districtName": "鼓楼区"
+    },
+    {
+      "id": "way/1243073749",
+      "name": "栖霞寺",
+      "center": [
+        118.95283905,
+        32.15373475
+      ],
+      "bbox": [
+        118.9501914,
+        32.1522792,
+        118.9554867,
+        32.1551903
+      ],
+      "divisionCode": "320113",
+      "districtName": "栖霞区"
+    },
+    {
+      "id": "way/89910837",
+      "name": "南京大学(仙林校区)",
+      "center": [
+        118.9531432,
+        32.11974215
+      ],
+      "bbox": [
+        118.9457301,
+        32.1113781,
+        118.9605563,
+        32.1281062
+      ],
+      "divisionCode": "320113",
+      "districtName": "栖霞区"
+    },
+    {
+      "id": "way/121887178",
+      "name": "南京南站",
+      "center": [
+        118.79298705,
+        31.9707257
+      ],
+      "bbox": [
+        118.789878,
+        31.9682741,
+        118.7960961,
+        31.9731773
+      ],
+      "divisionCode": "320114",
+      "districtName": "雨花台区"
+    },
+    {
+      "id": "way/62381499",
+      "name": "雨花台风景名胜区",
+      "center": [
+        118.77805484999999,
+        32.000652849999994
+      ],
+      "bbox": [
+        118.7706159,
+        31.9948889,
+        118.7854938,
+        32.0064168
+      ],
+      "divisionCode": "320114",
+      "districtName": "雨花台区"
     }
   ],
   "license": "ODbL 1.0",
   "attribution": "© OpenStreetMap contributors",
-  "sourceUrl": "https://www.openstreetmap.org/relation/2138698",
+  "sourceUrl": "https://www.openstreetmap.org/copyright",
   "queryEndpoint": "https://overpass-api.de/api/interpreter",
-  "scopeNote": "OSM 玄武区范围检索，包含与区界相交的完整对象；数量是本次快照收录量，不是城区普查总量。",
+  "scopeNote": "南京鼓楼、玄武、秦淮、雨花台、建邺、栖霞六区 OSM 范围检索；包含与区界相交的完整对象并按 OSM ID 去重，未裁切到区界。数量为开放地图快照收录量，非城区普查总量。",
   "heightNote": "height 为 OSM 标注，未经测绘复核；building:levels × 3 m 为推算；无高度记录时仅显示 12 m 示意体量，可关闭。所有显示高度均不参与真实用地评估。",
   "missing": [
     "权属与宗地台账",
@@ -158,5 +325,223 @@
     "空置率与运营调查",
     "授权正射影像与实景三维模型"
   ],
-  "creator": "制作者：东南大学建筑学院 蔡子攀"
+  "creator": "制作者：东南大学建筑学院 蔡子攀",
+  "divisionCodes": [
+    "320106",
+    "320102",
+    "320104",
+    "320114",
+    "320105",
+    "320113"
+  ],
+  "districts": [
+    {
+      "name": "鼓楼区",
+      "divisionCode": "320106",
+      "osmId": "relation/2139790",
+      "bbox": [
+        118.7144899,
+        32.0309981,
+        118.8016432,
+        32.133624
+      ],
+      "center": [
+        118.75806655,
+        32.08231105
+      ],
+      "counts": {
+        "buildings": 7543,
+        "land": 620,
+        "roads": 2558,
+        "water": 46,
+        "pois": 551,
+        "services": 662,
+        "researchUnits": 4
+      },
+      "snapshotAt": "2026-09-12T06:54:05Z",
+      "sourceUrl": "https://www.openstreetmap.org/relation/2139790"
+    },
+    {
+      "name": "玄武区",
+      "divisionCode": "320102",
+      "osmId": "relation/2138698",
+      "bbox": [
+        118.7786581,
+        32.0168191,
+        118.9032696,
+        32.1082971
+      ],
+      "center": [
+        118.84096385000001,
+        32.062558100000004
+      ],
+      "counts": {
+        "buildings": 3830,
+        "land": 654,
+        "roads": 3693,
+        "water": 112,
+        "pois": 745,
+        "services": 769,
+        "researchUnits": 8
+      },
+      "snapshotAt": "2026-09-12T06:54:05Z",
+      "sourceUrl": "https://www.openstreetmap.org/relation/2138698"
+    },
+    {
+      "name": "秦淮区",
+      "divisionCode": "320104",
+      "osmId": "relation/2140011",
+      "bbox": [
+        118.7588812,
+        31.9767275,
+        118.8756,
+        32.0448801
+      ],
+      "center": [
+        118.8172406,
+        32.0108038
+      ],
+      "counts": {
+        "buildings": 10412,
+        "land": 560,
+        "roads": 3044,
+        "water": 87,
+        "pois": 798,
+        "services": 981,
+        "researchUnits": 4
+      },
+      "snapshotAt": "2026-09-12T06:55:05Z",
+      "sourceUrl": "https://www.openstreetmap.org/relation/2140011"
+    },
+    {
+      "name": "雨花台区",
+      "divisionCode": "320114",
+      "osmId": "relation/2139830",
+      "bbox": [
+        118.5843581,
+        31.8676515,
+        118.8078039,
+        32.0163558
+      ],
+      "center": [
+        118.69608099999999,
+        31.94200365
+      ],
+      "counts": {
+        "buildings": 1403,
+        "land": 763,
+        "roads": 3414,
+        "water": 112,
+        "pois": 305,
+        "services": 365,
+        "researchUnits": 4
+      },
+      "snapshotAt": "2026-09-12T06:57:06Z",
+      "sourceUrl": "https://www.openstreetmap.org/relation/2139830"
+    },
+    {
+      "name": "建邺区",
+      "divisionCode": "320105",
+      "osmId": "relation/2139809",
+      "bbox": [
+        118.6471572,
+        31.9582491,
+        118.7633598,
+        32.0969677
+      ],
+      "center": [
+        118.7052585,
+        32.0276084
+      ],
+      "counts": {
+        "buildings": 3643,
+        "land": 674,
+        "roads": 3381,
+        "water": 119,
+        "pois": 392,
+        "services": 385,
+        "researchUnits": 4
+      },
+      "snapshotAt": "2026-09-12T06:58:05Z",
+      "sourceUrl": "https://www.openstreetmap.org/relation/2139809"
+    },
+    {
+      "name": "栖霞区",
+      "divisionCode": "320113",
+      "osmId": "relation/2140010",
+      "bbox": [
+        118.7598521,
+        32.0275227,
+        119.2395068,
+        32.2470622
+      ],
+      "center": [
+        118.99967945,
+        32.137292450000004
+      ],
+      "counts": {
+        "buildings": 19684,
+        "land": 3472,
+        "roads": 13904,
+        "water": 523,
+        "pois": 1280,
+        "services": 1233,
+        "researchUnits": 4
+      },
+      "snapshotAt": "2026-09-12T06:55:05Z",
+      "sourceUrl": "https://www.openstreetmap.org/relation/2140010"
+    }
+  ],
+  "snapshotRange": [
+    "2026-09-12T06:54:05Z",
+    "2026-09-12T06:58:05Z"
+  ],
+  "sourceSnapshots": [
+    {
+      "divisionCode": "320106",
+      "name": "鼓楼区",
+      "snapshotAt": "2026-09-12T06:54:05Z",
+      "areaSnapshotAt": "2026-09-11T20:42:21Z",
+      "rawCount": 11881
+    },
+    {
+      "divisionCode": "320102",
+      "name": "玄武区",
+      "snapshotAt": "2026-09-12T06:54:05Z",
+      "areaSnapshotAt": "2026-09-11T20:42:21Z",
+      "rawCount": 9958
+    },
+    {
+      "divisionCode": "320104",
+      "name": "秦淮区",
+      "snapshotAt": "2026-09-12T06:55:05Z",
+      "areaSnapshotAt": "2026-09-11T14:41:21Z",
+      "rawCount": 15615
+    },
+    {
+      "divisionCode": "320114",
+      "name": "雨花台区",
+      "snapshotAt": "2026-09-12T06:57:06Z",
+      "areaSnapshotAt": "2026-09-11T20:42:21Z",
+      "rawCount": 6374
+    },
+    {
+      "divisionCode": "320105",
+      "name": "建邺区",
+      "snapshotAt": "2026-09-12T06:58:05Z",
+      "areaSnapshotAt": "2026-09-11T20:42:21Z",
+      "rawCount": 8601
+    },
+    {
+      "divisionCode": "320113",
+      "name": "栖霞区",
+      "snapshotAt": "2026-09-12T06:55:05Z",
+      "areaSnapshotAt": "2026-09-11T14:41:21Z",
+      "rawCount": 40771
+    }
+  ],
+  "districtNote": "分区标签优先按对象包围盒中心落区，中心不在六区时按检索相交区记录；不是权属、地籍或精确面积归属。",
+  "researchUnitCount": 28,
+  "serviceCount": 4395,
+  "terrainNote": "同站 DEM 仍仅覆盖原玄武区及邻近范围；六区扩展使用真实平面数据，未补充的区域不宣称已接入精确地形。"
 }

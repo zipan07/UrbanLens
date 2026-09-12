@@ -1,6 +1,10 @@
 // Coordinate math is deliberately independent of the renderer.
 export const EMPTY = () => ({type:'FeatureCollection',features:[]});
 export function coordinates(geometry) {
+  if (Array.isArray(geometry)) return geometry.flatMap(coordinates);
+  if (geometry?.type==='FeatureCollection') return geometry.features.flatMap(coordinates);
+  if (geometry?.type==='Feature') return coordinates(geometry.geometry);
+  if (geometry?.type==='GeometryCollection') return geometry.geometries.flatMap(coordinates);
   if (!geometry || !Array.isArray(geometry.coordinates)) return [];
   const out=[]; const walk=c=>{if(Array.isArray(c)&&typeof c[0]==='number')out.push(c);else if(Array.isArray(c))c.forEach(walk);};
   walk(geometry.coordinates); return out;
@@ -21,6 +25,11 @@ export function inRing([x,y],ring) {
   }return inside;
 }
 export function inGeometry(point,g) {
+  if(!g)return false;
+  if(Array.isArray(g))return g.some(x=>inGeometry(point,x));
+  if(g.type==='FeatureCollection')return g.features.some(f=>inGeometry(point,f));
+  if(g.type==='Feature')return inGeometry(point,g.geometry);
+  if(g.type==='GeometryCollection')return g.geometries.some(x=>inGeometry(point,x));
   const polygons=g.type==='Polygon'?[g.coordinates]:g.type==='MultiPolygon'?g.coordinates:[];
   return polygons.some(p=>inRing(point,p[0])&&!p.slice(1).some(r=>inRing(point,r)));
 }
@@ -42,6 +51,9 @@ export function validateImport(input,boundary) {
   if(input?.type!=='FeatureCollection'||!Array.isArray(input.features))throw new Error('请使用 GeoJSON FeatureCollection。');
   if(input.crs)throw new Error('请先转换为 WGS84 经纬度并移除旧式 crs 字段。');
   if(!input.features.length||input.features.length>1000)throw new Error('每批导入 1–1,000 个研究范围。');
+  const extent=boundsOf(boundary);
+  if(!extent||!extent.every(Number.isFinite))throw new Error('研究区边界未就绪，请加载南京核心六区边界后重试。');
+  const districts=boundary?.type==='FeatureCollection'?boundary.features:Array.isArray(boundary)?boundary:boundary?.type==='Feature'?[boundary]:[];
   const ids=new Set();let points=0;
   const features=input.features.map((f,i)=>{
     const id=String(f.properties?.parcel_id??'').trim();if(!id||id.length>100)throw new Error(`第 ${i+1} 条缺少有效 parcel_id（最长100字）。`);
@@ -51,10 +63,12 @@ export function validateImport(input,boundary) {
     if(!Array.isArray(polygons)||!polygons.length)throw new Error(`${id} 边界为空。`);
     for(const poly of polygons){if(!Array.isArray(poly)||!poly.length)throw new Error(`${id} 缺少外环。`);for(const ring of poly){
       if(!Array.isArray(ring)||ring.length<4)throw new Error(`${id} 边界至少需要4个闭合坐标。`);
-      for(const c of ring){points++;if(points>200000)throw new Error('边界过于复杂，请简化到20万个坐标点以内。');if(!Array.isArray(c)||!Number.isFinite(c[0])||!Number.isFinite(c[1])||c[0]<118.65||c[0]>119.02||c[1]<31.9||c[1]>32.2)throw new Error(`${id} 坐标超出南京研究范围，请核对 WGS84。`);}
+      for(const c of ring){points++;if(points>200000)throw new Error('边界过于复杂，请简化到20万个坐标点以内。');if(!Array.isArray(c)||!Number.isFinite(c[0])||!Number.isFinite(c[1])||c[0]<extent[0]-.05||c[0]>extent[2]+.05||c[1]<extent[1]-.05||c[1]>extent[3]+.05)throw new Error(`${id} 坐标超出南京研究范围，请核对 WGS84。`);}
       const a=ring[0],b=ring.at(-1);if(a[0]!==b[0]||a[1]!==b[1])throw new Error(`${id} 边界环没有闭合。`);
     }}
-    if(!coordinates(g).some(c=>inGeometry(c,boundary)))throw new Error(`${id} 没有位于玄武区内的边界点，请核对研究范围。`);
-    return {type:'Feature',id,properties:{parcel_id:id,name:String(f.properties.name||id).slice(0,200),category:'imported',source:'用户导入 / 未复核',use:String(f.properties.use||'待补充').slice(0,100)},geometry:structuredClone(g)};
+    const vertices=coordinates(g);
+    if(!vertices.some(c=>inGeometry(c,boundary)))throw new Error(`${id} 没有位于已加载南京研究区内的边界点，请核对研究范围。`);
+    const matched=districts.filter(d=>vertices.some(c=>inGeometry(c,d))),primary=matched[0]?.properties;
+    return {type:'Feature',id,properties:{parcel_id:id,name:String(f.properties.name||id).slice(0,200),category:'imported',source:'用户导入 / 未复核',use:String(f.properties.use||'待补充').slice(0,100),...(primary?{district_name:matched.map(d=>d.properties.district_name||d.properties.name).filter(Boolean).join(' / '),division_code:String(primary.division_code||''),district_codes:matched.map(d=>String(d.properties.division_code||'')).filter(Boolean)}:{})},geometry:structuredClone(g)};
   });return {type:'FeatureCollection',features};
 }

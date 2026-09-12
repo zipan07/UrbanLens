@@ -9,3 +9,12 @@ coverage/
 
 # Reconstructed from the versioned packed data during build
 dist/data/services.geojson
+
+# Reconstructed losslessly from versioned compressed spatial layers by npm run build
+dist/data/boundary.geojson
+dist/data/buildings.geojson
+dist/data/roads.geojson
+dist/data/land.geojson
+dist/data/water.geojson
+dist/data/pois.geojson
+__pycache__/
