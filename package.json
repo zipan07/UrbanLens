@@ -8,15 +8,17 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "esbuild src/city-webgl.js --bundle --minify --format=esm --target=es2022 --outfile=dist/scene.js --legal-comments=eof && esbuild src/atlas-app.js --bundle --minify --format=esm --target=es2022 --outfile=dist/atlas.js --legal-comments=eof",
+    "build": "esbuild src/city-webgl.js --bundle --minify --format=esm --target=es2022 --outfile=dist/scene.js --legal-comments=eof && node scripts/pack-runtime.mjs",
     "start": "node scripts/serve.mjs",
     "test": "node --test",
-    "check": "node --check dist/app.js && node --check src/atlas-app.js && node --check src/atlas-style.js && node --check src/geo.js && node --check src/canvas-atlas.js && node --check dist/domain.js && node --check dist/assistant.js && node --check server/worker.js"
+    "check": "node --check dist/app.js && node --check src/atlas-app.js && node --check src/atlas-style.js && node --check src/geo.js && node --check src/canvas-atlas.js && node --check dist/domain.js && node --check dist/assistant.js && node --check server/worker.js && node --check src/value-domain.js && node --check src/value-studio.js && node --check src/value-report.js"
   },
   "dependencies": {
     "@mapbox/tiny-sdf": "2.0.7",
+    "fflate": "0.8.3",
     "maplibre-gl": "5.6.1",
     "pbf": "3.3.0",
+    "proj4": "2.22.0",
     "three": "0.180.0"
   },
   "devDependencies": {

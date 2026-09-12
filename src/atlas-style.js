@@ -7,7 +7,7 @@ export const THEMES={
 export function makeStyle(data,{theme='day',mode='3d',terrain=true,schematic=true,layers={}},base) {
  const c=THEMES[theme],sources={};
  for(const id of ['boundary','land','water','roads','buildings','pois'])sources[id]={type:'geojson',data:data[id],maxzoom:17,tolerance:.45};
- for(const id of ['selected','imported','measure'])sources[id]={type:'geojson',data:EMPTY()};
+ for(const id of ['selected','imported','measure','research','studySelected','context','radius'])sources[id]={type:'geojson',data:EMPTY()};
  const dem={type:'raster-dem',tiles:[`${base}data/terrain/{z}/{x}/{y}.png`],encoding:'terrarium',tileSize:256,minzoom:12,maxzoom:12,bounds:[118.72,31.98,118.96,32.15]};
  sources.dem={...dem};sources.hillshade={...dem};
  const style={version:8,name:`UrbanLens Xuanwu / ${theme}`,glyphs:'local-font://{fontstack}/{range}.pbf',sources,light:{anchor:'viewport',color:theme==='night'?'#fdeac5':'#fff8e9',intensity:.42,position:[1.2,220,35]},sky:{'sky-color':c.sky,'horizon-color':c.bg,'fog-color':c.bg,'sky-horizon-blend':.7,'horizon-fog-blend':.7,'fog-ground-blend':.6},layers:[]};
@@ -50,6 +50,13 @@ export function makeStyle(data,{theme='day',mode='3d',terrain=true,schematic=tru
  style.layers.at(-1).minzoom=14;
  add('imported-fill','fill','imported',{'fill-color':'#bf8468','fill-opacity':.22});
  add('imported-edge','line','imported',{'line-color':'#ba7057','line-width':2,'line-dasharray':[3,2]});
+ add('study-radius','fill','radius',{'fill-color':'#779c96','fill-opacity':.1});
+ add('study-radius-edge','line','radius',{'line-color':'#638f83','line-width':1.5,'line-dasharray':[4,3]});
+ add('research-fill','fill','research',{'fill-color':['step',['get','score'],'#9aaf94',0,'#a7bc85',40,'#cfad70',60,'#c88671'],'fill-opacity':.28});
+ add('research-edge','line','research',{'line-color':theme==='night'?'#d3e6a4':'#536f53','line-width':2,'line-dasharray':[3,2]});
+ add('research-labels','symbol','research',{'text-color':theme==='night'?'#e5f3c3':'#385a44','text-halo-color':c.halo,'text-halo-width':2},null, {'text-field':['get','unit_id'],'text-font':['Local Regular'],'text-size':11,'text-allow-overlap':true});
+ add('study-selected','line','studySelected',{'line-color':'#dc9864','line-width':4});
+ add('study-context','circle','context',{'circle-color':['match',['get','category'],'transit','#8d82a9','education','#588c86','health','#c58076','park','#789656','heritage','#bb9862','#a39978'],'circle-radius':4,'circle-stroke-color':c.halo,'circle-stroke-width':1.2});
  add('selected-fill','fill','selected',{'fill-color':'#e7c869','fill-opacity':.4},['==',['geometry-type'],'Polygon']);
  add('selected-line','line','selected',{'line-color':theme==='night'?'#f2dd8a':'#476f50','line-width':3},['!=',['geometry-type'],'Point']);
  add('selected-point','circle','selected',{'circle-color':'#e2c76a','circle-radius':8,'circle-stroke-color':c.halo,'circle-stroke-width':3},['==',['geometry-type'],'Point']);
