@@ -1,4 +1,4 @@
-import {readFileSync,writeFileSync,mkdirSync,readdirSync,unlinkSync,existsSync} from 'node:fs';
+import {readFileSync,writeFileSync,mkdirSync,readdirSync,unlinkSync,existsSync,cpSync,rmSync} from 'node:fs';
 import {gzipSync,gunzipSync} from 'node:zlib';
 import {build} from 'esbuild';
 import {createHash} from 'node:crypto';
@@ -15,3 +15,12 @@ for(const file of readdirSync(dir).filter(f=>f.startsWith('atlas-')))unlinkSync(
 for(let i=0;i<runtime.length;i+=90000){const file=`atlas-${hash}-${String(parts.length+1).padStart(2,'0')}.txt`;writeFileSync(dir+'/'+file,runtime.slice(i,i+90000));parts.push(file);}
 writeFileSync(dir+'/atlas.json',JSON.stringify({encoding:'utf-8',parts,bytes:Buffer.byteLength(runtime)}));
 await build({entryPoints:['src/atlas-bootstrap.js'],bundle:true,minify:true,format:'esm',target:'es2022',outfile:'dist/atlas.js',legalComments:'eof'});
+
+await build({entryPoints:['src/cloud-connect.js'],bundle:true,minify:true,format:'esm',target:'es2022',outfile:'dist/connect.js'});
+
+// The same map UI is served by the authenticated project Worker.
+await build({entryPoints:['server/projects.js'],bundle:true,minify:true,format:'esm',target:'es2022',outfile:'dist/server/index.js',legalComments:'eof'});
+rmSync('dist/client',{recursive:true,force:true});mkdirSync('dist/client',{recursive:true});
+for(const file of readdirSync('dist'))if(!['client','server','.openai'].includes(file))cpSync('dist/'+file,'dist/client/'+file,{recursive:true});
+rmSync('dist/.openai',{recursive:true,force:true});
+if(existsSync('.openai/hosting.json')){mkdirSync('dist/.openai',{recursive:true});cpSync('.openai/hosting.json','dist/.openai/hosting.json');cpSync('drizzle','dist/.openai/drizzle',{recursive:true});}

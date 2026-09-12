@@ -81,7 +81,7 @@ test('save, repeated download and print reuse one content version and its origin
  }
 });
 
-test('editing narrative or review creates an immutable revision with a stable family', () => {
+test('editing narrative creates an immutable revision without forging review identity', () => {
  const initial = draft(), first = saveReportVersion(initial, initial, []), before = JSON.stringify(first);
  const edited = updateReportDraft(first.model, {note: '新增研究意见', reviewer: ' 蔡子攀 ', reviewNote: ' 已核对原始资料 '});
  const second = saveReportVersion(first.model, edited, first.reports);
@@ -92,8 +92,8 @@ test('editing narrative or review creates an immutable revision with a stable fa
  assert.equal(second.model.revision, 2);
  assert.equal(JSON.stringify(first), before);
  assert.match(reportMarkdown(second.model), /新增研究意见/);
- assert.equal(second.model.status, '已记录本机演示复核');
- assert.equal(second.model.reviewer, '蔡子攀');
+ assert.equal(second.model.status, '未复核');
+ assert.equal(second.model.reviewer, '');
  assert.equal(second.reports[0].note, '');
 });
 

@@ -1,9 +1,9 @@
 {
   "name": "urbanlens",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "城市更新用地智能评估交互系统 — V0.1 interaction prototype",
+  "description": "UrbanLens 项目、数据版本与权限工作区",
   "engines": {
     "node": ">=22"
   },
@@ -11,7 +11,8 @@
     "build": "esbuild src/city-webgl.js --bundle --minify --format=esm --target=es2022 --outfile=dist/scene.js --legal-comments=eof && node scripts/pack-runtime.mjs",
     "start": "node scripts/serve.mjs",
     "test": "node --test",
-    "check": "node --check dist/app.js && node --check src/atlas-app.js && node --check src/atlas-style.js && node --check src/geo.js && node --check src/canvas-atlas.js && node --check dist/domain.js && node --check dist/assistant.js && node --check server/worker.js && node --check src/value-domain.js && node --check src/value-studio.js && node --check src/value-report.js && node --check src/map-gestures.js && node --check src/studio-shell.js && node --check src/map-details.js && node --check dist/motion.js"
+    "check": "node --check dist/app.js && node --check src/atlas-app.js && node --check src/atlas-style.js && node --check src/geo.js && node --check src/canvas-atlas.js && node --check dist/domain.js && node --check dist/assistant.js && node --check server/worker.js && node --check src/value-domain.js && node --check src/value-studio.js && node --check src/value-report.js && node --check src/map-gestures.js && node --check src/studio-shell.js && node --check src/map-details.js && node --check dist/motion.js",
+    "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
     "@mapbox/tiny-sdf": "2.0.7",
@@ -23,7 +24,9 @@
   },
   "devDependencies": {
     "esbuild": "0.25.9",
-    "osmtogeojson": "3.0.0-beta.5"
+    "osmtogeojson": "3.0.0-beta.5",
+    "drizzle-kit": "0.31.10",
+    "drizzle-orm": "0.45.2"
   },
   "overrides": {
     "@xmldom/xmldom": "^0.8.11"

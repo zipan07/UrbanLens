@@ -7,5 +7,6 @@ node_modules/
 .DS_Store
 coverage/
 
-# Reconstructed from the versioned packed data during build
-dist/data/services.geojson
+dist/client/
+dist/server/
+dist/.openai/
