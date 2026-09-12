@@ -1,3 +1,4 @@
+import {evidenceSnapshot,ruleSnapshot,VALIDITY,CONSTRAINT_STATUS} from './assessment-evidence.js';
 import proj4 from 'proj4';
 import {evaluate as evaluateLegacy, DIMENSIONS} from '../dist/domain.js';
 import {centerOf,boundsOf,inGeometry,distanceMeters} from './geo.js';
@@ -34,23 +35,25 @@ export function businessInput(unit,analysis,mode='observed',uploaded={}){
  return {id:unit.id,name:unit.properties.name,area:analysis.area,distance:analysis.nearest.transit?.distance??null,...record,dataVersion:VALUE_VERSION+' / '+mode};
 }
 export function fingerprint(input,profile,analysis){const s=JSON.stringify([input,profile,analysis.geometryDate,analysis.spatialDate,analysis.counts]);let h=2166136261;for(let i=0;i<s.length;i++)h=Math.imul(h^s.charCodeAt(i),16777619);return (h>>>0).toString(16);}
-export function computeAssessment(unit,analysis,{mode='observed',profile='balanced',uploaded={}}={}){
+export function computeAssessment(unit,analysis,{mode='observed',profile='balanced',uploaded={},evidenceRecords={}}={}){
  if(!PROFILES[profile]||!MODE_NAMES[mode])throw Error('无效的评估口径');
- const input=businessInput(unit,analysis,mode,uploaded),legacy=evaluateLegacy(input),weights=PROFILES[profile].weights;
+ const input=businessInput(unit,analysis,mode,uploaded),evidence=evidenceSnapshot(input,analysis,evidenceRecords[unit.id],{mode,geometry:JSON.stringify(unit.geometry)}),calculation={...input};
+ for(const field of evidence.fields)if(field.validity!=='valid')calculation[field.key]=field.key==='industry'?'待核实':null;
+ const legacy=evaluateLegacy(calculation),weights=PROFILES[profile].weights;
  const scores=legacy.scores,coverage=rounded(weights.reduce((s,w,i)=>s+(scores[i]===null?0:w),0)*100);
  const total=scores.every(n=>n!==null)?rounded(scores.reduce((s,n,i)=>s+n*weights[i],0)):null;
  const fieldSources=[{id:'spatial',title:'交通直线距离',date:analysis.spatialDate,source:'OSM 设施点位与研究轮廓',url:'https://www.openstreetmap.org/copyright'},{id:'business',title:MODE_NAMES[mode],date:input.date,source:input.source}];
  const raw=[input.distance===null?'缺失':`${Math.round(input.distance)} m`,legacy.ratio===null?'缺失':legacy.ratio.toFixed(2),input.industry,input.condition===null?'缺失':`${input.condition} 级`,input.vacancy===null?'缺失':`${input.vacancy}%`];
  const methods=['min(100, 交通直线距离 ÷ 15)','max(0, min(100, (2 − 容积率) ÷ 2 × 100))；2 为演示基准','符合 = 20；待调整 = 80；待核实 = 缺失','演示等级 1–4 线性映射为 0–100；不等于安全鉴定','使用状态得分 = 空置率（%）'];
  const dimensions=DIMENSIONS.map((name,i)=>({name,raw:raw[i],score:scores[i],weight:weights[i],method:methods[i],status:scores[i]===null?'资料不足':i===0?'开放数据计算':mode==='demo'?'虚构演示':mode==='uploaded'?'用户填报待核实':'资料不足',sourceId:i===0?'spatial':'business',date:i===0?analysis.spatialDate:input.date}));
- return {unitId:unit.id,name:unit.properties.name,mode,profile,ruleVersion:`DEMO-VALUE-07-${profile}`,ruleStatus:'演示规则，未获业务核准',dataVersion:input.dataVersion,geometryDate:analysis.geometryDate,spatialDate:analysis.spatialDate,input,ratio:legacy.ratio,scores,coverage,total,dimensions,missing:dimensions.filter(d=>d.score===null).map(d=>d.name),fingerprint:fingerprint(input,profile,analysis),sources:fieldSources,limitations:['研究轮廓不是地籍宗地或官方更新边界','综合分仅为更新研究关注度，不表示地价、投资回报或实施可行性','权属、法定规划条件、建筑安全与经营台账尚未核验','开放设施点位覆盖不完整，未检索到不代表不存在']};
+ return {fieldEvidence:evidence.fields,constraints:evidence.constraints,analysisSnapshot:structuredClone(analysis),ruleSnapshot:ruleSnapshot(profile,weights),unitId:unit.id,name:unit.properties.name,mode,profile,ruleVersion:`DEMO-VALUE-07-${profile}`,ruleStatus:'演示规则，未获业务核准',dataVersion:input.dataVersion,geometryDate:analysis.geometryDate,spatialDate:analysis.spatialDate,input,ratio:legacy.ratio,scores,coverage,total,dimensions,missing:dimensions.filter(d=>d.score===null).map(d=>d.name),fingerprint:fingerprint({...input,evidence},profile,analysis),sources:fieldSources,limitations:['研究轮廓不是地籍宗地或官方更新边界','综合分仅为更新研究关注度，不表示地价、投资回报或实施可行性','权属、法定规划条件、建筑安全与经营台账尚未核验','开放设施点位覆盖不完整，未检索到不代表不存在']};
 }
 export function createRun(unit,analysis,options){const result=computeAssessment(unit,analysis,options);return {...structuredClone(result),id:`RUN-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,createdAt:new Date().toISOString(),review:{status:'未复核',note:'',name:'',date:null}};}
 export function compareRuns(runs){
  if(runs.length<2||runs.length>3)return {ranked:[],reason:'请选择 2–3 个研究单元。'};
  if(new Set(runs.map(r=>r.mode)).size!==1)return {ranked:[],reason:'数据口径不同，暂不排序。'};
  if(new Set(runs.map(r=>r.ruleVersion)).size!==1)return {ranked:[],reason:'规则版本不同，请统一规则重算。'};
- if(new Set(runs.map(r=>JSON.stringify([r.geometryDate,r.spatialDate,r.input.date]))).size!==1)return {ranked:[],reason:'数据时点不同，只比较原始指标，暂不排序。'};
+ if(new Set(runs.map(r=>JSON.stringify([r.geometryDate,r.spatialDate,r.input.date,r.fieldEvidence?.map(f=>f.date)]))).size!==1)return {ranked:[],reason:'数据时点不同，只比较原始指标，暂不排序。'};
  if(runs.some(r=>r.total===null))return {ranked:[],reason:'数据不完整，暂不排序；可比较原始指标与缺失项。'};
  return {ranked:[...runs].sort((a,b)=>b.total-a.total),reason:'同口径更新研究关注度排序；不代表投资或更新实施优先级。'};
 }
@@ -101,7 +104,7 @@ function matchingDocuments(question,documents){
  }).slice(0,3);
 }
 
-export function answerQuestion(question,{units,analyses,selectedId,compared=[],scope='unit',mode='observed',profile='balanced',uploaded={},runs=[],evidence}){
+export function answerQuestion(question,{units,analyses,selectedId,compared=[],scope='unit',mode='observed',profile='balanced',uploaded={},evidenceRecords={},runs=[],evidence}){
  const clean=String(question).trim().slice(0,1200),selected=units.find(u=>u.id===selectedId);
  const inScope=scope==='project'?units:scope==='compare'?units.filter(u=>compared.includes(u.id)):[selected].filter(Boolean);
  const source=(id,title,text,url,date)=>({id,title,text,url,date});
@@ -110,7 +113,7 @@ export function answerQuestion(question,{units,analyses,selectedId,compared=[],s
  const namedOut=units.some(u=>clean.includes(u.properties.name)&&!inScope.includes(u));
  if(explicit.some(id=>!inScope.some(u=>u.id===id.toUpperCase()))||namedOut)return {text:'问题涉及当前范围之外的对象。请切换到“比较清单”或“整个研究项目”，再明确选择需要比较的对象。旧版 UL 地块请打开历史样例。',sources:[],actions:[]};
  const sources=[],actions=[];const add=s=>{sources.push(s);return ` [${s.id}]`;};
- const policy=/政策|案例|百子亭|印刷厂|红山片区|长江路|更新规划|保护|文件|文档/.test(clean);
+ const policy=/政策|案例|百子亭|印刷厂|红山片区|长江路|更新规划|保护|文件|文档/.test(clean)&&!/当前.*规划约束|规划约束/.test(clean);
  if(/地价|成交|市场|多少钱|价值.*元|楼面价|估价/.test(clean)){
   const text=evidence.market.map((m,i)=>{const calc=marketMeasures(m);return `${m.id}（${m.date}）：${m.area_m2} m²，容积率上限 ${m.far_max}，成交 ${m.deal_wan} 万元；按面积×容积率上限折算楼面地价约 ${calc.floorPrice} 元/m²。${add(source('M'+(i+1),m.title,m.note,m.url,m.date))}`;}).join('\n\n');
   return {text:text+'\n\n这两笔不同年份、不同用途与位置的交易只作市场背景，不能直接套用于当前研究单元。缺少权属、规划条件、完整可比成交和时点修正，当前不输出该单元的市场价值。原站正文暂不可达，成交字段经官方检索索引核对。',sources,actions:[{type:'market',label:'打开市场与案例'}]};
@@ -125,19 +128,20 @@ export function answerQuestion(question,{units,analyses,selectedId,compared=[],s
  if(/^(运行|开始|重新).*(评估|分析)/.test(clean))return {text:'将使用当前数据口径与权重配置生成一份可追溯的评估快照。',sources:[],actions:[{type:'evaluate',label:'运行当前评估'}]};
  if(/导出|报告/.test(clean))return {text:'报告引用确定的评估运行，保留数据口径、规则、缺失项和复核状态。请先运行评估，再预览与导出。',sources:[],actions:[{type:'report',label:'打开报告预览'}]};
  if(/加入.*比较/.test(clean))return {text:'可将当前研究单元加入最多3个对象的比较清单。',sources:[],actions:[{type:'compare-add',label:'加入比较清单'}]};
- if(!/评估|评分|价值|关注|为什么|如何|建议|现状|面积|容积|空置|建筑|产业|数据|来源|缺|资料|补|交通|地铁|公交|教育|医疗|公园|配套|距离|比较|差异|地块|单元|规则|权属/.test(clean))return {text:'当前资料没有支持这个问题的依据。我可以解释所选单元的空间条件、五维评估、缺失资料、比较差异及已收录更新案例。',sources:[],actions:[]};
+ if(!/评估|评分|价值|关注|为什么|如何|建议|现状|面积|容积|空置|建筑|产业|数据|来源|缺|资料|补|交通|地铁|公交|教育|医疗|公园|配套|距离|比较|差异|地块|单元|规则|权属|安全|规划约束/.test(clean))return {text:'当前资料没有支持这个问题的依据。我可以解释所选单元的空间条件、五维评估、缺失资料、比较差异及已收录更新案例。',sources:[],actions:[]};
  const parts=[];
  for(const [i,u] of inScope.entries()){
-  const a=analyses.get(u.id),r=computeAssessment(u,a,{mode,profile,uploaded});
+  const a=analyses.get(u.id),r=computeAssessment(u,a,{mode,profile,uploaded,evidenceRecords});
   const saved=[...runs].reverse().find(x=>x.unitId===u.id&&x.fingerprint===r.fingerprint);
   const sid='U'+(i+1);add(source(sid,u.properties.name+' / '+u.id,`${a.method}\n边界日期 ${a.geometryDate}；设施日期 ${a.spatialDate}。业务来源：${r.input.source}；日期 ${r.input.date||'缺失'}。`,u.properties.source_url,a.spatialDate));
   let text=`${u.properties.name}（${u.id}）· ${MODE_NAMES[mode]}\n`;
   if(/交通|地铁|公交|教育|医疗|公园|配套|距离/.test(clean)){text+=Object.entries(a.nearest).map(([k,f])=>`${SERVICE_NAMES[k]}：${f?f.properties.name+'，参考点直线距离约 '+Math.round(f.distance)+' m':'未收录'}`).join('\n');text+='\n600 m 内收录 '+Object.values(a.counts).reduce((s,n)=>s+n,0)+' 个设施参考点；未核实实际入口和开放状态。';}
-  else if(/缺|补|权属|资料/.test(clean)){text+=`当前五维有效覆盖率 ${r.coverage}%。缺失：${r.missing.join('、')||'演示指标字段齐全'}。真实权属、规划条件、计容建筑面积、经营与空置调查、建筑安全鉴定仍需补充。完整演示台账不是实测事实。`;}
+  else if(/缺|补|权属|资料|规划约束|安全/.test(clean)){text+=`有效覆盖率 ${r.coverage}%。缺项：${r.missing.join('、')||'无'}。\n${r.constraints.map(c=>c.label+'：'+CONSTRAINT_STATUS[c.status]+(c.summary?'；'+c.summary:'')).join('\n')}\n资料不足不等于没有约束。`;}
   else {text+=`研究轮廓投影面积 ${a.area?.toLocaleString('zh-CN')||'不可算'} m²。${saved?'已保存运行 '+saved.id:'尚无当前口径运行；下列为即时校算'}。\n${r.dimensions.map(d=>`${d.name}：${d.raw} → ${d.score===null?'资料不足':d.score+' 分'}（${d.status}）`).join('\n')}\n${r.total===null?'资料不全，不合成综合分':'演示更新研究关注度 '+r.total+' / 100'}；覆盖率 ${r.coverage}%。`;}
+  if(!/交通|地铁|公交|教育|医疗|公园|配套|距离/.test(clean)){for(const f of r.fieldEvidence){const fieldId=`F${i+1}-${f.key}`;add(source(fieldId,f.label,`${f.value??'缺失'} ${f.unit}；${f.source||'来源未提供'}；${f.date||'日期未提供'}；${VALIDITY[f.validity]}；${f.verification==='verified'?'已核对':'待核实'}`,null,f.date));for(const ref of f.refs)add({...source(fieldId+'-'+ref.page,ref.title,ref.text,null,f.date),documentId:ref.documentId,page:ref.page});}for(const c of r.constraints)for(const ref of c.refs)add({...source('C'+i+'-'+c.category+'-'+ref.page,ref.title,ref.text,null,c.date),documentId:ref.documentId,page:ref.page});}
   parts.push(text+` [${sid}]`);
  }
- if(inScope.length>1){const c=compareRuns(inScope.map(u=>computeAssessment(u,analyses.get(u.id),{mode,profile,uploaded})));parts.push(c.reason+(c.ranked.length?'\n'+c.ranked.map(r=>r.name+'：'+r.total).join('；'):''));actions.push({type:'compare',label:'打开比较视图'});}
+ if(inScope.length>1){const evaluated=inScope.map(u=>computeAssessment(u,analyses.get(u.id),{mode,profile,uploaded,evidenceRecords})),saved=evaluated.map(r=>[...runs].reverse().find(x=>x.unitId===r.unitId&&x.fingerprint===r.fingerprint&&x.ruleVersion===r.ruleVersion));const c=saved.every(Boolean)?compareRuns(saved):{ranked:[],reason:'部分对象尚未保存当前评估，仅比较原始资料，不作排序。'};parts.push(c.reason+(c.ranked.length?'\n'+c.ranked.map(r=>r.name+'：'+r.total).join('；'):''));actions.push({type:'compare',label:'打开比较视图'});}
  const rule=source('R1',`演示规则 DEMO-VALUE-07-${profile}`,`五维权重依次为 ${PROFILES[profile].weights.map(n=>n*100+'%').join(' / ')}。各指标映射沿用旧版 DEMO-0.1；全部有效才合成更新研究关注度；高分不等于土地市场价值、投资回报或实施条件。`,null,'2026-09-12');
  parts.push(rule.text+add(rule));if(/为什么|解释|规则|评分|价值|关注/.test(clean))actions.push({type:'evidence',label:'展开指标与计算依据'});
  return {text:parts.join('\n\n'),sources,actions};

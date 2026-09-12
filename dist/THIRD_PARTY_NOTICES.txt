@@ -299,3 +299,5 @@ Copyright (c) 2014, Mike Adair, Richard Greenwood, Didier Richard, Stephen Irons
 Space Grotesk Project Authors / SIL Open Font License 1.1
 Locally subset and renamed UrbanLens Grotesk. Full license: fonts/SpaceGrotesk-OFL.txt
 Official source: https://github.com/floriankarsten/space-grotesk
+
+PDF.js 5.6.205 — Mozilla contributors — Apache License 2.0. Source: https://github.com/mozilla/pdf.js . Distribution license: vendor/pdfjs/LICENSE; character maps include their upstream notices.

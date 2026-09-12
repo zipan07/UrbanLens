@@ -9,7 +9,7 @@ const canonical = value => {
 };
 const serialize = value => JSON.stringify(canonical(value));
 const without = (value, keys) => Object.fromEntries(Object.entries(value || {}).filter(([key]) => !keys.includes(key)));
-const assessmentContent = result => without(result, ['id', 'createdAt', 'review']);
+const assessmentContent = result => without(result, ['id', 'createdAt', 'review', 'projectId', 'projectDataVersion', 'createdBy', 'createdByName', 'geometry']);
 const matchesRun = (result, run) => Boolean(run?.id && result && serialize(assessmentContent(result)) === serialize(assessmentContent(run)));
 
 /** One comparability decision for the table, bars and exported evidence. */
@@ -60,6 +60,10 @@ export function comparisonPresentation(results, runs = []) {
 export function updateReportDraft(previous, {note = previous.note || '', reviewer = previous.reviewer || '', reviewNote = previous.reviewNote || ''} = {}) {
  const model = clone(previous);
  model.note = note;
+ if(model.run?.projectId||model.run?.fieldEvidence){
+  const summary=model.sections.find(s=>s.title==='研究摘要');if(summary)summary.paragraphs[1]=note||'建议优先核对研究边界、法定规划条件、计容面积、权属及建筑和经营调查。';
+  return model;
+ }
  model.reviewer = reviewer.trim();
  model.reviewNote = reviewNote.trim();
  model.status = model.reviewer && model.reviewNote ? '已记录本机演示复核' : '未复核';
