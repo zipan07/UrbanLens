@@ -8,7 +8,7 @@ export function installLocalFonts(maplibre) {
    const range=url.match(/\/(\d+)-(\d+)\.pbf$/);if(!range)throw new Error('Invalid glyph range');
    const begin=Number(range[1]),end=Number(range[2]);if(end-begin!==255||begin<0||end>65535)throw new Error('Invalid glyph range');
    if(cache.has(begin))return {data:cache.get(begin).slice(0)};
-   sdf??=new TinySDF({fontSize:24,buffer:3,radius:8,cutoff:.25,fontFamily:'sans-serif'});
+   sdf??=new TinySDF({fontSize:24,buffer:3,radius:8,cutoff:.25,fontFamily:'-apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif'});
    const p=new Pbf();
    p.writeMessage(1,(_,stack)=>{
      stack.writeStringField(1,'Local Regular');stack.writeStringField(2,`${begin}-${end}`);
