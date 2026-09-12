@@ -1,0 +1,26 @@
+/* Studio 11: clear research controls within the existing white glass system. */
+.workflow-search{margin:20px 0 12px}
+.workflow-search input,.workflow-filter-grid input,.workflow-filter-grid select{display:block;width:100%;min-width:0;min-height:42px;padding:10px 12px;border:1px solid #1d1d1f1c;border-radius:12px;background:#ffffffb8;color:#1d1d1f;font:inherit;font-size:14px;line-height:1.4;box-sizing:border-box}
+.workflow-search input{font-size:15px;min-height:46px}
+.workflow-filters,.workflow-archive{border:1px solid #1d1d1f15;border-radius:15px;background:#ffffff9e;margin:12px 0}
+.workflow-filters>summary,.workflow-archive>summary{cursor:pointer;padding:13px 15px;color:#303034;font-size:14px;font-weight:550;line-height:1.5}
+.workflow-filters>summary span{float:right;color:#77777f;font-size:12px;font-weight:400}
+.workflow-filter-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px 10px;padding:5px 13px 10px}
+.workflow-filter-grid label{min-width:0;font-size:12px;line-height:1.5;color:#63636c}
+.workflow-filter-grid input,.workflow-filter-grid select{margin-top:6px}
+.workflow-filter-note{font-size:11px;line-height:1.7;color:#73737c;padding:0 14px 13px;margin:0}
+.workflow-view-toggle{display:flex;align-items:center;gap:9px;margin:14px 2px;font-size:13px;line-height:1.5;color:#4b4b53;cursor:pointer}
+.workflow-view-toggle input{width:17px;height:17px;accent-color:#0071e3;flex:none}
+.workflow-error{color:#a23b27;font-size:12px;line-height:1.7;margin:12px 0}
+.workflow-notice{font-size:13px;line-height:1.8;color:#5b5b64;background:#f4f5f7;border:1px solid #1d1d1f12;border-radius:12px;padding:12px 14px;margin:16px 0}
+.workflow-notice[hidden],.workflow-error[hidden]{display:none}
+.workflow-archive dl{padding:0 14px;margin:0}
+.workflow-archive dl>div{display:grid;grid-template-columns:100px minmax(0,1fr);gap:12px;padding:11px 0;border-bottom:1px solid #1d1d1f0c;font-size:12px;line-height:1.65}
+.workflow-archive dt{color:#77777f}.workflow-archive dd{margin:0;color:#303036;overflow-wrap:anywhere}
+.workflow-archive p{font-size:12px;line-height:1.8;color:#73737c;margin:13px 14px}
+.workflow-archive>a,.workflow-archive>button{display:block;font:inherit;font-size:12px;line-height:1.5;color:#0071e3;margin:12px 14px;padding:3px 0;text-align:left}
+.workflow-operation-status{min-height:24px;color:#62626c;font-size:13px;line-height:1.7}
+.unit-card[aria-pressed=true]{border-color:#0071e36b}
+.workflow-search input:focus-visible,.workflow-filter-grid input:focus-visible,.workflow-filter-grid select:focus-visible,.workflow-filters>summary:focus-visible,.workflow-archive>summary:focus-visible{outline:3px solid #0071e355;outline-offset:2px}
+@media(max-width:720px){.workflow-search input,.workflow-filter-grid input,.workflow-filter-grid select{font-size:16px;min-height:44px}.workflow-archive dl>div{grid-template-columns:92px minmax(0,1fr)}.workflow-filter-grid{gap:12px 9px}.workflow-filters>summary span{font-size:11px}}
+@media print{.workflow-operation-status{display:none}}
