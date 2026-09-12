@@ -295,3 +295,7 @@ Copyright (c) 2014, Mike Adair, Richard Greenwood, Didier Richard, Stephen Irons
  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  DEALINGS IN THE SOFTWARE._
+
+Space Grotesk Project Authors / SIL Open Font License 1.1
+Locally subset and renamed UrbanLens Grotesk. Full license: fonts/SpaceGrotesk-OFL.txt
+Official source: https://github.com/floriankarsten/space-grotesk
