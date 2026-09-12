@@ -44,7 +44,8 @@ export function installMapDetails({map,manifest,pick,highlight,inspect,focus,dow
  const close=()=>{popup.hidden=true;};
  function position(){if(popup.hidden||!anchor)return;const p=map.project(anchor),x=Array.isArray(p)?p[0]:p.x,y=Array.isArray(p)?p[1]:p.y,w=host.clientWidth,h=host.clientHeight;
   popup.style.maxHeight=Math.max(120,h-24)+'px';const pw=popup.offsetWidth,ph=popup.offsetHeight;
-  popup.style.left=Math.max(12,Math.min(x+18,w-pw-12))+'px';popup.style.top=Math.max(12,Math.min(y-ph/2,h-ph-12))+'px';
+  const left=Math.max(12,Math.min(x+18,w-pw-12)),top=Math.max(12,Math.min(y-ph/2,h-ph-12));
+  popup.style.left=left+'px';popup.style.top=top+'px';popup.style.transformOrigin=Math.max(0,Math.min(pw,x-left))+'px '+Math.max(0,Math.min(ph,y-top))+'px';
  }
  function render(){const f=objects[index],d=objectDetails(f,manifest);highlight(f);
   popup.innerHTML=`<div class="map-details-head"><span>${esc(d.kind)} <small>SPATIAL RECORD</small></span><button data-detail="close" aria-label="关闭地图详情">×</button></div><h2>${esc(d.name)}</h2><p class="map-details-id">${esc(d.id)}</p>${objects.length>1?`<label class="map-details-switch">此处有 ${objects.length} 个对象<select aria-label="切换此处地图对象">${objects.map((o,i)=>`<option value="${i}" ${i===index?'selected':''}>${esc(kinds[o.properties.category]||'空间对象')} · ${esc(o.properties.name||o.properties.osm_id||o.id)}</option>`).join('')}</select></label>`:''}<dl>${d.facts.map(([k,v])=>`<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl><p class="map-details-note">${esc(d.note)}</p><p class="map-details-coordinates">${esc(d.coordinates)}</p><div class="map-details-actions"><button data-detail="inspect">完整档案 ↗</button><button data-detail="focus">定位</button><button data-detail="export">导出</button></div>${d.url?`<a href="${d.url}" target="_blank" rel="noopener" class="map-details-source">OpenStreetMap 原始对象 ↗</a>`:''}`;

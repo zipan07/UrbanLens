@@ -3,6 +3,8 @@ import {inGeometry} from './geo.js';
 const RAD=Math.PI/180;
 const mercator=([lng,lat])=>[(lng+180)/360,(1-Math.asinh(Math.tan(lat*RAD))/Math.PI)/2];
 const inverse=([x,y])=>[x*360-180,Math.atan(Math.sinh(Math.PI*(1-2*y)))/RAD];
+const reducedMotion=()=>globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches===true;
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const value=(v,p,z,g)=>{
  if(!Array.isArray(v))return v;const [op,...a]=v,E=x=>value(x,p,z,g);
  if(op==='get')return p[a[0]];if(op==='literal')return a[0];if(op==='zoom')return z;if(op==='geometry-type')return g.type.replace('Multi','');
@@ -20,18 +22,37 @@ export class CanvasAtlas {
   this.observer=new ResizeObserver(()=>this.drawSoon());this.observer.observe(this.container);this.bind();this.drawSoon();
  }
  on(name,fn){const a=this.events.get(name)||[];a.push(fn);this.events.set(name,a);return this;}
+ off(name,fn){this.events.set(name,(this.events.get(name)||[]).filter(f=>f!==fn));return this;}
  once(name,fn){const wrap=(...a)=>{this.events.set(name,(this.events.get(name)||[]).filter(f=>f!==wrap));fn(...a);};return this.on(name,wrap);}
  emit(name,event){for(const fn of [...(this.events.get(name)||[])])fn(event);}
  getCanvas(){return this.canvas;}getContainer(){return this.container;}getCenter(){const [lng,lat]=inverse(this.center);return {lng,lat};}getPitch(){return 0;}getBearing(){return this.bearing;}getZoom(){return this.zoom;}
  getMinZoom(){return this.minZoom;}getMaxZoom(){return this.maxZoom;}
  getLayer(id){return this.style.layers.find(l=>l.id===id);}getSource(id){const s=this.style.sources[id];return s?{setData:data=>{s.data=data;this.visibleCache.clear();this.drawSoon();}}:null;}
+ getLayoutProperty(id,key){return this.getLayer(id)?.layout?.[key];}setLayoutProperty(id,key,v){const l=this.getLayer(id);if(l){l.layout??={};l.layout[key]=v;}this.drawSoon();}
  addControl(){}setTerrain(){}setPitch(){this.emit('pitchend');}
  setPaintProperty(id,key,v){const l=this.getLayer(id);if(l)l.paint[key]=v;this.drawSoon();}
  setStyle(style){this.style=style;this.visibleCache.clear();requestAnimationFrame(()=>{this.emit('style.load');this.drawSoon();});}
  resize(){this.drawSoon();}triggerRepaint(){this.drawSoon();}
- easeTo(options){if(options.center)this.center=mercator(options.center);if(options.zoom!==undefined)this.zoom=Math.max(this.minZoom,Math.min(this.maxZoom,options.zoom));if(options.bearing!==undefined)this.bearing=options.bearing;this.constrain();this.emit('move');this.emit('pitchend');this.drawSoon();}
- flyTo(options){this.easeTo(options);}zoomIn(){this.easeTo({zoom:this.zoom+.6});}zoomOut(){this.easeTo({zoom:this.zoom-.6});}
- fitBounds([a,b],options={}){const p=mercator(a),q=mercator(b),pad=options.padding||{},w=Math.max(80,this.container.clientWidth-(pad.left||30)-(pad.right||30)),h=Math.max(80,this.container.clientHeight-(pad.top||30)-(pad.bottom||30));this.center=[(p[0]+q[0])/2,(p[1]+q[1])/2];this.easeTo({zoom:Math.log2(Math.min(w/Math.abs(q[0]-p[0]),h/Math.abs(q[1]-p[1]))/512),bearing:0});}
+ beginMove(){if(!this.moving){this.moving=true;this.emit('movestart');}}
+ endMove(){if(this.moving){this.moving=false;this.emit('moveend');}}
+ stop(){if(this.cameraFrame)cancelAnimationFrame(this.cameraFrame);this.cameraFrame=0;this.cameraAnimation=null;clearTimeout(this.wheelEnd);this.wheelEnd=null;this.endMove();return this;}
+ isMoving(){return !!this.moving;}
+ jumpTo(options){return this.easeTo({...options,duration:0});}
+ easeTo(options={}){
+  const supplied=options.center,coords=Array.isArray(supplied)?supplied:supplied?[supplied.lng,supplied.lat]:null;
+  if(coords&&(!coords.every(Number.isFinite)||coords.length!==2)||options.zoom!==undefined&&!Number.isFinite(options.zoom)||options.bearing!==undefined&&!Number.isFinite(options.bearing))return this;
+  const from={center:[...this.center],zoom:this.zoom,bearing:this.bearing},target=coords?mercator([coords[0],clamp(coords[1],-85.051129,85.051129)]):[...this.center];
+  const zoom=clamp(options.zoom??this.zoom,this.minZoom,this.maxZoom),bearing=this.bearing+(((options.bearing??this.bearing)-this.bearing+540)%360+360)%360-180;
+  const duration=options.animate===false||reducedMotion()?0:clamp(Number.isFinite(options.duration)?options.duration:300,0,2000),started=performance.now();
+  this.stop();const animation={};this.cameraAnimation=animation;this.beginMove();
+  const apply=t=>{const eased=t*t*(3-2*t);this.center=from.center.map((v,i)=>v+(target[i]-v)*eased);this.zoom=from.zoom+(zoom-from.zoom)*eased;this.bearing=from.bearing+(bearing-from.bearing)*eased;this.constrain();this.emit('move');this.drawSoon();};
+  const finish=()=>{this.cameraFrame=0;this.cameraAnimation=null;this.emit('pitchend');this.endMove();};
+  if(!duration){apply(1);finish();return this;}
+  const frame=now=>{if(this.cameraAnimation!==animation)return;const t=clamp((now-started)/duration,0,1);apply(t);if(this.cameraAnimation!==animation)return;if(t<1)this.cameraFrame=requestAnimationFrame(frame);else finish();};
+  this.cameraFrame=requestAnimationFrame(frame);return this;
+ }
+ flyTo(options){return this.easeTo(options);}zoomIn(){return this.easeTo({zoom:this.zoom+.6,duration:220});}zoomOut(){return this.easeTo({zoom:this.zoom-.6,duration:220});}
+ fitBounds([a,b],options={}){if(![...a,...b].every(Number.isFinite))return this;const p=mercator(a),q=mercator(b),pad=typeof options.padding==='number'?{top:options.padding,right:options.padding,bottom:options.padding,left:options.padding}:options.padding||{},left=pad.left??30,right=pad.right??30,top=pad.top??30,bottom=pad.bottom??30,w=Math.max(80,this.container.clientWidth-left-right),h=Math.max(80,this.container.clientHeight-top-bottom),zoom=clamp(Math.log2(Math.min(w/Math.max(Math.abs(q[0]-p[0]),1e-12),h/Math.max(Math.abs(q[1]-p[1]),1e-12))/512),this.minZoom,this.maxZoom),scale=512*2**zoom,center=inverse([(p[0]+q[0])/2+(right-left)/(2*scale),(p[1]+q[1])/2+(bottom-top)/(2*scale)]);return this.easeTo({...options,center,zoom,bearing:options.bearing??0});}
  constrain(){const c=inverse(this.center);c[0]=Math.max(this.bounds[0]-.1,Math.min(this.bounds[2]+.1,c[0]));c[1]=Math.max(this.bounds[1]-.1,Math.min(this.bounds[3]+.1,c[1]));this.center=mercator(c);}
  projectWorld([x,y]){const s=512*2**this.zoom,angle=-this.bearing*RAD,dx=(x-this.center[0])*s,dy=(y-this.center[1])*s;return [this.width/2+dx*Math.cos(angle)-dy*Math.sin(angle),this.height/2+dx*Math.sin(angle)+dy*Math.cos(angle)];}
  project(lnglat){return this.projectWorld(mercator(lnglat));}
@@ -64,12 +85,13 @@ export class CanvasAtlas {
  }
  bind(){const canvas=this.canvas,point=e=>{const r=canvas.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top];};
   const frame=()=>{const a=[...this.pointers.values()];return a.length>1?{center:[(a[0][0]+a[1][0])/2,(a[0][1]+a[1][1])/2],distance:Math.hypot(a[1][0]-a[0][0],a[1][1]-a[0][1]),angle:Math.atan2(a[1][1]-a[0][1],a[1][0]-a[0][0])}:{center:a[0]};};
-  canvas.addEventListener('pointerdown',e=>{if(e.button!==0&&e.pointerType!=='touch')return;canvas.setPointerCapture(e.pointerId);this.pointers.set(e.pointerId,point(e));this.previous=frame();this.startPoint=point(e);this.moved=this.pointers.size>1;});
-  canvas.addEventListener('pointermove',e=>{const p=point(e);if(!this.pointers.has(e.pointerId)){this.emit('mousemove',{point:{x:p[0],y:p[1]}});return;}const before=this.previous;this.pointers.set(e.pointerId,p);const after=frame();if(Math.hypot(p[0]-this.startPoint[0],p[1]-this.startPoint[1])>4)this.moved=true;if(before?.center&&after.center){const a=mercator(this.unproject(before.center));if(before.distance&&after.distance){this.zoom=Math.max(this.minZoom,Math.min(this.maxZoom,this.zoom+Math.log2(after.distance/before.distance)));this.bearing-=((after.angle-before.angle+Math.PI*3)%(Math.PI*2)-Math.PI)/RAD;}const b=mercator(this.unproject(after.center));this.center=[this.center[0]+a[0]-b[0],this.center[1]+a[1]-b[1]];this.constrain();this.emit('move');this.drawSoon();}this.previous=after;});
-  canvas.addEventListener('pointerup',e=>{const p=point(e),click=this.pointers.has(e.pointerId)&&!this.moved&&this.pointers.size===1;this.pointers.delete(e.pointerId);this.previous=this.pointers.size?frame():null;if(click){const [lng,lat]=this.unproject(p);this.emit('click',{point:{x:p[0],y:p[1]},lngLat:{lng,lat}});}});
-  canvas.addEventListener('pointercancel',e=>{this.pointers.delete(e.pointerId);this.previous=null;this.moved=true;});
-  canvas.addEventListener('wheel',e=>{e.preventDefault();const p=point(e),a=mercator(this.unproject(p));this.zoom=Math.max(this.minZoom,Math.min(this.maxZoom,this.zoom-e.deltaY*.002));const b=mercator(this.unproject(p));this.center=[this.center[0]+a[0]-b[0],this.center[1]+a[1]-b[1]];this.constrain();this.emit('move');this.drawSoon();},{passive:false});
+  canvas.addEventListener('pointerdown',e=>{this.stop();if(e.button!==0&&e.pointerType!=='touch')return;canvas.setPointerCapture(e.pointerId);this.pointers.set(e.pointerId,point(e));this.previous=frame();this.startPoint=point(e);this.moved=this.pointers.size>1;});
+  canvas.addEventListener('pointermove',e=>{const p=point(e);if(!this.pointers.has(e.pointerId)){this.emit('mousemove',{point:{x:p[0],y:p[1]}});return;}const before=this.previous;this.pointers.set(e.pointerId,p);const after=frame();if(Math.hypot(p[0]-this.startPoint[0],p[1]-this.startPoint[1])>4)this.moved=true;if(before?.center&&after.center){this.beginMove();const a=mercator(this.unproject(before.center));if(before.distance&&after.distance){this.zoom=Math.max(this.minZoom,Math.min(this.maxZoom,this.zoom+Math.log2(after.distance/before.distance)));this.bearing-=((after.angle-before.angle+Math.PI*3)%(Math.PI*2)-Math.PI)/RAD;}const b=mercator(this.unproject(after.center));this.center=[this.center[0]+a[0]-b[0],this.center[1]+a[1]-b[1]];this.constrain();this.emit('move');this.drawSoon();}this.previous=after;});
+  canvas.addEventListener('pointerup',e=>{const p=point(e),click=this.pointers.has(e.pointerId)&&!this.moved&&this.pointers.size===1;this.pointers.delete(e.pointerId);this.previous=this.pointers.size?frame():null;if(!this.pointers.size)this.endMove();if(click){const [lng,lat]=this.unproject(p);this.emit('click',{point:{x:p[0],y:p[1]},lngLat:{lng,lat}});}});
+  const cancelPointer=e=>{this.pointers.delete(e.pointerId);this.previous=this.pointers.size?frame():null;this.moved=true;if(!this.pointers.size)this.endMove();};
+  canvas.addEventListener('pointercancel',cancelPointer);canvas.addEventListener('lostpointercapture',cancelPointer);
+  canvas.addEventListener('wheel',e=>{e.preventDefault();if(!Number.isFinite(e.deltaY))return;this.stop();this.beginMove();const p=point(e),a=mercator(this.unproject(p)),factor=e.deltaMode===1?16:e.deltaMode===2?this.height:1;this.zoom=Math.max(this.minZoom,Math.min(this.maxZoom,this.zoom-e.deltaY*factor*.002));const b=mercator(this.unproject(p));this.center=[this.center[0]+a[0]-b[0],this.center[1]+a[1]-b[1]];this.constrain();this.emit('move');this.drawSoon();this.wheelEnd=setTimeout(()=>{this.wheelEnd=null;this.endMove();},120);},{passive:false});
   canvas.addEventListener('dblclick',()=>{if(this.doubleEnabled)this.zoomIn();});
-  canvas.addEventListener('keydown',e=>{if(['+','=','-','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){e.preventDefault();if(e.key==='+'||e.key==='=')this.zoomIn();else if(e.key==='-')this.zoomOut();else{const d={ArrowLeft:[-60,0],ArrowRight:[60,0],ArrowUp:[0,-60],ArrowDown:[0,60]}[e.key];this.center=mercator(this.unproject([this.width/2+d[0],this.height/2+d[1]]));this.constrain();this.emit('move');this.drawSoon();}}});
+  canvas.addEventListener('keydown',e=>{if(['+','=','-','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Escape'].includes(e.key)){this.stop();if(e.key==='Escape')return;e.preventDefault();if(e.key==='+'||e.key==='=')this.zoomIn();else if(e.key==='-')this.zoomOut();else{const d={ArrowLeft:[-60,0],ArrowRight:[60,0],ArrowUp:[0,-60],ArrowDown:[0,60]}[e.key];this.easeTo({center:this.unproject([this.width/2+d[0],this.height/2+d[1]]),duration:180});}}});
  }
 }

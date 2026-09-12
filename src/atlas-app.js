@@ -17,18 +17,43 @@ const base=new URL('.',location.href).href;
 const state={theme:'day',mode:'3d',terrain:true,schematic:true,layers:{},selected:null,imported:EMPTY(),measure:[],measuring:false,ready:false};
 const labels={building:'建筑 / 建筑部件',green:'绿地',water:'水体',civic:'公共服务用地',commercial:'商业用地',residential:'居住用地',industrial:'工业等用地',other:'开放地图用地',road:'道路',rail:'轨道',waterway:'水系',education:'教育设施',health:'医疗设施',transport:'交通设施',culture:'文化与游览',nature:'自然空间',place:'地名',service:'服务设施',boundary:'行政边界',imported:'研究范围 / 未复核'};
 let map,manifest,data,studio,shellUI,detailsUI,objects=[],byId=new Map(),toastTimer,loadTimer;
-const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const motionPreference=matchMedia('(prefers-reduced-motion: reduce)'),layerFades=new Map(),selectionFrames=new Map(),selectionKeys=new Map();
+let reduced=motionPreference.matches;
+motionPreference.addEventListener?.('change',e=>{reduced=e.matches;if(reduced){map?.stop?.();shellUI?.stopOrbit();if(state.ready&&data)applyLayerVisibility();}});
 function toast(message){$('#toast').textContent=message;$('#toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').hidden=true,4200);}
 function openPanel(open=true){$('#inspector').classList.toggle('is-open',open);$('#mobile-panel').setAttribute('aria-expanded',String(open));if(document.body.classList.contains('is-presenting')){document.body.classList.toggle('present-panel',open);$('#presentation-panel').setAttribute('aria-pressed',String(open));requestAnimationFrame(()=>map?.resize?.());}}
 function tab(name,open=true){if(!['value','overview','object','data'].includes(name))return;for(const t of ['value','overview','object','data']){$(`#panel-${t}`).hidden=t!==name;$(`#tab-${t}`).setAttribute('aria-selected',String(t===name));}$$('.rail-link[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));if(open)openPanel();$('.inspector-scroll').scrollTop=0;}
 function fail(message){clearTimeout(loadTimer);$('#map-loading').hidden=true;$('#map-failure').hidden=false;$('#map-error').textContent=message;$('#load-status').textContent='地图未就绪 · 资料目录仍可查看';}
 async function json(path){if(path==='data/services.geojson')return JSON.parse(new TextDecoder().decode(await packedBytes('services')));const r=await fetch(`${base}${path}?v=6`,{signal:AbortSignal.timeout(30000)});if(!r.ok)throw new Error(`数据文件加载失败（${r.status}）：${path}`);return r.json();}
-function sourceData(id,geo){map?.getSource(id)?.setData(geo);}
+function sourceData(id,geo){map?.getSource(id)?.setData(geo);
+ if(!['selected','studySelected'].includes(id))return;
+ if(!geo.features?.length){selectionKeys.delete(id);return;}
+ const f=geo.features[0],p=f.properties||{},has=v=>v!==undefined&&v!==null&&v!=='',key=has(p.unit_id)?JSON.stringify(['unit',p.unit_id]):has(p.parcel_id)?JSON.stringify(['parcel',p.parcel_id]):has(p.osm_id)?JSON.stringify(['osm',p.category??'',p.osm_id]):has(f.id)?JSON.stringify(['feature',f.id]):f;
+ if(selectionKeys.get(id)===key)return;selectionKeys.set(id,key);
+ if(reduced||map?.fallback)return;const layer=id==='selected'?'selected-line':'study-selected',width=id==='selected'?3:4;
+ if(!map?.getLayer(layer))return;cancelAnimationFrame(selectionFrames.get(id));map.setPaintProperty(layer,'line-width-transition',{duration:0});map.setPaintProperty(layer,'line-width',width+1.5);
+ selectionFrames.set(id,requestAnimationFrame(()=>{selectionFrames.delete(id);if(!map.getLayer(layer))return;map.setPaintProperty(layer,'line-width-transition',{duration:220});map.setPaintProperty(layer,'line-width',width);}));
+}
 function ready(action){if(!state.ready){toast('地图仍在加载，请稍后操作。');return;}action();}
 function updateCamera(){if(!map)return;const c=map.getCenter(),p=Math.round(map.getPitch());$('#camera-status').textContent=`${p>1?'3D':'2D'} · ${c.lng.toFixed(4)}° E / ${c.lat.toFixed(4)}° N`;$('#pitch-value').value=`${p}°`;$('#pitch').value=p;$('#compass').style.transform=`rotate(${-map.getBearing()}deg)`;$('.map-title').style.opacity=map.getZoom()>15.5?'.25':'1';state.mode=p>1?'3d':'2d';$$('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===state.mode)));}
 function refreshStateSources(){sourceData('selected',state.selected?{type:'FeatureCollection',features:[state.selected]}:EMPTY());sourceData('imported',state.imported);updateMeasure();studio?.mapLayers();}
-function applyStyle(){if(!map||!data)return;detailsUI?.close();state.ready=false;$('#export-map').disabled=true;map.setStyle(makeStyle(data,state,base),{diff:false});map.once('style.load',()=>{refreshStateSources();state.ready=true;$('#export-map').disabled=false;updateCamera();});}
-function focusFeature(f){if(!map||!state.ready)return;const c=centerOf(f.geometry),b=boundsOf(f.geometry),span=Math.max(b[2]-b[0],b[3]-b[1]);const zoom=span>.025?13.8:span>.009?14.7:span>.003?15.7:17.1;map.flyTo({center:c,zoom,pitch:state.mode==='3d'?55:0,bearing:map.getBearing(),duration:reduced?0:1500,essential:false});}
+function applyStyle(){if(!map||!data)return;detailsUI?.close();for(const fade of layerFades.values()){clearTimeout(fade.timer);cancelAnimationFrame(fade.frame);}layerFades.clear();state.ready=false;$('#export-map').disabled=true;map.setStyle(makeStyle(data,state,base),{diff:false});map.once('style.load',()=>{refreshStateSources();state.ready=true;$('#export-map').disabled=false;updateCamera();});}
+function applyLayerVisibility(){
+ detailsUI?.close();
+ // Retain loaded sources and camera state; only the affected layers change.
+ for(const layer of makeStyle(data,state,base).layers){const current=map.getLayer(layer.id);if(!current)continue;const visible=layer.layout.visibility,previous=layerFades.get(layer.id);
+  if(!reduced&&previous?.visible===visible)continue;
+  if(!previous&&map.getLayoutProperty(layer.id,'visibility')===visible)continue;
+  if(previous){clearTimeout(previous.timer);cancelAnimationFrame(previous.frame);layerFades.delete(layer.id);}
+  const key=({fill:'fill-opacity',line:'line-opacity',circle:'circle-opacity','fill-extrusion':'fill-extrusion-opacity',symbol:'text-opacity'})[layer.type];
+  if(reduced||map.fallback||!key){map.setLayoutProperty(layer.id,'visibility',visible);if(key){map.setPaintProperty(layer.id,key+'-transition',{duration:0});map.setPaintProperty(layer.id,key,layer.paint[key]??1);}continue;}
+  const opacity=layer.paint[key]??1,fade={visible};layerFades.set(layer.id,fade);map.setPaintProperty(layer.id,key+'-transition',{duration:200,delay:0});
+  if(visible==='none'){map.setPaintProperty(layer.id,key,0);fade.timer=setTimeout(()=>{if(layerFades.get(layer.id)!==fade)return;map.setLayoutProperty(layer.id,'visibility','none');map.setPaintProperty(layer.id,key,opacity);layerFades.delete(layer.id);},210);}
+  else if(map.getLayoutProperty(layer.id,'visibility')!=='none'){map.setPaintProperty(layer.id,key,opacity);layerFades.delete(layer.id);}
+  else{map.setPaintProperty(layer.id,key+'-transition',{duration:0});map.setPaintProperty(layer.id,key,0);map.setLayoutProperty(layer.id,'visibility','visible');fade.frame=requestAnimationFrame(()=>{if(layerFades.get(layer.id)!==fade)return;map.setPaintProperty(layer.id,key+'-transition',{duration:200,delay:0});map.setPaintProperty(layer.id,key,opacity);layerFades.delete(layer.id);});}
+ }
+}
+function focusFeature(f){if(!map||!state.ready)return;const c=centerOf(f.geometry),b=boundsOf(f.geometry),span=Math.max(b[2]-b[0],b[3]-b[1]);const zoom=span>.025?13.8:span>.009?14.7:span>.003?15.7:17.1,current=map.getCenter(),distance=distanceMeters([current.lng,current.lat],c),duration=reduced?0:Math.round(Math.min(800,450+Math.min(distance/30,220)+Math.abs(map.getZoom()-zoom)*45));shellUI?.stopOrbit();map.flyTo({center:c,zoom,pitch:state.mode==='3d'?55:0,bearing:map.getBearing(),duration,essential:false});}
 function select(f,{fly=false}={}){
  state.selected=f;sourceData('selected',{type:'FeatureCollection',features:[f]});renderObject(f);tab('object');if(fly)focusFeature(f);
  $('#search-results').hidden=true;
@@ -76,6 +101,12 @@ async function start(){loadTimer=setTimeout(()=>fail('数据加载较慢。请�
   try{map=new maplibregl.Map({container:'map',style:makeStyle(data,state,base),center:[118.814,32.057],zoom:14.2,pitch:52,bearing:-22,minZoom:10.5,maxZoom:19,maxPitch:70,maxBounds:[[118.60,31.90],[119.08,32.25]],renderWorldCopies:false,attributionControl:false,localIdeographFontFamily:'-apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif',canvasContextAttributes:{antialias:true,preserveDrawingBuffer:true},fadeDuration:150});}
   catch(renderError){console.warn('WebGL unavailable; using geographic Canvas 2D.',renderError.message);state.mode='2d';state.terrain=false;$('#terrain-toggle').checked=false;$('#terrain-toggle').disabled=true;$('#pitch').disabled=true;const button=$('[data-mode="3d"]');button.disabled=true;button.title='当前浏览器未启用图形加速，已使用真实地图的 2D 兼容模式。';map=new CanvasAtlas({container:'map',style:makeStyle(data,state,base),center:[118.811,32.059],zoom:13.4,bounds:manifest.boundary.bbox,minZoom:10.5});$('.interaction-help').textContent='2D 兼容 · 右键详情 · 中键旋转 · Mac ⌥ 滑动';}
   map.touchZoomRotate.enable();map.touchPitch.enable();installMapGestures(map,{onInteraction:()=>shellUI?.stopOrbit()});shellUI=installStudioShell({map,manifest,studio:()=>studio,toast,tab,openPanel});map.addControl(new maplibregl.ScaleControl({maxWidth:80,unit:'metric'}),'bottom-left');
+  let movementEnd;
+  const moving=()=>{clearTimeout(movementEnd);document.body.classList.add('is-map-moving');$('#map-hover-label').hidden=true;};
+  const settled=()=>{clearTimeout(movementEnd);movementEnd=setTimeout(()=>document.body.classList.remove('is-map-moving'),100);};
+  map.on('movestart',moving);map.on('move',moving);map.on('moveend',settled);
+  const interrupt=e=>{if(e.type==='keydown'&&!['Escape','+','=','-','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;map.stop?.();shellUI?.stopOrbit();settled();};
+  for(const type of ['pointerdown','wheel','keydown'])map.getCanvas().addEventListener(type,interrupt,{capture:true,passive:true});
   map.on('load',()=>{clearTimeout(loadTimer);state.ready=true;$('#map-loading').hidden=true;$('#map-failure').hidden=true;$('#export-map').disabled=false;$('#load-status').textContent=`${map.fallback?'2D 兼容模式 · ':''}OSM ${manifest.snapshotAt.slice(0,10)} · ${fmt(manifest.counts.buildings)} 个建筑与部件`;map.getCanvas().setAttribute('aria-label','玄武区地图。单击选中，右键或长按查看详情。方向键平移，加减键缩放。');updateCamera();studio?.mapLayers();});
   Promise.all([json('data/services.geojson'),json('data/research-units.geojson'),json('data/value-evidence.json')]).then(([services,units,evidence])=>{
    studio=new ValueStudio({data,services,units,evidence,adapter:{tab,openPanel,toast,download,focus:focusFeature,layers:items=>{for(const [id,geo]of Object.entries(items))sourceData(id,geo);}}});$('#study-hud').hidden=false;
@@ -102,7 +133,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)r
  if(b.dataset.tab)tab(b.dataset.tab);
  if(b.dataset.place){const f=byId.get(b.dataset.place);if(f)select(f,{fly:true});else toast('该对象尚在加载。');}
  if(b.dataset.feature){const f=byId.get(b.dataset.feature);if(f)select(f,{fly:true});}
- if(b.dataset.mode)ready(()=>{state.mode=b.dataset.mode;map.easeTo({pitch:state.mode==='2d'?0:55,bearing:map.getBearing(),duration:reduced?0:800});});
+ if(b.dataset.mode)ready(()=>{state.mode=b.dataset.mode;map.easeTo({pitch:state.mode==='2d'?0:55,bearing:map.getBearing(),duration:reduced?0:650});});
  if(b.dataset.theme)ready(()=>{state.theme=b.dataset.theme;document.body.classList.toggle('night',state.theme==='night');$$('[data-theme]').forEach(x=>{x.classList.toggle('active',x===b);x.setAttribute('aria-pressed',String(x===b));});applyStyle();});
  if(b.id==='locate-selected'&&state.selected)ready(()=>{focusFeature(state.selected);if(innerWidth<=720)openPanel(false);});
  if(b.id==='download-object'&&state.selected)download('UrbanLens-Xuanwu-object.geojson',JSON.stringify({...state.selected,metadata:{snapshotAt:manifest.snapshotAt,attribution:manifest.attribution,license:manifest.license,creator:manifest.creator}},null,2));
@@ -110,12 +141,12 @@ document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)r
 $('#place-search').addEventListener('input',search);$('#place-search').addEventListener('keydown',e=>{if(e.key==='Escape')$('#search-results').hidden=true;if(e.key==='Enter')$('#search-results button')?.click();});
 $('#clear-search').onclick=()=>{$('#place-search').value='';search();$('#place-search').focus();};
 $('#layers-toggle').onclick=()=>{const open=$('#layers-popover').hidden;$('#layers-popover').hidden=!open;$('#layers-toggle').setAttribute('aria-expanded',String(open));};
-$$('[data-layer]').forEach(input=>input.addEventListener('change',()=>{state.layers[input.dataset.layer]=input.checked;if(state.ready)applyStyle();}));
+$$('[data-layer]').forEach(input=>input.addEventListener('change',()=>{state.layers[input.dataset.layer]=input.checked;if(state.ready)applyLayerVisibility();}));
 $('#terrain-toggle').onchange=e=>{state.terrain=e.target.checked;if(state.ready)map.setTerrain(state.terrain&&state.mode==='3d'?{source:'dem',exaggeration:1}:null);};
 $('#schematic-toggle').onchange=e=>{state.schematic=e.target.checked;if(state.ready)map.setPaintProperty('building-3d','fill-extrusion-height',state.mode==='2d'?0:state.schematic?['get','render_height']:['coalesce',['get','height_m'],0]);};
 $('#pitch').oninput=e=>ready(()=>map.setPitch(Number(e.target.value)));
 $('#north').onclick=()=>ready(()=>map.easeTo({bearing:0,duration:reduced?0:600}));$('#zoom-in').onclick=()=>ready(()=>map.zoomIn());$('#zoom-out').onclick=()=>ready(()=>map.zoomOut());
-$('#overview').onclick=()=>ready(()=>{const b=manifest.boundary.bbox;map.fitBounds([[b[0],b[1]],[b[2],b[3]]],{padding:{top:80,bottom:70,left:30,right:30},pitch:0,bearing:0,duration:reduced?0:1300});});
+$('#overview').onclick=()=>ready(()=>{const b=manifest.boundary.bbox;map.fitBounds([[b[0],b[1]],[b[2],b[3]]],{padding:{top:80,bottom:70,left:30,right:30},pitch:0,bearing:0,duration:reduced?0:750});});
 $('#measure').onclick=()=>ready(()=>{state.measuring=!state.measuring;$('#measure').setAttribute('aria-pressed',String(state.measuring));$('#measurement').hidden=!state.measuring;map.getCanvas().style.cursor=state.measuring?'crosshair':'';if(state.measuring)map.doubleClickZoom.disable();else map.doubleClickZoom.enable();});
 $('#clear-measure').onclick=()=>{state.measure=[];updateMeasure();};
 $('#about').onclick=()=>$('#about-dialog').showModal();$('#close-about').onclick=()=>$('#about-dialog').close();$('#retry').onclick=()=>location.reload();$('#export-map').onclick=exportMap;
