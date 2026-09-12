@@ -1,0 +1,585 @@
+rix;uniform vec2 u_world;in vec2 a_pos;out vec2 v_pos;void main() {gl_Position=u_matrix*vec4(a_pos*u_world,0,1);v_pos.x=a_pos.x;v_pos.y=1.0-a_pos.y;}"),collisionBox:Ae("in float v_placed;in float v_notUsed;void main() {float alpha=0.5;fragColor=vec4(1.0,0.0,0.0,1.0)*alpha;if (v_placed > 0.5) {fragColor=vec4(0.0,0.0,1.0,0.5)*alpha;}if (v_notUsed > 0.5) {fragColor*=.1;}}","in vec2 a_anchor_pos;in vec2 a_placed;in vec2 a_box_real;uniform vec2 u_pixel_extrude_scale;out float v_placed;out float v_notUsed;void main() {gl_Position=projectTileWithElevation(a_anchor_pos,get_elevation(a_anchor_pos));gl_Position.xy=((a_box_real+0.5)*u_pixel_extrude_scale*2.0-1.0)*vec2(1.0,-1.0)*gl_Position.w;if (gl_Position.z/gl_Position.w < 1.1) {gl_Position.z=0.5;}v_placed=a_placed.x;v_notUsed=a_placed.y;}"),collisionCircle:Ae("in float v_radius;in vec2 v_extrude;in float v_collision;void main() {float alpha=0.5;float stroke_radius=0.9;float distance_to_center=length(v_extrude);float distance_to_edge=abs(distance_to_center-v_radius);float opacity_t=smoothstep(-stroke_radius,0.0,-distance_to_edge);vec4 color=mix(vec4(0.0,0.0,1.0,0.5),vec4(1.0,0.0,0.0,1.0),v_collision);fragColor=color*alpha*opacity_t;}","in vec2 a_pos;in float a_radius;in vec2 a_flags;uniform vec2 u_viewport_size;out float v_radius;out vec2 v_extrude;out float v_collision;void main() {float radius=a_radius;float collision=a_flags.x;float vertexIdx=a_flags.y;vec2 quadVertexOffset=vec2(mix(-1.0,1.0,float(vertexIdx >=2.0)),mix(-1.0,1.0,float(vertexIdx >=1.0 && vertexIdx <=2.0)));vec2 quadVertexExtent=quadVertexOffset*radius;float padding_factor=1.2;v_radius=radius;v_extrude=quadVertexExtent*padding_factor;v_collision=collision;gl_Position=vec4((a_pos/u_viewport_size*2.0-1.0)*vec2(1.0,-1.0),0.0,1.0)+vec4(quadVertexExtent*padding_factor/u_viewport_size*2.0,0.0,0.0);}"),colorRelief:Ae(`#ifdef GL_ES
+precision highp float;
+#endif
+uniform sampler2D u_image;uniform vec4 u_unpack;uniform sampler2D u_elevation_stops;uniform sampler2D u_color_stops;uniform int u_color_ramp_size;uniform float u_opacity;in vec2 v_pos;float getElevation(vec2 coord) {vec4 data=texture(u_image,coord)*255.0;data.a=-1.0;return dot(data,u_unpack);}float getElevationStop(int stop) {float x=(float(stop)+0.5)/float(u_color_ramp_size);vec4 data=texture(u_elevation_stops,vec2(x,0))*255.0;data.a=-1.0;return dot(data,u_unpack);}void main() {float el=getElevation(v_pos);int r=(u_color_ramp_size-1);int l=0;float el_l=getElevationStop(l);float el_r=getElevationStop(r);while(r-l > 1){int m=(r+l)/2;float el_m=getElevationStop(m);if(el < el_m){r=m;el_r=el_m;}else
+{l=m;el_l=el_m;}}float x=(float(l)+(el-el_l)/(el_r-el_l)+0.5)/float(u_color_ramp_size);fragColor=u_opacity*texture(u_color_stops,vec2(x,0));
+#ifdef OVERDRAW_INSPECTOR
+fragColor=vec4(1.0);
+#endif
+}`,"uniform vec2 u_dimension;in vec2 a_pos;out vec2 v_pos;void main() {gl_Position=projectTile(a_pos,a_pos);highp vec2 epsilon=1.0/u_dimension;float scale=(u_dimension.x-2.0)/u_dimension.x;v_pos=(a_pos/8192.0)*scale+epsilon;if (a_pos.y <-32767.5) {v_pos.y=0.0;}if (a_pos.y > 32766.5) {v_pos.y=1.0;}}"),debug:Ae("uniform highp vec4 u_color;uniform sampler2D u_overlay;in vec2 v_uv;void main() {vec4 overlay_color=texture(u_overlay,v_uv);fragColor=mix(u_color,overlay_color,overlay_color.a);}","in vec2 a_pos;out vec2 v_uv;uniform float u_overlay_scale;void main() {v_uv=a_pos/8192.0;gl_Position=projectTileWithElevation(a_pos*u_overlay_scale,get_elevation(a_pos));}"),depth:Ae(Lo,`in vec2 a_pos;void main() {
+#ifdef GLOBE
+gl_Position=projectTileFor3D(a_pos,0.0);
+#else
+gl_Position=u_projection_matrix*vec4(a_pos,0.0,1.0);
+#endif
+}`),fill:Ae(`#pragma mapbox: define highp vec4 color
+#pragma mapbox: define lowp float opacity
+void main() {
+#pragma mapbox: initialize highp vec4 color
+#pragma mapbox: initialize lowp float opacity
+fragColor=color*opacity;
+#ifdef OVERDRAW_INSPECTOR
+fragColor=vec4(1.0);
+#endif
+}`,`uniform vec2 u_fill_translate;in vec2 a_pos;
+#pragma mapbox: define highp vec4 color
+#pragma mapbox: define lowp float opacity
+void main() {
+#pragma mapbox: initialize highp vec4 color
+#pragma mapbox: initialize lowp float opacity
+gl_Position=projectTile(a_pos+u_fill_translate,a_pos);}`),fillOutline:Ae(`in vec2 v_pos;
+#ifdef GLOBE
+in float v_depth;
+#endif
+#pragma mapbox: define highp vec4 outline_color
+#pragma mapbox: define lowp float opacity
+void main() {
+#pragma mapbox: initialize highp vec4 outline_color
+#pragma mapbox: initialize lowp float opacity
+float dist=length(v_pos-gl_FragCoord.xy);float alpha=1.0-smoothstep(0.0,1.0,dist);fragColor=outline_color*(alpha*opacity);
+#ifdef GLOBE
+if (v_depth > 1.0) {discard;}
+#endif
+#ifdef OVERDRAW_INSPECTOR
+fragColor=vec4(1.0);
+#endif
+}`,`uniform vec2 u_world;uniform vec2 u_fill_translate;in vec2 a_pos;out vec2 v_pos;
+#ifdef GLOBE
+out float v_depth;
+#endif
+#pragma mapbox: define highp vec4 outline_color
+#pragma mapbox: define lowp float opacity
+void main() {
+#pragma mapbox: initialize highp vec4 outline_color
+#pragma mapbox: initialize lowp float opacity
+gl_Position=projectTile(a_pos+u_fill_translate,a_pos);v_pos=(gl_Position.xy/gl_Position.w+1.0)/2.0*u_world;
+#ifdef GLOBE
+v_depth=gl_Position.z/gl_Position.w;
+#endif
+}`),fillOutlinePattern:Ae(`uniform vec2 u_texsize;uniform sampler2D u_image;uniform float u_fade;in vec2 v_pos_a;in vec2 v_pos_b;in vec2 v_pos;
+#ifdef GLOBE
+in float v_depth;
+#endif
+#pragma mapbox: define lowp float opacity
+#pragma mapbox: define lowp vec4 pattern_from
+#pragma mapbox: define lowp vec4 pattern_to
+void main() {
+#pragma mapbox: initialize lowp float opacity
+#pragma mapbox: initialize mediump vec4 pattern_from
+#pragma mapbox: initialize mediump vec4 pattern_to
+vec2 pattern_tl_a=pattern_from.xy;vec2 pattern_br_a=pattern_from.zw;vec2 pattern_tl_b=pattern_to.xy;vec2 pattern_br_b=pattern_to.zw;vec2 imagecoord=mod(v_pos_a,1.0);vec2 pos=mix(pattern_tl_a/u_texsize,pattern_br_a/u_texsize,imagecoord);vec4 color1=texture(u_image,pos);vec2 imagecoord_b=mod(v_pos_b,1.0);vec2 pos2=mix(pattern_tl_b/u_texsize,pattern_br_b/u_texsize,imagecoord_b);vec4 color2=texture(u_image,pos2);float dist=length(v_pos-gl_FragCoord.xy);float alpha=1.0-smoothstep(0.0,1.0,dist);fragColor=mix(color1,color2,u_fade)*alpha*opacity;
+#ifdef GLOBE
+if (v_depth > 1.0) {discard;}
+#endif
+#ifdef OVERDRAW_INSPECTOR
+fragColor=vec4(1.0);
+#endif
+}`,`uniform vec2 u_world;uniform vec2 u_pixel_coord_upper;uniform vec2 u_pixel_coord_lower;uniform vec3 u_scale;uniform vec2 u_fill_translate;in vec2 a_pos;out vec2 v_pos_a;out vec2 v_pos_b;out vec2 v_pos;
+#ifdef GLOBE
+out float v_depth;
+#endif
+#pragma mapbox: define lowp float opacity
+#pragma mapbox: define lowp vec4 pattern_from
+#pragma mapbox: define lowp vec4 pattern_to
+#pragma mapbox: define lowp float pixel_ratio_from
+#pragma mapbox: define lowp float pixel_ratio_to
+void main() {
+#pragma mapbox: initialize lowp float opacity
+#pragma mapbox: initialize mediump vec4 pattern_from
+#pragma mapbox: initialize mediump vec4 pattern_to
+#pragma mapbox: initialize lowp float pixel_ratio_from
+#pragma mapbox: initialize lowp float pixel_ratio_to
+vec2 pattern_tl_a=pattern_from.xy;vec2 pattern_br_a=pattern_from.zw;vec2 pattern_tl_b=pattern_to.xy;vec2 pattern_br_b=pattern_to.zw;float tileRatio=u_scale.x;float fromScale=u_scale.y;float toScale=u_scale.z;gl_Position=projectTile(a_pos+u_fill_translate,a_pos);vec2 display_size_a=(pattern_br_a-pattern_tl_a)/pixel_ratio_from;vec2 display_size_b=(pattern_br_b-pattern_tl_b)/pixel_ratio_to;v_pos_a=get_pattern_pos(u_pixel_coord_upper,u_pixel_coord_lower,fromScale*display_size_a,tileRatio,a_pos);v_pos_b=get_pattern_pos(u_pixel_coord_upper,u_pixel_coord_lower,toScale*display_size_b,tileRatio,a_pos);v_pos=(gl_Position.xy/gl_Position.w+1.0)/2.0*u_world;
+#ifdef GLOBE
+v_depth=gl_Position.z/gl_Position.w;
+#endif
+}`),fillPattern:Ae(`#ifdef GL_ES
+precision highp float;
+#endif
+uniform vec2 u_texsize;uniform float u_fade;uniform sampler2D u_image;in vec2 v_pos_a;in vec2 v_pos_b;
+#pragma mapbox: define lowp float opacity
+#pragma mapbox: define lowp vec4 pattern_from
+#pragma mapbox: define lowp vec4 pattern_to
+void main() {
+#pragma mapbox: initialize lowp float opacity
+#pragma mapbox: initialize mediump vec4 pattern_from
+#pragma mapbox: initialize mediump vec4 pattern_to
+vec2 pattern_tl_a=pattern_from.xy;vec2 pattern_br_a=pattern_from.zw;vec2 pattern_tl_b=pattern_to.xy;vec2 pattern_br_b=pattern_to.zw;vec2 imagecoord=mod(v_pos_a,1.0);vec2 pos=mix(pattern_tl_a/u_texsize,pattern_br_a/u_texsize,imagecoord);vec4 color1=texture(u_image,pos);vec2 imagecoord_b=mod(v_pos_b,1.0);vec2 pos2=mix(pattern_tl_b/u_texsize,pattern_br_b/u_texsize,imagecoord_b);vec4 color2=texture(u_image,pos2);fragColor=mix(color1,color2,u_fade)*opacity;
+#ifdef OVERDRAW_INSPECTOR
+fragColor=vec4(1.0);
+#endif
+}`,`uniform vec2 u_pixel_coord_upper;uniform vec2 u_pixel_coord_lower;uniform vec3 u_scale;uniform vec2 u_fill_translate;in vec2 a_pos;out vec2 v_pos_a;out vec2 v_pos_b;
+#pragma mapbox: define lowp float opacity
+#pragma mapbox: define lowp vec4 pattern_from
+#pragma mapbox: define lowp vec4 pattern_to
+#pragma mapbox: define lowp float pixel_ratio_from
+#pragma mapbox: define lowp float pixel_ratio_to
+void main() {
+#pragma mapbox: initialize lowp float opacity
+#pragma mapbox: initialize mediump vec4 pattern_from
+#pragma mapbox: initialize mediump vec4 pattern_to
+#pragma mapbox: initialize lowp float pixel_ratio_from
+#pragma mapbox: initialize lowp float pixel_ratio_to
+vec2 pattern_tl_a=pattern_from.xy;vec2 pattern_br_a=pattern_from.zw;vec2 pattern_tl_b=pattern_to.xy;vec2 pattern_br_b=pattern_to.zw;float tileZoomRatio=u_scale.x;float fromScale=u_scale.y;float toScale=u_scale.z;vec2 display_size_a=(pattern_br_a-pattern_tl_a)/pixel_ratio_from;vec2 display_size_b=(pattern_br_b-pattern_tl_b)/pixel_ratio_to;gl_Position=projectTile(a_pos+u_fill_translate,a_pos);v_pos_a=get_pattern_pos(u_pixel_coord_upper,u_pixel_coord_lower,fromScale*display_size_a,tileZoomRatio,a_pos);v_pos_b=get_pattern_pos(u_pixel_coord_upper,u_pixel_coord_lower,toScale*display_size_b,tileZoomRatio,a_pos);}`),fillExtrusion:Ae(`in vec4 v_color;void main() {fragColor=v_color;
+#ifdef OVERDRAW_INSPECTOR
+fragColor=vec4(1.0);
+#endif
+}`,`uniform vec3 u_lightcolor;uniform lowp vec3 u_lightpos;uniform lowp vec3 u_lightpos_globe;uniform lowp float u_lightintensity;uniform float u_vertical_gradient;uniform lowp float u_opacity;uniform vec2 u_fill_translate;in vec2 a_pos;in vec4 a_normal_ed;
+#ifdef TERRAIN3D
+in vec2 a_centroid;
+#endif
+out vec4 v_color;
+#pragma mapbox: define highp float base
+#pragma mapbox: define highp float height
+#pragma mapbox: define highp vec4 color
+void main() {
+#pragma mapbox: initialize highp float base
+#pragma mapbox: initialize highp float height
+#pragma mapbox: initialize highp vec4 color
+vec3 normal=a_normal_ed.xyz;
+#ifdef TERRAIN3D
+float height_terrain3d_offset=get_elevation(a_centroid);float base_terrain3d_offset=height_terrain3d_offset-(base > 0.0 ? 0.0 : 10.0);
+#else
+float height_terrain3d_offset=0.0;float base_terrain3d_offset=0.0;
+#endif
+base=max(0.0,base)+base_terrain3d_offset;height=max(0.0,height)+height_terrain3d_offset;float t=mod(normal.x,2.0);float elevation=t > 0.0 ? height : base;vec2 posInTile=a_pos+u_fill_translate;
+#ifdef GLOBE
+vec3 spherePos=projectToSphere(posInTile,a_pos);gl_Position=interpolateProjectionFor3D(posInTile,spherePos,elevation);
+#else
+gl_Position=u_projection_matrix*vec4(posInTile,elevation,1.0);
+#endif
+float colorvalue=color.r*0.2126+color.g*0.7152+color.b*0.0722;v_color=vec4(0.0,0.0,0.0,1.0);vec4 ambientlight=vec4(0.03,0.03,0.03,1.0);color+=ambientlight;vec3 normalForLighting=normal/16384.0;float directional=clamp(dot(normalForLighting,u_lightpos),0.0,1.0);
+#ifdef GLOBE
+mat3 rotMatrix=globeGetRotationMatrix(spherePos);normalForLighting=rotMatrix*normalForLighting;directional=mix(directional,clamp(dot(normalForLighting,u_lightpos_globe),0.0,1.0),u_projection_transition);
+#endif
+directional=mix((1.0-u_lightintensity),max((1.0-colorvalue+u_lightintensity),1.0),directional);if (normal.y !=0.0) {directional*=((1.0-u_vertical_gradient)+(u_vertical_gradient*clamp((t+base)*pow(height/150.0,0.5),mix(0.7,0.98,1.0-u_lightintensity),1.0)));}v_color.r+=clamp(color.r*directional*u_lightcolor.r,mix(0.0,0.3,1.0-u_lightcolor.r),1.0);v_color.g+=clamp(color.g*directional*u_lightcolor.g,mix(0.0,0.3,1.0-u_lightcolor.g),1.0);v_color.b+=clamp(color.b*directional*u_lightcolor.b,mix(0.0,0.3,1.0-u_lightcolor.b),1.0);v_color*=u_opacity;}`),fillExtrusionPattern:Ae(`uniform vec2 u_texsize;uniform float u_fade;uniform sampler2D u_image;in vec2 v_pos_a;in vec2 v_pos_b;in vec4 v_lighting;
+#pragma mapbox: define lowp float base
+#pragma mapbox: define lowp float height
+#pragma mapbox: define lowp vec4 pattern_from
+#pragma mapbox: define lowp vec4 pattern_to
+#pragma mapbox: define lowp float pixel_ratio_from
+#pragma mapbox: define lowp float pixel_ratio_to
+void main() {
+#pragma mapbox: initialize lowp float base
+#pragma mapbox: initialize lowp float height
+#pragma mapbox: initialize mediump vec4 pattern_from
+#pragma mapbox: initialize mediump vec4 pattern_to
+#pragma mapbox: initialize lowp float pixel_ratio_from
+#pragma mapbox: initialize lowp float pixel_ratio_to
+vec2 pattern_tl_a=pattern_from.xy;vec2 pattern_br_a=pattern_from.zw;vec2 pattern_tl_b=pattern_to.xy;vec2 pattern_br_b=pattern_to.zw;vec2 imagecoord=mod(v_pos_a,1.0);vec2 pos=mix(pattern_tl_a/u_texsize,pattern_br_a/u_texsize,imagecoord);vec4 color1=texture(u_image,pos);vec2 imagecoord_b=mod(v_pos_b,1.0);vec2 pos2=mix(pattern_tl_b/u_texsize,pattern_br_b/u_texsize,imagecoord_b);vec4 color2=texture(u_image,pos2);vec4 mixedColor=mix(color1,color2,u_fade);fragColor=mixedColor*v_lighting;
+#ifdef OVERDRAW_INSPECTOR
+fragColor=vec4(1.0);
+#endif
+}`,`uniform vec2 u_pixel_coord_upper;uniform vec2 u_pixel_coord_lower;uniform float u_height_factor;uniform vec3 u_scale;uniform float u_vertical_gradient;uniform lowp float u_opacity;uniform vec2 u_fill_translate;uniform vec3 u_lightcolor;uniform lowp vec3 u_lightpos;uniform lowp vec3 u_lightpos_globe;uniform lowp float u_lightintensity;in vec2 a_pos;in vec4 a_normal_ed;
+#ifdef TERRAIN3D
+in vec2 a_centroid;
+#endif
+#ifdef GLOBE
+out vec3 v_sphere_pos;
+#endif
+out vec2 v_pos_a;out vec2 v_pos_b;out vec4 v_lighting;
+#pragma mapbox: define lowp float base
+#pragma mapbox: define lowp float height
+#pragma mapbox: define lowp vec4 pattern_from
+#pragma mapbox: define lowp vec4 pattern_to
+#pragma mapbox: define lowp float pixel_ratio_from
+#pragma mapbox: define lowp float pixel_ratio_to
+void main() {
+#pragma mapbox: initialize lowp float base
+#pragma mapbox: initialize lowp float height
+#pragma mapbox: initialize mediump vec4 pattern_from
+#pragma mapbox: initialize mediump vec4 pattern_to
+#pragma mapbox: initialize lowp float pixel_ratio_from
+#pragma mapbox: initialize lowp float pixel_ratio_to
+vec2 pattern_tl_a=pattern_from.xy;vec2 pattern_br_a=pattern_from.zw;vec2 pattern_tl_b=pattern_to.xy;vec2 pattern_br_b=pattern_to.zw;float tileRatio=u_scale.x;float fromScale=u_scale.y;float toScale=u_scale.z;vec3 normal=a_normal_ed.xyz;float edgedistance=a_normal_ed.w;vec2 display_size_a=(pattern_br_a-pattern_tl_a)/pixel_ratio_from;vec2 display_size_b=(pattern_br_b-pattern_tl_b)/pixel_ratio_to;
+#ifdef TERRAIN3D
+float height_terrain3d_offset=get_elevation(a_centroid);float base_terrain3d_offset=height_terrain3d_offset-(base > 0.0 ? 0.0 : 10.0);
+#else
+float height_terrain3d_offset=0.0;float base_terrain3d_offset=0.0;
+#endif
+base=max(0.0,base)+base_terrain3d_offset;height=max(0.0,height)+height_terrain3d_offset;float t=mod(normal.x,2.0);float elevation=t > 0.0 ? height : base;vec2 posInTile=a_pos+u_fill_translate;
+#ifdef GLOBE
+vec3 spherePos=projectToSphere(posInTile,a_pos);vec3 elevatedPos=spherePos*(1.0+elevation/GLOBE_RADIUS);v_sphere_pos=elevatedPos;gl_Position=interpolateProjectionFor3D(posInTile,spherePos,elevation);
+#else
+gl_Position=u_projection_matrix*vec4(posInTile,elevation,1.0);
+#endif
+vec2 pos=normal.x==1.0 && normal.y==0.0 && normal.z==16384.0
+? a_pos
+: vec2(edgedistance,elevation*u_height_factor);v_pos_a=get_pattern_pos(u_pixel_coord_upper,u_pixel_coord_lower,fromScale*display_size_a,tileRatio,pos);v_pos_b=get_pattern_pos(u_pixel_coord_upper,u_pixel_coord_lower,toScale*display_size_b,tileRatio,pos);v_lighting=vec4(0.0,0.0,0.0,1.0);float directional=clamp(dot(normal/16383.0,u_lightpos),0.0,1.0);directional=mix((1.0-u_lightintensity),max((0.5+u_lightintensity),1.0),directional);if (normal.y !=0.0) {directional*=((1.0-u_vertical_gradient)+(u_vertical_gradient*clamp((t+base)*pow(height/150.0,0.5),mix(0.7,0.98,1.0-u_lightintensity),1.0)));}v_lighting.rgb+=clamp(directional*u_lightcolor,mix(vec3(0.0),vec3(0.3),1.0-u_lightcolor),vec3(1.0));v_lighting*=u_opacity;}`),hillshadePrepare:Ae(`#ifdef GL_ES
+precision highp float;
+#endif
+uniform sampler2D u_image;in vec2 v_pos;uniform vec2 u_dimension;uniform float u_zoom;uniform vec4 u_unpack;float getElevation(vec2 coord,float bias) {vec4 data=texture(u_image,coord)*255.0;data.a=-1.0;return dot(data,u_unpack);}void main() {vec2 epsilon=1.0/u_dimension;float tileSize=u_dimension.x-2.0;float a=getElevation(v_pos+vec2(-epsilon.x,-epsilon.y),0.0);float b=getElevation(v_pos+vec2(0,-epsilon.y),0.0);float c=getElevation(v_pos+vec2(epsilon.x,-epsilon.y),0.0);float d=getElevation(v_pos+vec2(-epsilon.x,0),0.0);float e=getElevation(v_pos,0.0);float f=getElevation(v_pos+vec2(epsilon.x,0),0.0);float g=getElevation(v_pos+vec2(-epsilon.x,epsilon.y),0.0);float h=getElevation(v_pos+vec2(0,epsilon.y),0.0);float i=getElevation(v_pos+vec2(epsilon.x,epsilon.y),0.0);float exaggerationFactor=u_zoom < 2.0 ? 0.4 : u_zoom < 4.5 ? 0.35 : 0.3;float exaggeration=u_zoom < 15.0 ? (u_zoom-15.0)*exaggerationFactor : 0.0;vec2 deriv=vec2((c+f+f+i)-(a+d+d+g),(g+h+h+i)-(a+b+b+c))*tileSize/pow(2.0,exaggeration+(28.2562-u_zoom));fragColor=clamp(vec4(deriv.x/8.0+0.5,deriv.y/8.0+0.5,1.0,1.0),0.0,1.0);
+#ifdef OVERDRAW_INSPECTOR
+fragColor=vec4(1.0);
+#endif
+}`,"uniform mat4 u_matrix;uniform vec2 u_dimension;in vec2 a_pos;in vec2 a_texture_pos;out vec2 v_pos;void main() {gl_Position=u_matrix*vec4(a_pos,0,1);highp vec2 epsilon=1.0/u_dimension;float scale=(u_dimension.x-2.0)/u_dimension.x;v_pos=(a_texture_pos/8192.0)*scale+epsilon;}"),hillshade:Ae(`uniform sampler2D u_image;in vec2 v_pos;uniform vec2 u_latrange;uniform float u_exaggeration;uniform vec4 u_accent;uniform int u_method;uniform float u_altitudes[NUM_ILLUMINATION_SOURCES];uniform float u_azimuths[NUM_ILLUMINATION_SOURCES];uniform vec4 u_shadows[NUM_ILLUMINATION_SOURCES];uniform vec4 u_highlights[NUM_ILLUMINATION_SOURCES];
+#define PI 3.141592653589793
+#define STANDARD 0
+#define COMBINED 1
+#define IGOR 2
+#define MULTIDIRECTIONAL 3
+#define BASIC 4
+float get_aspect(vec2 deriv){return deriv.x !=0.0 ? atan(deriv.y,-deriv.x) : PI/2.0*(deriv.y > 0.0 ? 1.0 :-1.0);}void igor_hillshade(vec2 deriv){deriv=deriv*u_exaggeration*2.0;float aspect=get_aspect(deriv);float azimuth=u_azimuths[0]+PI;float slope_stength=atan(length(deriv))*2.0/PI;float aspect_strength=1.0-abs(mod((aspect+azimuth)/PI+0.5,2.0)-1.0);float shadow_strength=slope_stength*aspect_strength;float highlight_strength=slope_stength*(1.0-aspect_strength);fragColor=u_shadows[0]*shadow_strength+u_highlights[0]*highlight_strength;}void standard_hillshade(vec2 deriv){float azimuth=u_azimuths[0]+PI;float slope=atan(0.625*length(deriv));float aspect=get_aspect(deriv);float intensity=u_exaggeration;float base=1.875-intensity*1.75;float maxValue=0.5*PI;float scaledSlope=intensity !=0.5 ? ((pow(base,slope)-1.0)/(pow(base,maxValue)-1.0))*maxValue : slope;float accent=cos(scaledSlope);vec4 accent_color=(1.0-accent)*u_accent*clamp(intensity*2.0,0.0,1.0);float shade=abs(mod((aspect+azimuth)/PI+0.5,2.0)-1.0);vec4 shade_color=mix(u_shadows[0],u_highlights[0],shade)*sin(scaledSlope)*clamp(intensity*2.0,0.0,1.0);fragColor=accent_color*(1.0-shade_color.a)+shade_color;}void basic_hillshade(vec2 deriv){deriv=deriv*u_exaggeration*2.0;float azimuth=u_azimuths[0]+PI;float cos_az=cos(azimuth);float sin_az=sin(azimuth);float cos_alt=cos(u_altitudes[0]);float sin_alt=sin(u_altitudes[0]);float cang=(sin_alt-(deriv.y*cos_az*cos_alt-deriv.x*sin_az*cos_alt))/sqrt(1.0+dot(deriv,deriv));float shade=clamp(cang,0.0,1.0);if(shade > 0.5){fragColor=u_highlights[0]*(2.0*shade-1.0);}else
+{fragColor=u_shadows[0]*(1.0-2.0*shade);}}void multidirectional_hillshade(vec2 deriv){deriv=deriv*u_exaggeration*2.0;fragColor=vec4(0,0,0,0);for(int i=0; i < NUM_ILLUMINATION_SOURCES; i++){float cos_alt=cos(u_altitudes[i]);float sin_alt=sin(u_altitudes[i]);float cos_az=-cos(u_azimuths[i]);float sin_az=-sin(u_azimuths[i]);float cang=(sin_alt-(deriv.y*cos_az*cos_alt-deriv.x*sin_az*cos_alt))/sqrt(1.0+dot(deriv,deriv));float shade=clamp(cang,0.0,1.0);if(shade > 0.5){fragColor+=u_highlights[i]*(2.0*shade-1.0)/float(NUM_ILLUMINATION_SOURCES);}else
+{fragColor+=u_shadows[i]*(1.0-2.0*shade)/float(NUM_ILLUMINATION_SOURCES);}}}void combined_hillshade(vec2 deriv){deriv=deriv*u_exaggeration*2.0;float azimuth=u_azimuths[0]+PI;float cos_az=cos(azimuth);float sin_az=sin(azimuth);float cos_alt=cos(u_altitudes[0]);float sin_alt=sin(u_altitudes[0]);float cang=acos((sin_alt-(deriv.y*cos_az*cos_alt-deriv.x*sin_az*cos_alt))/sqrt(1.0+dot(deriv,deriv)));cang=clamp(cang,0.0,PI/2.0);float shade=cang*atan(length(deriv))*4.0/PI/PI;float highlight=(PI/2.0-cang)*atan(length(deriv))*4.0/PI/PI;fragColor=u_shadows[0]*shade+u_highlights[0]*highlight;}void main() {vec4 pixel=texture(u_image,v_pos);float scaleFactor=cos(radians((u_latrange[0]-u_latrange[1])*(1.0-v_pos.y)+u_latrange[1]));vec2 deriv=((pixel.rg*8.0)-4.0)/scaleFactor;if (u_method==BASIC) {basic_hillshade(deriv);} else if (u_method==COMBINED) {combined_hillshade(deriv);} else if (u_method==IGOR) {igor_hillshade(deriv);} else if (u_method==MULTIDIRECTIONAL) {multidirectional_hillshade(deriv);} else if (u_method==STANDARD) {standard_hillshade(deriv);} else {standard_hillshade(deriv);}
+#ifdef OVERDRAW_INSPECTOR
+fragColor=vec4(1.0);
+#endif
+}`,"uniform mat4 u_matrix;in vec2 a_pos;out vec2 v_pos;void main() {gl_Position=projectTile(a_pos,a_pos);v_pos=a_pos/8192.0;if (a_pos.y <-32767.5) {v_pos.y=0.0;}if (a_pos.y > 32766.5) {v_pos.y=1.0;}}"),line:Ae(`uniform lowp float u_device_pixel_ratio;in vec2 v_width2;in vec2 v_normal;in float v_gamma_scale;
+#ifdef GLOBE
+in float v_depth;
+#endif
+#pragma mapbox: define highp vec4 color
+#pragma mapbox: define lowp float blur
+#pragma mapbox: define lowp float opacity
+void main() {
+#pragma mapbox: initialize highp vec4 color
+#pragma mapbox: initialize lowp float blur
+#pragma mapbox: initialize lowp float opacity
+float dist=length(v_normal)*v_width2.s;float blur2=(blur+1.0/u_device_pixel_ratio)*v_gamma_scale;float alpha=clamp(min(dist-(v_width2.t-blur2),v_width2.s-dist)/blur2,0.0,1.0);fragColor=color*(alpha*opacity);
+#ifdef GLOBE
+if (v_depth > 1.0) {discard;}
+#endif
+#ifdef OVERDRAW_INSPECTOR
+fragColor=vec4(1.0);
+#endif
+}`,`
+#define scale 0.015873016
+in vec2 a_pos_normal;in vec4 a_data;uniform vec2 u_translation;uniform mediump float u_ratio;uniform vec2 u_units_to_pixels;uniform lowp float u_device_pixel_ratio;out vec2 v_normal;out vec2 v_width2;out float v_gamma_scale;out highp float v_linesofar;
+#ifdef GLOBE
+out float v_depth;
+#endif
+#pragma mapbox: define highp vec4 color
+#pragma mapbox: define lowp float blur
+#pragma mapbox: define lowp float opacity
+#pragma mapbox: define mediump float gapwidth
+#pragma mapbox: define lowp float offset
+#pragma mapbox: define mediump float width
+void main() {
+#pragma mapbox: initialize highp vec4 color
+#pragma mapbox: initialize lowp float blur
+#pragma mapbox: initialize lowp float opacity
+#pragma mapbox: initialize mediump float gapwidth
+#pragma mapbox: initialize lowp float offset
+#pragma mapbox: initialize mediump float width
+float ANTIALIASING=1.0/u_device_pixel_ratio/2.0;vec2 a_extrude=a_data.xy-128.0;float a_direction=mod(a_data.z,4.0)-1.0;v_linesofar=(floor(a_data.z/4.0)+a_data.w*64.0)*2.0;vec2 pos=floor(a_pos_normal*0.5);mediump vec2 normal=a_pos_normal-2.0*pos;normal.y=normal.y*2.0-1.0;v_normal=normal;gapwidth=gapwidth/2.0;float halfwidth=width/2.0;offset=-1.0*offset;float inset=gapwidth+(gapwidth > 0.0 ? ANTIALIASING : 0.0);float outset=gapwidth+halfwidth*(gapwidth > 0.0 ? 2.0 : 1.0)+(halfwidth==0.0 ? 0.0 : ANTIALIASING);mediump vec2 dist=outset*a_extrude*scale;mediump float u=0.5*a_direction;mediump float t=1.0-abs(u);mediump vec2 offset2=offset*a_extrude*scale*normal.y*mat2(t,-u,u,t);float adjustedThickness=projectLineThickness(pos.y);vec4 projected_no_extrude=projectTile(pos+offset2/u_ratio*adjustedThickness+u_translation);vec4 projected_with_extrude=projectTile(pos+offset2/u_ratio*adjustedThickness+u_translation+dist/u_ratio*adjustedThickness);gl_Position=projected_with_extrude;
+#ifdef GLOBE
+v_depth=gl_Position.z/gl_Position.w;
+#endif
+#ifdef TERRAIN3D
+v_gamma_scale=1.0;
+#else
+float extrude_length_without_perspective=length(dist);float extrude_length_with_perspective=length((projected_with_extrude.xy-projected_no_extrude.xy)/projected_with_extrude.w*u_units_to_pixels);v_gamma_scale=extrude_length_without_perspective/extrude_length_with_perspective;
+#endif
+v_width2=vec2(outset,inset);}`),lineGradient:Ae(`uniform lowp float u_device_pixel_ratio;uniform sampler2D u_image;in vec2 v_width2;in vec2 v_normal;in float v_gamma_scale;in highp vec2 v_uv;
+#ifdef GLOBE
+in float v_depth;
+#endif
+#pragma mapbox: define lowp float blur
+#pragma mapbox: define lowp float opacity
+void main() {
+#pragma mapbox: initialize lowp float blur
+#pragma mapbox: initialize lowp float opacity
+float dist=length(v_normal)*v_width2.s;float blur2=(blur+1.0/u_device_pixel_ratio)*v_gamma_scale;float alpha=clamp(min(dist-(v_width2.t-blur2),v_width2.s-dist)/blur2,0.0,1.0);vec4 color=texture(u_image,v_uv);fragColor=color*(alpha*opacity);
+#ifdef GLOBE
+if (v_depth > 1.0) {discard;}
+#endif
+#ifdef OVERDRAW_INSPECTOR
+fragColor=vec4(1.0);
+#endif
+}`,`
+#define scale 0.015873016
+in vec2 a_pos_normal;in vec4 a_data;in float a_uv_x;in float a_split_index;uniform vec2 u_translation;uniform mediump float u_ratio;uniform lowp float u_device_pixel_ratio;uniform vec2 u_units_to_pixels;uniform float u_image_height;out vec2 v_normal;out vec2 v_width2;out float v_gamma_scale;out highp vec2 v_uv;
+#ifdef GLOBE
+out float v_depth;
+#endif
+#pragma mapbox: define lowp float blur
+#pragma mapbox: define lowp float opacity
+#pragma mapbox: define mediump float gapwidth
+#pragma mapbox: define lowp float offset
+#pragma mapbox: define mediump float width
+void main() {
+#pragma mapbox: initialize lowp float blur
+#pragma mapbox: initialize lowp float opacity
+#pragma mapbox: initialize mediump float gapwidth
+#pragma mapbox: initialize lowp float offset
+#pragma mapbox: initialize mediump float width
+float ANTIALIASING=1.0/u_device_pixel_ratio/2.0;vec2 a_extrude=a_data.xy-128.0;float a_direction=mod(a_data.z,4.0)-1.0;highp float texel_height=1.0/u_image_height;highp float half_texel_height=0.5*texel_height;v_uv=vec2(a_uv_x,a_split_index*texel_height-half_texel_height);vec2 pos=floor(a_pos_normal*0.5);mediump vec2 normal=a_pos_normal-2.0*pos;normal.y=normal.y*2.0-1.0;v_normal=normal;gapwidth=gapwidth/2.0;float halfwidth=width/2.0;offset=-1.0*offset;float inset=gapwidth+(gapwidth > 0.0 ? ANTIALIASING : 0.0);float outset=gapwidth+halfwidth*(gapwidth > 0.0 ? 2.0 : 1.0)+(halfwidth==0.0 ? 0.0 : ANTIALIASING);mediump vec2 dist=outset*a_extrude*scale;mediump float u=0.5*a_direction;mediump float t=1.0-abs(u);mediump vec2 offset2=offset*a_extrude*scale*normal.y*mat2(t,-u,u,t);float adjustedThickness=projectLineThickness(pos.y);vec4 projected_no_extrude=projectTile(pos+offset2/u_ratio*adjustedThickness+u_translation);vec4 projected_with_extrude=projectTile(pos+offset2/u_ratio*adjustedThickness+u_translation+dist/u_ratio*adjustedThickness);gl_Position=projected_with_extrude;
+#ifdef GLOBE
+v_depth=gl_Position.z/gl_Position.w;
+#endif
+#ifdef TERRAIN3D
+v_gamma_scale=1.0;
+#else
+float extrude_length_without_perspective=length(dist);float extrude_length_with_perspective=length((projected_with_extrude.xy-projected_no_extrude.xy)/projected_with_extrude.w*u_units_to_pixels);v_gamma_scale=extrude_length_without_perspective/extrude_length_with_perspective;
+#endif
+v_width2=vec2(outset,inset);}`),linePattern:Ae(`#ifdef GL_ES
+precision highp float;
+#endif
+uniform lowp float u_device_pixel_ratio;uniform vec2 u_texsize;uniform float u_fade;uniform mediump vec3 u_scale;uniform sampler2D u_image;in vec2 v_normal;in vec2 v_width2;in float v_linesofar;in float v_gamma_scale;in float v_width;
+#ifdef GLOBE
+in float v_depth;
+#endif
+#pragma mapbox: define lowp vec4 pattern_from
+#pragma mapbox: define lowp vec4 pattern_to
+#pragma mapbox: define lowp float pixel_ratio_from
+#pragma mapbox: define lowp float pixel_ratio_to
+#pragma mapbox: define lowp float blur
+#pragma mapbox: define lowp float opacity
+void main() {
+#pragma mapbox: initialize mediump vec4 pattern_from
+#pragma mapbox: initialize mediump vec4 pattern_to
+#pragma mapbox: initialize lowp float pixel_ratio_from
+#pragma mapbox: initialize lowp float pixel_ratio_to
+#pragma mapbox: initialize lowp float blur
+#pragma mapbox: initialize lowp float opacity
+vec2 pattern_tl_a=pattern_from.xy;vec2 pattern_br_a=pattern_from.zw;vec2 pattern_tl_b=pattern_to.xy;vec2 pattern_br_b=pattern_to.zw;float tileZoomRatio=u_scale.x;float fromScale=u_scale.y;float toScale=u_scale.z;vec2 display_size_a=(pattern_br_a-pattern_tl_a)/pixel_ratio_from;vec2 display_size_b=(pattern_br_b-pattern_tl_b)/pixel_ratio_to;vec2 pattern_size_a=vec2(display_size_a.x*fromScale/tileZoomRatio,display_size_a.y);vec2 pattern_size_b=vec2(display_size_b.x*toScale/tileZoomRatio,display_size_b.y);float aspect_a=display_size_a.y/v_width;float aspect_b=display_size_b.y/v_width;float dist=length(v_normal)*v_width2.s;float blur2=(blur+1.0/u_device_pixel_ratio)*v_gamma_scale;float alpha=clamp(min(dist-(v_width2.t-blur2),v_width2.s-dist)/blur2,0.0,1.0);float x_a=mod(v_linesofar/pattern_size_a.x*aspect_a,1.0);float x_b=mod(v_linesofar/pattern_size_b.x*aspect_b,1.0);float y=0.5*v_normal.y+0.5;vec2 texel_size=1.0/u_texsize;vec2 pos_a=mix(pattern_tl_a*texel_size-texel_size,pattern_br_a*texel_size+texel_size,vec2(x_a,y));vec2 pos_b=mix(pattern_tl_b*texel_size-texel_size,pattern_br_b*texel_size+texel_size,vec2(x_b,y));vec4 color=mix(texture(u_image,pos_a),texture(u_image,pos_b),u_fade);fragColor=color*alpha*opacity;
+#ifdef GLOBE
+if (v_depth > 1.0) {discard;}
+#endif
+#ifdef OVERDRAW_INSPECTOR
+fragColor=vec4(1.0);
+#endif
+}`,`
+#define scale 0.015873016
+#define LINE_DISTANCE_SCALE 2.0
+in vec2 a_pos_normal;in vec4 a_data;uniform vec2 u_translation;uniform vec2 u_units_to_pixels;uniform mediump float u_ratio;uniform lowp float u_device_pixel_ratio;out vec2 v_normal;out vec2 v_width2;out float v_linesofar;out float v_gamma_scale;out float v_width;
+#ifdef GLOBE
+out float v_depth;
+#endif
+#pragma mapbox: define lowp float blur
+#pragma mapbox: define lowp float opacity
+#pragma mapbox: define lowp float offset
+#pragma mapbox: define mediump float gapwidth
+#pragma mapbox: define mediump float width
+#pragma mapbox: define lowp float floorwidth
+#pragma mapbox: define lowp vec4 pattern_from
+#pragma mapbox: define lowp vec4 pattern_to
+#pragma mapbox: define lowp float pixel_ratio_from
+#pragma mapbox: define lowp float pixel_ratio_to
+void main() {
+#pragma mapbox: initialize lowp float blur
+#pragma mapbox: initialize lowp float opacity
+#pragma mapbox: initialize lowp float offset
+#pragma mapbox: initialize mediump float gapwidth
+#pragma mapbox: initialize mediump float width
+#pragma mapbox: initialize lowp float floorwidth
+#pragma mapbox: initialize mediump vec4 pattern_from
+#pragma mapbox: initialize mediump vec4 pattern_to
+#pragma mapbox: initialize lowp float pixel_ratio_from
+#pragma mapbox: initialize lowp float pixel_ratio_to
+float ANTIALIASING=1.0/u_device_pixel_ratio/2.0;vec2 a_extrude=a_data.xy-128.0;float a_direction=mod(a_data.z,4.0)-1.0;float a_linesofar=(floor(a_data.z/4.0)+a_data.w*64.0)*LINE_DISTANCE_SCALE;vec2 pos=floor(a_pos_normal*0.5);mediump vec2 normal=a_pos_normal-2.0*pos;normal.y=normal.y*2.0-1.0;v_normal=normal;gapwidth=gapwidth/2.0;float halfwidth=width/2.0;offset=-1.0*offset;float inset=gapwidth+(gapwidth > 0.0 ? ANTIALIASING : 0.0);float outset=gapwidth+halfwidth*(gapwidth > 0.0 ? 2.0 : 1.0)+(halfwidth==0.0 ? 0.0 : ANTIALIASING);mediump vec2 dist=outset*a_extrude*scale;mediump float u=0.5*a_direction;mediump float t=1.0-abs(u);mediump vec2 offset2=offset*a_extrude*scale*normal.y*mat2(t,-u,u,t);float adjustedThickness=projectLineThickness(pos.y);vec4 projected_no_extrude=projectTile(pos+offset2/u_ratio*adjustedThickness+u_translation);vec4 projected_with_extrude=projectTile(pos+offset2/u_ratio*adjustedThickness+u_translation+dist/u_ratio*adjustedThickness);gl_Position=projected_with_extrude;
+#ifdef GLOBE
+v_depth=gl_Position.z/gl_Position.w;
+#endif
+#ifdef TERRAIN3D
+v_gamma_scale=1.0;
+#else
+float extrude_length_without_perspective=length(dist);float extrude_length_with_perspective=length((projected_with_extrude.xy-projected_no_extrude.xy)/projected_with_extrude.w*u_units_to_pixels);v_gamma_scale=extrude_length_without_perspective/extrude_length_with_perspective;
+#endif
+v_linesofar=a_linesofar;v_width2=vec2(outset,inset);v_width=floorwidth;}`),lineSDF:Ae(`uniform lowp float u_device_pixel_ratio;uniform sampler2D u_image;uniform float u_sdfgamma;uniform float u_mix;in vec2 v_normal;in vec2 v_width2;in vec2 v_tex_a;in vec2 v_tex_b;in float v_gamma_scale;
+#ifdef GLOBE
+in float v_depth;
+#endif
+#pragma mapbox: define highp vec4 color
+#pragma mapbox: define lowp float blur
+#pragma mapbox: define lowp float opacity
+#pragma mapbox: define mediump float width
+#pragma mapbox: define lowp float floorwidth
+void main() {
+#pragma mapbox: initialize highp vec4 color
+#pragma mapbox: initialize lowp float blur
+#pragma mapbox: initialize lowp float opacity
+#pragma mapbox: initialize mediump float width
+#pragma mapbox: initialize lowp float floorwidth
+float dist=length(v_normal)*v_width2.s;float blur2=(blur+1.0/u_device_pixel_ratio)*v_gamma_scale;float alpha=clamp(min(dist-(v_width2.t-blur2),v_width2.s-dist)/blur2,0.0,1.0);float sdfdist_a=texture(u_image,v_tex_a).a;float sdfdist_b=texture(u_image,v_tex_b).a;float sdfdist=mix(sdfdist_a,sdfdist_b,u_mix);alpha*=smoothstep(0.5-u_sdfgamma/floorwidth,0.5+u_sdfgamma/floorwidth,sdfdist);fragColor=color*(alpha*opacity);
+#ifdef GLOBE
+if (v_depth > 1.0) {discard;}
+#endif
+#ifdef OVERDRAW_INSPECTOR
+fragColor=vec4(1.0);
+#endif
+}`,`
+#define scale 0.015873016
+#define LINE_DISTANCE_SCALE 2.0
+in vec2 a_pos_normal;in vec4 a_data;uniform vec2 u_translation;uniform mediump float u_ratio;uniform lowp float u_device_pixel_ratio;uniform vec2 u_patternscale_a;uniform float u_tex_y_a;uniform vec2 u_patternscale_b;uniform float u_tex_y_b;uniform vec2 u_units_to_pixels;out vec2 v_normal;out vec2 v_width2;out vec2 v_tex_a;out vec2 v_tex_b;out float v_gamma_scale;
+#ifdef GLOBE
+out float v_depth;
+#endif
+#pragma mapbox: define highp vec4 color
+#pragma mapbox: define lowp float blur
+#pragma mapbox: define lowp float opacity
+#pragma mapbox: define mediump float gapwidth
+#pragma mapbox: define lowp float offset
+#pragma mapbox: define mediump float width
+#pragma mapbox: define lowp float floorwidth
+void main() {
+#pragma mapbox: initialize highp vec4 color
+#pragma mapbox: initialize lowp float blur
+#pragma mapbox: initialize lowp float opacity
+#pragma mapbox: initialize mediump float gapwidth
+#pragma mapbox: initialize lowp float offset
+#pragma mapbox: initialize mediump float width
+#pragma mapbox: initialize lowp float floorwidth
+float ANTIALIASING=1.0/u_device_pixel_ratio/2.0;vec2 a_extrude=a_data.xy-128.0;float a_direction=mod(a_data.z,4.0)-1.0;float a_linesofar=(floor(a_data.z/4.0)+a_data.w*64.0)*LINE_DISTANCE_SCALE;vec2 pos=floor(a_pos_normal*0.5);mediump vec2 normal=a_pos_normal-2.0*pos;normal.y=normal.y*2.0-1.0;v_normal=normal;gapwidth=gapwidth/2.0;float halfwidth=width/2.0;offset=-1.0*offset;float inset=gapwidth+(gapwidth > 0.0 ? ANTIALIASING : 0.0);float outset=gapwidth+halfwidth*(gapwidth > 0.0 ? 2.0 : 1.0)+(halfwidth==0.0 ? 0.0 : ANTIALIASING);mediump vec2 dist=outset*a_extrude*scale;mediump float u=0.5*a_direction;mediump float t=1.0-abs(u);mediump vec2 offset2=offset*a_extrude*scale*normal.y*mat2(t,-u,u,t);float adjustedThickness=projectLineThickness(pos.y);vec4 projected_no_extrude=projectTile(pos+offset2/u_ratio*adjustedThickness+u_translation);vec4 projected_with_extrude=projectTile(pos+offset2/u_ratio*adjustedThickness+u_translation+dist/u_ratio*adjustedThickness);gl_Position=projected_with_extrude;
+#ifdef GLOBE
+v_depth=gl_Position.z/gl_Position.w;
+#endif
+#ifdef TERRAIN3D
+v_gamma_scale=1.0;
+#else
+float extrude_length_without_perspective=length(dist);float extrude_length_with_perspective=length((projected_with_extrude.xy-projected_no_extrude.xy)/projected_with_extrude.w*u_units_to_pixels);v_gamma_scale=extrude_length_without_perspective/extrude_length_with_perspective;
+#endif
+v_tex_a=vec2(a_linesofar*u_patternscale_a.x/floorwidth,normal.y*u_patternscale_a.y+u_tex_y_a);v_tex_b=vec2(a_linesofar*u_patternscale_b.x/floorwidth,normal.y*u_patternscale_b.y+u_tex_y_b);v_width2=vec2(outset,inset);}`),raster:Ae(`uniform float u_fade_t;uniform float u_opacity;uniform sampler2D u_image0;uniform sampler2D u_image1;in vec2 v_pos0;in vec2 v_pos1;uniform float u_brightness_low;uniform float u_brightness_high;uniform float u_saturation_factor;uniform float u_contrast_factor;uniform vec3 u_spin_weights;void main() {vec4 color0=texture(u_image0,v_pos0);vec4 color1=texture(u_image1,v_pos1);if (color0.a > 0.0) {color0.rgb=color0.rgb/color0.a;}if (color1.a > 0.0) {color1.rgb=color1.rgb/color1.a;}vec4 color=mix(color0,color1,u_fade_t);color.a*=u_opacity;vec3 rgb=color.rgb;rgb=vec3(dot(rgb,u_spin_weights.xyz),dot(rgb,u_spin_weights.zxy),dot(rgb,u_spin_weights.yzx));float average=(color.r+color.g+color.b)/3.0;rgb+=(average-rgb)*u_saturation_factor;rgb=(rgb-0.5)*u_contrast_factor+0.5;vec3 u_high_vec=vec3(u_brightness_low,u_brightness_low,u_brightness_low);vec3 u_low_vec=vec3(u_brightness_high,u_brightness_high,u_brightness_high);fragColor=vec4(mix(u_high_vec,u_low_vec,rgb)*color.a,color.a);
+#ifdef OVERDRAW_INSPECTOR
+fragColor=vec4(1.0);
+#endif
+}`,`uniform vec2 u_tl_parent;uniform float u_scale_parent;uniform float u_buffer_scale;uniform vec4 u_coords_top;uniform vec4 u_coords_bottom;in vec2 a_pos;out vec2 v_pos0;out vec2 v_pos1;void main() {vec2 fractionalPos=a_pos/8192.0;vec2 position=mix(mix(u_coords_top.xy,u_coords_top.zw,fractionalPos.x),mix(u_coords_bottom.xy,u_coords_bottom.zw,fractionalPos.x),fractionalPos.y);gl_Position=projectTile(position,position);v_pos0=((fractionalPos-0.5)/u_buffer_scale)+0.5;
+#ifdef GLOBE
+if (a_pos.y <-32767.5) {v_pos0.y=0.0;}if (a_pos.y > 32766.5) {v_pos0.y=1.0;}
+#endif
+v_pos1=(v_pos0*u_scale_parent)+u_tl_parent;}`),symbolIcon:Ae(`uniform sampler2D u_texture;in vec2 v_tex;in float v_fade_opacity;
+#pragma mapbox: define lowp float opacity
+void main() {
+#pragma mapbox: initialize lowp float opacity
+lowp float alpha=opacity*v_fade_opacity;fragColor=texture(u_texture,v_tex)*alpha;
+#ifdef OVERDRAW_INSPECTOR
+fragColor=vec4(1.0);
+#endif
+}`,`in vec4 a_pos_offset;in vec4 a_data;in vec4 a_pixeloffset;in vec3 a_projected_pos;in float a_fade_opacity;uniform bool u_is_size_zoom_constant;uniform bool u_is_size_feature_constant;uniform highp float u_size_t;uniform highp float u_size;uniform highp float u_camera_to_center_distance;uniform highp float u_pitch;uniform bool u_rotate_symbol;uniform highp float u_aspect_ratio;uniform float u_fade_change;uniform mat4 u_label_plane_matrix;uniform mat4 u_coord_matrix;uniform bool u_is_text;uniform bool u_pitch_with_map;uniform vec2 u_texsize;uniform bool u_is_along_line;uniform bool u_is_variable_anchor;uniform vec2 u_translation;uniform float u_pitched_scale;out vec2 v_tex;out float v_fade_opacity;
+#pragma mapbox: define lowp float opacity
+void main() {
+#pragma mapbox: initialize lowp float opacity
+vec2 a_pos=a_pos_offset.xy;vec2 a_offset=a_pos_offset.zw;vec2 a_tex=a_data.xy;vec2 a_size=a_data.zw;float a_size_min=floor(a_size[0]*0.5);vec2 a_pxoffset=a_pixeloffset.xy;vec2 a_minFontScale=a_pixeloffset.zw/256.0;float ele=get_elevation(a_pos);highp float segment_angle=-a_projected_pos[2];float size;if (!u_is_size_zoom_constant && !u_is_size_feature_constant) {size=mix(a_size_min,a_size[1],u_size_t)/128.0;} else if (u_is_size_zoom_constant && !u_is_size_feature_constant) {size=a_size_min/128.0;} else {size=u_size;}vec2 translated_a_pos=a_pos+u_translation;vec4 projectedPoint=projectTileWithElevation(translated_a_pos,ele);highp float camera_to_anchor_distance=projectedPoint.w;highp float distance_ratio=u_pitch_with_map ?
+camera_to_anchor_distance/u_camera_to_center_distance :
+u_camera_to_center_distance/camera_to_anchor_distance;highp float perspective_ratio=clamp(0.5+0.5*distance_ratio,0.0,4.0);size*=perspective_ratio;float fontScale=u_is_text ? size/24.0 : size;highp float symbol_rotation=0.0;if (u_rotate_symbol) {vec4 offsetProjectedPoint=projectTileWithElevation(translated_a_pos+vec2(1,0),ele);vec2 a=projectedPoint.xy/projectedPoint.w;vec2 b=offsetProjectedPoint.xy/offsetProjectedPoint.w;symbol_rotation=atan((b.y-a.y)/u_aspect_ratio,b.x-a.x);}highp float angle_sin=sin(segment_angle+symbol_rotation);highp float angle_cos=cos(segment_angle+symbol_rotation);mat2 rotation_matrix=mat2(angle_cos,-1.0*angle_sin,angle_sin,angle_cos);vec4 projected_pos;if (u_is_along_line || u_is_variable_anchor) {projected_pos=vec4(a_projected_pos.xy,ele,1.0);} else if (u_pitch_with_map) {projected_pos=u_label_plane_matrix*vec4(a_projected_pos.xy+u_translation,ele,1.0);} else {projected_pos=u_label_plane_matrix*projectTileWithElevation(a_projected_pos.xy+u_translation,ele);}float z=float(u_pitch_with_map)*projected_pos.z/projected_pos.w;float projectionScaling=1.0;
+#ifdef GLOBE
+if(u_pitch_with_map) {float anchor_pos_tile_y=(u_coord_matrix*vec4(projected_pos.xy/projected_pos.w,z,1.0)).y;projectionScaling=mix(projectionScaling,1.0/circumferenceRatioAtTileY(anchor_pos_tile_y)*u_pitched_scale,u_projection_transition);}
+#endif
+vec4 finalPos=u_coord_matrix*vec4(projected_pos.xy/projected_pos.w+rotation_matrix*(a_offset/32.0*max(a_minFontScale,fontScale)+a_pxoffset/16.0)*projectionScaling,z,1.0);if(u_pitch_with_map) {finalPos=projectTileWithElevation(finalPos.xy,finalPos.z);}gl_Position=finalPos;v_tex=a_tex/u_texsize;vec2 fade_opacity=unpack_opacity(a_fade_opacity);float fade_change=fade_opacity[1] > 0.5 ? u_fade_change :-u_fade_change;float visibility=calculate_visibility(projectedPoint);v_fade_opacity=max(0.0,min(visibility,fade_opacity[0]+fade_change));}`),symbolSDF:Ae(`#define SDF_PX 8.0
+uniform bool u_is_halo;uniform sampler2D u_texture;uniform highp float u_gamma_scale;uniform lowp float u_device_pixel_ratio;uniform bool u_is_text;in vec2 v_data0;in vec3 v_data1;
+#pragma mapbox: define highp vec4 fill_color
+#pragma mapbox: define highp vec4 halo_color
+#pragma mapbox: define lowp float opacity
+#pragma mapbox: define lowp float halo_width
+#pragma mapbox: define lowp float halo_blur
+void main() {
+#pragma mapbox: initialize highp vec4 fill_color
+#pragma mapbox: initialize highp vec4 halo_color
+#pragma mapbox: initialize lowp float opacity
+#pragma mapbox: initialize lowp float halo_width
+#pragma mapbox: initialize lowp float halo_blur
+float EDGE_GAMMA=0.105/u_device_pixel_ratio;vec2 tex=v_data0.xy;float gamma_scale=v_data1.x;float size=v_data1.y;float fade_opacity=v_data1[2];float fontScale=u_is_text ? size/24.0 : size;lowp vec4 color=fill_color;highp float gamma=EDGE_GAMMA/(fontScale*u_gamma_scale);lowp float inner_edge=(256.0-64.0)/256.0;if (u_is_halo) {color=halo_color;gamma=(halo_blur*1.19/SDF_PX+EDGE_GAMMA)/(fontScale*u_gamma_scale);inner_edge=inner_edge+gamma*gamma_scale;}lowp float dist=texture(u_texture,tex).a;highp float gamma_scaled=gamma*gamma_scale;highp float alpha=smoothstep(inner_edge-gamma_scaled,inner_edge+gamma_scaled,dist);if (u_is_halo) {lowp float halo_edge=(6.0-halo_width/fontScale)/SDF_PX;alpha=min(smoothstep(halo_edge-gamma_scaled,halo_edge+gamma_scaled,dist),1.0-alpha);}fragColor=color*(alpha*opacity*fade_opacity);
+#ifdef OVERDRAW_INSPECTOR
+fragColor=vec4(1.0);
+#endif
+}`,`in vec4 a_pos_offset;in vec4 a_data;in vec4 a_pixeloffset;in vec3 a_projected_pos;in float a_fade_opacity;uniform bool u_is_size_zoom_constant;uniform bool u_is_size_feature_constant;uniform highp float u_size_t;uniform highp float u_size;uniform mat4 u_label_plane_matrix;uniform mat4 u_coord_matrix;uniform bool u_is_text;uniform bool u_pitch_with_map;uniform bool u_is_along_line;uniform bool u_is_variable_anchor;uniform highp float u_pitch;uniform bool u_rotate_symbol;uniform highp float u_aspect_ratio;uniform highp float u_camera_to_center_distance;uniform float u_fade_change;uniform vec2 u_texsize;uniform vec2 u_translation;uniform float u_pitched_scale;out vec2 v_data0;out vec3 v_data1;
+#pragma mapbox: define highp vec4 fill_color
+#pragma mapbox: define highp vec4 halo_color
+#pragma mapbox: define lowp float opacity
+#pragma mapbox: define lowp float halo_width
+#pragma mapbox: define lowp float halo_blur
+void main() {
+#pragma mapbox: initialize highp vec4 fill_color
+#pragma mapbox: initialize highp vec4 halo_color
+#pragma mapbox: initialize lowp float opacity
+#pragma mapbox: initialize lowp float halo_width
+#pragma mapbox: initialize lowp float halo_blur
+vec2 a_pos=a_pos_offset.xy;vec2 a_offset=a_pos_offset.zw;vec2 a_tex=a_data.xy;vec2 a_size=a_data.zw;float a_size_min=floor(a_size[0]*0.5);vec2 a_pxoffset=a_pixeloffset.xy;float ele=get_elevation(a_pos);highp float segment_angle=-a_projected_pos[2];float size;if (!u_is_size_zoom_constant && !u_is_size_feature_constant) {size=mix(a_size_min,a_size[1],u_size_t)/128.0;} else if (u_is_size_zoom_constant && !u_is_size_feature_constant) {size=a_size_min/128.0;} else {size=u_size;}vec2 translated_a_pos=a_pos+u_translation;vec4 projectedPoint=projectTileWithElevation(translated_a_pos,ele);highp float camera_to_anchor_distance=projectedPoint.w;highp float distance_ratio=u_pitch_with_map ?
+camera_to_anchor_distance/u_camera_to_center_distance :
+u_camera_to_center_distance/camera_to_anchor_distance;highp float perspective_ratio=clamp(0.5+0.5*distance_ratio,0.0,4.0);size*=perspective_ratio;float fontScale=u_is_text ? size/24.0 : size;highp float symbol_rotation=0.0;if (u_rotate_symbol) {vec4 offsetProjectedPoint=projectTileWithElevation(translated_a_pos+vec2(1,0),ele);vec2 a=projectedPoint.xy/projectedPoint.w;vec2 b=offsetProjectedPoint.xy/offsetProjectedPoint.w;symbol_rotation=atan((b.y-a.y)/u_aspect_ratio,b.x-a.x);}highp float angle_sin=sin(segment_angle+symbol_rotation);highp float angle_cos=cos(segment_angle+symbol_rotation);mat2 rotation_matrix=mat2(angle_cos,-1.0*angle_sin,angle_sin,angle_cos);vec4 projected_pos;if (u_is_along_line || u_is_variable_anchor) {projected_pos=vec4(a_projected_pos.xy,ele,1.0);} else if (u_pitch_with_map) {projected_pos=u_label_plane_matrix*vec4(a_projected_pos.xy+u_translation,ele,1.0);} else {projected_pos=u_label_plane_matrix*projectTileWithElevation(a_projected_pos.xy+u_translation,ele);}float z=float(u_pitch_with_map)*projected_pos.z/projected_pos.w;float projectionScaling=1.0;
+#ifdef GLOBE
+if(u_pitch_with_map) {float anchor_pos_tile_y=(u_coord_matrix*vec4(projected_pos.xy/projected_pos.w,z,1.0)).y;projectionScaling=mix(projectionScaling,1.0/circumferenceRatioAtTileY(anchor_pos_tile_y)*u_pitched_scale,u_projection_transition);}
+#endif
+vec4 finalPos=u_coord_matrix*vec4(projected_pos.xy/projected_pos.w+rotation_matrix*(a_offset/32.0*fontScale+a_pxoffset)*projectionScaling,z,1.0);if(u_pitch_with_map) {finalPos=projectTileWithElevation(finalPos.xy,finalPos.z);}float gamma_scale=finalPos.w;gl_Position=finalPos;vec2 fade_opacity=unpack_opacity(a_fade_opacity);float visibility=calculate_visibility(projectedPoint);float fade_change=fade_opacity[1] > 0.5 ? u_fade_change :-u_fade_change;float interpolated_fade_opacity=max(0.0,min(visibility,fade_opacity[0]+fade_change));v_data0=a_tex/u_texsize;v_data1=vec3(gamma_scale,size,interpolated_fade_opacity);}`),symbolTextAndIcon:Ae(`#define SDF_PX 8.0
+#define SDF 1.0
+#define ICON 0.0
+uniform bool u_is_halo;uniform sampler2D u_texture;uniform sampler2D u_texture_icon;uniform highp float u_gamma_scale;uniform lowp float u_device_pixel_ratio;in vec4 v_data0;in vec4 v_data1;
+#pragma mapbox: define highp vec4 fill_color
+#pragma mapbox: define highp vec4 halo_color
+#pragma mapbox: define lowp float opacity
+#pragma mapbox: define lowp float halo_width
+#pragma mapbox: define lowp float halo_blur
+void main() {
+#pragma mapbox: initialize highp vec4 fill_color
+#pragma mapbox: initialize highp vec4 halo_color
+#pragma mapbox: initialize lowp float opacity
+#pragma mapbox: initialize lowp float halo_width
+#pragma mapbox: initialize lowp float halo_blur
+float fade_opacity=v_data1[2];if (v_data1.w==ICON) {vec2 tex_icon=v_data0.zw;lowp float alpha=opacity*fade_opacity;fragColor=texture(u_texture_icon,tex_icon)*alpha;
+#ifdef OVERDRAW_INSPECTOR
+fragColor=vec4(1.0);
+#endif
+return;}vec2 tex=v_data0.xy;float EDGE_GAMMA=0.105/u_device_pixel_ratio;float gamma_scale=v_data1.x;float size=v_data1.y;float fontScale=size/24.0;lowp vec4 color=fill_color;highp float gamma=EDGE_GAMMA/(fontScale*u_gamma_scale);lowp float buff=(256.0-64.0)/256.0;if (u_is_halo) {color=halo_color;gamma=(halo_blur*1.19/SDF_PX+EDGE_GAMMA)/(fontScale*u_gamma_scale);buff=(6.0-halo_width/fontScale)/SDF_PX;}lowp float dist=texture(u_texture,tex).a;highp float gamma_scaled=gamma*gamma_scale;highp float alpha=smoothstep(buff-gamma_scaled,buff+gamma_scaled,dist);fragColor=color*(alpha*opacity*fade_opacity);
+#ifdef OVERDRAW_INSPECTOR
+fragColor=vec4(1.0);
+#endif
+}`,`in vec4 a_pos_offset;in vec4 a_data;in vec3 a_projected_pos;in float a_fade_opacity;uniform bool u_is_size_zoom_constant;uniform bool u_is_size_feature_constant;uniform highp float u_size_t;uniform highp float u_size;uniform mat4 u_label_plane_matrix;uniform mat4 u_coord_matrix;uniform bool u_is_text;uniform bool u_pitch_with_map;uniform highp float u_pitch;uniform bool u_rotate_symbol;uniform highp float u_aspect_ratio;uniform highp float u_camera_to_center_distance;uniform float u_fade_change;uniform vec2 u_texsize;uniform vec2 u_texsize_icon;uniform bool u_is_along_line;uniform bool u_is_variable_anchor;uniform vec2 u_translation;uniform float u_pitched_scale;out vec4 v_data0;out vec4 v_data1;
+#pragma mapbox: define highp vec4 fill_color
+#pragma mapbox: define highp vec4 halo_color
+#pragma mapbox: define lowp float opacity
+#pragma mapbox: define lowp float halo_width
+#pragma mapbox: define lowp float halo_blur
+void main() {
+#pragma mapbox: initialize highp vec4 fill_color
+#pragma mapbox: initialize highp vec4 halo_color
+#pragma mapbox: initialize lowp float opacity
+#pragma mapbox: initialize lowp float halo_width
+#pragma mapbox: initialize lowp float halo_blur
+vec2 a_pos=a_pos_offset.xy;vec2 a_offset=a_pos_offset.zw;vec2 a_tex=a_data.xy;vec2 a_size=a_data.zw;float a_size_min=floor(a_size[0]*0.5);float is_sdf=a_size[0]-2.0*a_size_min;float ele=get_elevation(a_pos);highp float segment_angle=-a_projected_pos[2];float size;if (!u_is_size_zoom_constant && !u_is_size_feature_constant) {size=mix(a_size_min,a_size[1],u_size_t)/128.0;} else if (u_is_size_zoom_constant && !u_is_size_feature_constant) {size=a_size_min/128.0;} else {size=u_size;}vec2 translated_a_pos=a_pos+u_translation;vec4 projectedPoint=projectTileWithElevation(translated_a_pos,ele);highp float camera_to_anchor_distance=projectedPoint.w;highp float distance_ratio=u_pitch_with_map ?
+camera_to_anchor_distance/u_camera_to_center_distance :
+u_camera_to_center_distance/camera_to_anchor_distance;highp float perspective_ratio=clamp(0.5+0.5*distance_ratio,0.0,4.0);size*=perspective_ratio;float fontScale=size/24.0;highp float symbol_rotation=0.0;if (u_rotate_symbol) {vec4 offsetProjectedPoint=projectTileWithElevation(translated_a_pos+vec2(1,0),ele);vec2 a=projectedPoint.xy/projectedPoint.w;vec2 b=offsetProjectedPoint.xy/offsetProjectedPoint.w;symbol_rotation=atan((b.y-a.y)/u_aspect_ratio,b.x-a.x);}highp float angle_sin=sin(segment_angle+symbol_rotation);highp float angle_cos=cos(segment_angle+symbol_rotation);mat2 rotation_matrix=mat2(angle_cos,-1.0*angle_sin,angle_sin,angle_cos);vec4 projected_pos;if (u_is_along_line || u_is_variable_anchor) {projected_pos=vec4(a_projected_pos.xy,ele,1.0);} else if (u_pitch_with_map) {projected_pos=u_label_plane_matrix*vec4(a_projected_pos.xy+u_translation,ele,1.0);} else {projected_pos=u_label_plane_matrix*projectTileWithElevation(a_projected_pos.xy+u_translation,ele);}float z=float(u_pitch_with_map)*projected_pos.z/projected_pos.w;float projectionScaling=1.0;
+#ifdef GLOBE
+if(u_pitch_with_map && !u_is_along_line) {float anchor_pos_tile_y=(u_coord_matrix*vec4(projected_pos.xy/projected_pos.w,z,1.0)).y;projectionScaling=mix(projectionScaling,1.0/circumferenceRatioAtTileY(anchor_pos_tile_y)*u_pitched_scale,u_projection_transition);}
+#endif
+vec4 finalPos=u_coord_matrix*vec4(projected_pos.xy/projected_pos.w+rotation_matrix*(a_offset/32.0*fontScale)*projectionScaling,z,1.0);if(u_pitch_with_map) {finalPos=projectTileWithElevation(finalPos.xy,finalPos.z);}float gamma_scale=finalPos.w;gl_Position=finalPos;vec2 fade_opacity=unpack_opacity(a_fade_opacity);float visibility=calculate_visibility(projectedPoint);float fade_change=fade_opacity[1] > 0.5 ? u_fade_change :-u_fade_change;float interpolated_fade_opacity=max(0.0,min(visibility,fade_opacity[0]+fade_change));v_data0.xy=a_tex/u_texsize;v_data0.zw=a_tex/u_texsize_icon;v_data1=vec4(gamma_scale,size,interpolated_fade_opacity,is_sdf);}`),terrain:Ae("uniform sampler2D u_texture;uniform vec4 u_fog_color;uniform vec4 u_horizon_color;uniform float u_fog_ground_blend;uniform float u_fog_ground_blend_opacity;uniform float u_horizon_fog_blend;uniform bool u_is_globe_mode;in vec2 v_texture_pos;in float v_fog_depth;const float gamma=2.2;vec4 gammaToLinear(vec4 color) {return pow(color,vec4(gamma));}vec4 linearToGamma(vec4 color) {return pow(color,vec4(1.0/gamma));}void main() {vec4 surface_color=texture(u_texture,vec2(v_texture_pos.x,1.0-v_texture_pos.y));if (!u_is_globe_mode && v_fog_depth > u_fog_ground_blend) {vec4 surface_color_linear=gammaToLinear(surface_color);float blend_color=smoothstep(0.0,1.0,max((v_fog_depth-u_horizon_fog_blend)/(1.0-u_horizon_fog_blend),0.0));vec4 fog_horizon_color_linear=mix(gammaToLinear(u_fog_color),gammaToLinear(u_horizon_color),blend_color);float factor_fog=max(v_fog_depth-u_fog_ground_blend,0.0)/(1.0-u_fog_ground_blend);fragColor=linearToGamma(mix(surface_color_linear,fog_horizon_color_linear,pow(factor_fog,2.0)*u_fog_ground_blend_opacity));} else {fragColor=surface_color;}}","in vec3 a_pos3d;uniform mat4 u_fog_matrix;uniform float u_ele_delta;out vec2 v_texture_pos;out float v_fog_depth;void main() {float ele=get_elevation(a_pos3d.xy);float ele_delta=a_pos3d.z==1.0 ? u_ele_delta : 0.0;v_texture_pos=a_pos3d.xy/8192.0;gl_Position=projectTileFor3D(a_pos3d.xy,get_elevation(a_pos3d.xy)-ele_delta);vec4 pos=u_fog_matrix*vec4(a_pos3d.xy,ele,1.0);v_fog_depth=pos.z/pos.w*0.5+0.5;}"),terrainDepth:Ae("in float v_depth;const highp vec4 bitSh=vec4(256.*256.*256.,256.*256.,256.,1.);const highp vec4 bitMsk=vec4(0.,vec3(1./256.0));highp vec4 pack(highp float value) {highp vec4 comp=fract(value*bitSh);comp-=comp.xxyz*bitMsk;return comp;}void main() {fragColor=pack(v_depth);}","in vec3 a_pos3d;uniform float u_ele_delta;out float v_depth;void main() {float ele=get_elevation(a_pos3d.xy);float ele_delta=a_pos3d.z==1.0 ? u_ele_delta : 0.0;gl_Position=projectTileFor3D(a_pos3d.xy,ele-ele_delta);v_depth=gl_Position.z/gl_Position.w;}"),terrainCoords:Ae("precision mediump float;uniform sampler2D u_texture;uniform float u_terrain_coords_id;in vec2 v_texture_pos;void main() {vec4 rgba=texture(u_texture,v_texture_pos);fragColor=vec4(rgba.r,rgba.g,rgba.b,u_terrain_coords_id);}","in vec3 a_pos3d;uniform float u_ele_delta;out vec2 v_texture_pos;void main() {float ele=get_elevation(a_pos3d.xy);float ele_delta=a_pos3d.z==1.0 ? u_ele_delta : 0.0;v_texture_pos=a_pos3d.xy/8192.0;gl_Position=projectTileFor3D(a_pos3d.xy,ele-ele_delta);}"),projectionErrorMeasurement:Ae("in vec4 v_output_error_encoded;void main() {fragColor=v_output_error_encoded;}","in vec2 a_pos;uniform highp float u_input;uniform highp float u_output_expected;out vec4 v_output_error_encoded;void main() {float real_output=2.0*atan(exp(PI-(u_input*PI*2.0)))-PI*0.5;float error=real_output-u_output_expected;float abs_error=abs(error)*128.0;v_output_error_encoded.x=min(floor(abs_error*256.0),255.0)/255.0;abs_error-=v_output_error_encoded.x;v_output_error_encoded.y=min(floor(abs_error*65536.0),255.0)/255.0;abs_error-=v_output_error_encoded.x/255.0;v_output_error_encoded.z=min(floor(abs_error*16777216.0),255.0)/255.0;v_output_error_encoded.w=error >=0.0 ? 1.0 : 0.0;gl_Position=vec4(a_pos,0.0,1.0);}"),atmosphere:Ae(`in vec3 view_direction;uniform vec3 u_sun_pos;uniform vec3 u_globe_position;uniform float u_globe_radius;uniform float u_atmosphere_blend;/**Shader use from https:*Made some change to adapt to MapLibre Globe geometry*/const float PI=3.141592653589793;const int iSteps=5;const int jSteps=3;/*radius of the planet*/const float EARTH_RADIUS=6371e3;/*radius of the atmosphere*/const float ATMOS_RADIUS=6471e3;vec2 rsi(vec3 r0,vec3 rd,float sr) {float a=dot(rd,rd);float b=2.0*dot(rd,r0);float c=dot(r0,r0)-(sr*sr);float d=(b*b)-4.0*a*c;if (d < 0.0) return vec2(1e5,-1e5);return vec2((-b-sqrt(d))/(2.0*a),(-b+sqrt(d))/(2.0*a));}vec4 atmosphere(vec3 r,vec3 r0,vec3 pSun,float iSun,float rPlanet,float rAtmos,vec3 kRlh,float kMie,float shRlh,float shMie,float g) {pSun=normalize(pSun);r=normalize(r);vec2 p=rsi(r0,r,rAtmos);if (p.x > p.y) {return vec4(0.0,0.0,0.0,1.0);}if (p.x < 0.0) {p.x=0.0;}vec3 pos=r0+r*p.x;vec2 p2=rsi(r0,r,rPlanet);if (p2.x <=p2.y && p2.x > 0.0) {p.y=min(p.y,p2.x);}float iStepSize=(p.y-p.x)/float(iSteps);float iTime=p.x+iStepSize*0.5;vec3 totalRlh=vec3(0,0,0);vec3 totalMie=vec3(0,0,0);float iOdRlh=0.0;float iOdMie=0.0;float mu=dot(r,pSun);float mumu=mu*mu;float gg=g*g;float pRlh=3.0/(16.0*PI)*(1.0+mumu);float pMie=3.0/(8.0*PI)*((1.0-gg)*(mumu+1.0))/(pow(1.0+gg-2.0*mu*g,1.5)*(2.0+gg));for (int i=0; i < iSteps; i++) {vec3 iPos=r0+r*iTime;float iHeight=length(iPos)-rPlanet;float odStepRlh=exp(-iHeight/shRlh)*iStepSize;float odStepMie=exp(-iHeight/shMie)*iStepSize;iOdRlh+=odStepRlh;iOdMie+=odStepMie;float jStepSize=rsi(iPos,pSun,rAtmos).y/float(jSteps);float jTime=jStepSize*0.5;float jOdRlh=0.0;float jOdMie=0.0;for (int j=0; j < jSteps; j++) {vec3 jPos=iPos+pSun*jTime;float jHeight=length(jPos)-rPlanet;jOdRlh+=exp(-jHeight/shRlh)*jStepSize;jOdMie+=exp(-jHeight/shMie)*jStepSize;jTime+=jStepSize;}vec3 attn=exp(-(kMie*(iOdMie+jOdMie)+kRlh*(iOdRlh+jOdRlh)));totalRlh+=odStepRlh*attn;totalMie+=odStepMie*attn;iTime+=iStepSize;}float opacity=exp(-(length(kRlh)*length(totalRlh)+kMie*length(totalMie)));vec3 color=iSun*(pRlh*kRlh*totalRlh+pMie*kMie*totalMie);return vec4(color,opacity);}void main() {vec3 scale_camera_pos=-u_globe_position*EARTH_RADIUS/u_globe_radius;vec4 color=atmosphere(normalize(view_direction),scale_camera_pos,u_sun_pos,22.0,EARTH_RADIUS,ATMOS_RADIUS,vec3(5.5e-6,13.0e-6,22.4e-6),21e-6,8e3,1.2e3,0.758
+);color.rgb=1.0-exp(-1.0*color.rgb);color=pow(color,vec4(1.0/2.2));fragColor=vec4(color.rgb,1.0-color.a)*u_atmosphere_blend;}`,"in vec2 a_pos;uniform mat4 u_inv_proj_matrix;out vec3 view_direction;void main() {view_direction=(u_inv_proj_matrix*vec4(a_pos,0.0,1.0)).xyz;gl_Position=vec4(a_pos,0.0,1.0);}"),sky:Ae("uniform vec4 u_sky_color;uniform vec4 u_horizon_color;uniform vec2 u_horizon;uniform vec2 u_horizon_normal;uniform float u_sky_horizon_blend;uniform float u_sky_blend;void main() {float x=gl_FragCoord.x;float y=gl_FragCoord.y;float blend=(y-u_horizon.y)*u_horizon_normal.y+(x-u_horizon.x)*u_horizon_normal.x;if (blend > 0.0) {if (blend < u_sky_horizon_blend) {fragColor=mix(u_sky_color,u_horizon_color,pow(1.0-blend/u_sky_horizon_blend,2.0));} else {fragColor=u_sky_color;}}fragColor=mix(fragColor,vec4(vec3(0.0),0.0),u_sky_blend);}","in vec2 a_pos;void main() {gl_Position=vec4(a_pos,1.0,1.0);}")};function Ae(f,t){let i=/#pragma mapbox: ([\w]+) ([\w]+) ([\w]+) ([\w]+)/g,h=t.match(/in ([\w]+) ([\w]+)/g),c=f.match(/uniform ([\w]+) ([\w]+)([\s]*)([\w]*)/g),m=t.match(/uniform ([\w]+) ([\w]+)([\s]*)([\w]*)/g),v=m?m.concat(c):c,b={};return{fragmentSource:f=f.replace(i,((P,E,k,L,D)=>(b[D]=!0,E==="define"?`
+#ifndef HAS_UNIFORM_u_${D}
+in ${k} ${L} ${D};
+#else
+uniform ${k} ${L} u_${D};
+#endif
+`:`
+#ifdef HAS_UNIFORM_u_${D}
+    ${k} ${L} ${D} = u_${D};
+#endif
+`))),vertexSource:t=t.replace(i,((P,E,k,L,D)=>{let O=L==="float"?"vec2":"vec4",$=D.match(/color/)?"color":O;return b[D]?E==="define"?`
+#ifndef HAS_UNIFORM_u_${D}
+uniform lowp float u_${D}_t;
+in ${k} ${O} a_${D};
+out ${k} ${L} ${D};
+#else
+uniform ${k} ${L} u_${D};
+#endif
+`:$==="vec4"?`
+#ifndef HAS_UNIFORM_u_${D}
+    ${D} = a_${D};
+#else
+    ${k} ${L} ${D} = u_${D};
+#endif
+`:`
+#ifndef HAS_UNIFORM_u_${D}
+    ${D} = unpack_mix_${$}(a_${D}, u_${D}_t);
+#else
+    ${k} ${L} ${D} = u_${D};
+#endif
+`:E==="define"?`
+#ifndef HAS_UNIFORM_u_${D}
+uniform lowp float u_${D}_t;
+in ${k} ${O} a_${D};
+#else
+uniform ${k} ${L} u_${D};
+#endif
+`:$==="vec4"?`
+#ifndef HAS_UNIFORM_u_${D}
+    ${k} ${L} ${D} = a_${D};
+#else
+    ${k} ${L} ${D} = u_${D};
+#endif
+`:`
+#ifndef HAS_UNIFORM_u_${D}
+    ${k} ${L} ${D} = unpack_mix_${$}(a_${D}, u_${D}_t);
+#else
+    ${k} ${L} ${D} = u_${D};
+#endif
+`})),staticAttributes:h,staticUniforms:v}}class kn{constructor(t,i,h){this.vertexBuffer=t,this.indexBuffer=i,this.segments=h}destroy(){this.vertexBuffer.destroy(),this.indexBuffer.destroy(),this.segments.destroy(),this.vertexBuffer=null,this.indexBuffer=null,this.segments=null}}var zn=s.aI([{name:"a_pos",type:"Int16",components:2}]);let ys="#define PROJECTION_MERCATOR",Jl="mercator";class Ql{constructor(){this._cachedMesh=null}get name(){return"mercator"}get useSubdivision(){return!1}get shaderVariantName(){return Jl}get shaderDefine(){return ys}get shaderPreludeCode(){return _n.projectionMercator}get vertexShaderPreludeCode(){return _n.projectionMercator.vertexSource}get subdivisionGranularity(){return s.aJ.noSubdivision}get useGlobeControls(){return!1}get transitionState(){return 0}get latitudeErrorCorrectionRadians(){return 0}destroy(){}updateGPUdependent(t){}getMeshFromTileID(t,i,h,c,m){if(this._cachedMesh)return this._cachedMesh;let v=new s.aK;v.emplaceBack(0,0),v.emplaceBack(s.$,0),v.emplaceBack(0,s.$),v.emplaceBack(s.$,s.$);let b=t.createVertexBuffer(v,zn.members),P=s.aL.simpleSegment(0,0,4,2),E=new s.aM;E.emplaceBack(1,0,2),E.emplaceBack(1,2,3);let k=t.createIndexBuffer(E);return this._cachedMesh=new kn(b,k,P),this._cachedMesh}recalculate(){}hasTransition(){return!1}setErrorQueryLatitudeDegrees(t){}}class Ur{constructor(t=0,i=0,h=0,c=0){if(isNaN(t)||t<0||isNaN(i)||i<0||isNaN(h)||h<0||isNaN(c)||c<0)throw new Error("Invalid value for edge-insets, top, bottom, left and right must all be numbers");this.top=t,this.bottom=i,this.left=h,this.right=c}interpolate(t,i,h){return i.top!=null&&t.top!=null&&(this.top=s.C.number(t.top,i.top,h)),i.bottom!=null&&t.bottom!=null&&(this.bottom=s.C.number(t.bottom,i.bottom,h)),i.left!=null&&t.left!=null&&(this.left=s.C.number(t.left,i.left,h)),i.right!=null&&t.right!=null&&(this.right=s.C.number(t.right,i.right,h)),this}getCenter(t,i){let h=s.ag((this.left+t-this.right)/2,0,t),c=s.ag((this.top+i-this.bottom)/2,0,i);return new s.P(h,c)}equals(t){return this.top===t.top&&this.bottom===t.bottom&&this.left===t.left&&this.right===t.right}clone(){return new Ur(this.top,this.bottom,this.left,this.right)}toJSON(){return{top:this.top,bottom:this.bottom,left:this.left,right:this.right}}}function Rn(f,t){if(!f.renderWorldCopies||f.lngRange)return;let i=t.lng-f.center.lng;t.lng+=i>180?-360:i<-180?360:0}function ke(f){return Math.max(0,Math.floor(f))}class Ba{constructor(t,i,h,c,m,v){this._callbacks=t,this._tileSize=512,this._renderWorldCopies=v===void 0||!!v,this._minZoom=i||0,this._maxZoom=h||22,this._minPitch=c??0,this._maxPitch=m??60,this.setMaxBounds(),this._width=0,this._height=0,this._center=new s.S(0,0),this._elevation=0,this._zoom=0,this._tileZoom=ke(this._zoom),this._scale=s.ae(this._zoom),this._bearingInRadians=0,this._fovInRadians=.6435011087932844,this._pitchInRadians=0,this._rollInRadians=0,this._unmodified=!0,this._edgeInsets=new Ur,this._minElevationForCurrentTile=0,this._autoCalculateNearFarZ=!0}apply(t,i,h){this._latRange=t.latRange,this._lngRange=t.lngRange,this._width=t.width,this._height=t.height,this._center=t.center,this._elevation=t.elevation,this._minElevationForCurrentTile=t.minElevationForCurrentTile,this._zoom=t.zoom,this._tileZoom=ke(this._zoom),this._scale=s.ae(this._zoom),this._bearingInRadians=t.bearingInRadians,this._fovInRadians=t.fovInRadians,this._pitchInRadians=t.pitchInRadians,this._rollInRadians=t.rollInRadians,this._unmodified=t.unmodified,this._edgeInsets=new Ur(t.padding.top,t.padding.bottom,t.padding.left,t.padding.right),this._minZoom=t.minZoom,this._maxZoom=t.maxZoom,this._minPitch=t.minPitch,this._maxPitch=t.maxPitch,this._renderWorldCopies=t.renderWorldCopies,this._cameraToCenterDistance=t.cameraToCenterDistance,this._nearZ=t.nearZ,this._farZ=t.farZ,this._autoCalculateNearFarZ=!h&&t.autoCalculateNearFarZ,i&&this._constrain(),this._calcMatrices()}get pixelsToClipSpaceMatrix(){return this._pixelsToClipSpaceMatrix}get clipSpaceToPixelsMatrix(){return this._clipSpaceToPixelsMatrix}get minElevationForCurrentTile(){return this._minElevationForCurrentTile}setMinElevationForCurrentTile(t){this._minElevationForCurrentTile=t}get tileSize(){return this._tileSize}get tileZoom(){return this._tileZoom}get scale(){return this._scale}get width(){return this._width}get height(){return this._height}get bearingInRadians(){return this._bearingInRadians}get lngRange(){return this._lngRange}get latRange(){return this._latRange}get pixelsToGLUnits(){return this._pixelsToGLUnits}get minZoom(){return this._minZoom}setMinZoom(t){this._minZoom!==t&&(this._minZoom=t,this.setZoom(this.getConstrained(this._center,this.zoom).zoom))}get maxZoom(){return this._maxZoom}setMaxZoom(t){this._maxZoom!==t&&(this._maxZoom=t,this.setZoom(this.getConstrained(this._center,this.zoom).zoom))}get minPitch(){return this._minPitch}setMinPitch(t){this._minPitch!==t&&(this._minPitch=t,this.setPitch(Math.max(this.pitch,t)))}get maxPitch(){return this._maxPitch}setMaxPitch(t){this._maxPitch!==t&&(this._maxPitch=t,this.setPitch(Math.min(this.pitch,t)))}get renderWorldCopies(){return this._renderWorldCopies}setRenderWorldCopies(t){t===void 0?t=!0:t===null&&(t=!1),this._renderWorldCopies=t}get worldSize(){return this._tileSize*this._scale}get centerOffset(){return this.centerPoint._sub(this.size._div(2))}get size(){return new s.P(this._width,this._height)}get bearing(){return this._bearingInRadians/Math.PI*180}setBearing(t){let i=s.aN(t,-180,180)*Math.PI/180;var h,c,m,v,b,P,E,k,L;this._bearingInRadians!==i&&(this._unmodified=!1,this._bearingInRadians=i,this._calcMatrices(),this._rotationMatrix=S(),h=this._rotationMatrix,m=-this._bearingInRadians,v=(c=this._rotationMatrix)[0],b=c[1],P=c[2],E=c[3],k=Math.sin(m),L=Math.cos(m),h[0]=v*L+P*k,h[1]=b*L+E*k,h[2]=v*-k+P*L,h[3]=b*-k+E*L)}get rotationMatrix(){return this._rotationMatrix}get pitchInRadians(){return this._pitchInRadians}get pitch(){return this._pitchInRadians/Math.PI*180}setPitch(t){let i=s.ag(t,this.minPitch,this.maxPitch)/180*Math.PI;this._pitchInRadians!==i&&(this._unmodified=!1,this._pitchInRadians=i,this._calcMatrices())}get rollInRadians(){return this._rollInRadians}get roll(){return this._rollInRadians/Math.PI*180}setRoll(t){let i=t/180*Math.PI;this._rollInRadians!==i&&(this._unmodified=!1,this._rollInRadians=i,this._calcMatrices())}get fovInRadians(){return this._fovInRadians}get fov(){return s.aO(this._fovInRadians)}setFov(t){t=s.ag(t,.1,150),this.fov!==t&&(this._unmodified=!1,this._fovInRadians=s.ad(t),this._calcMatrices())}get zoom(){return this._zoom}setZoom(t){let i=this.getConstrained(this._center,t).zoom;this._zoom!==i&&(this._unmodified=!1,this._zoom=i,this._tileZoom=Math.max(0,Math.floor(i)),this._scale=s.ae(i),this._constrain(),this._calcMatrices())}get center(){return this._center}setCenter(t){t.lat===this._center.lat&&t.lng===this._center.lng||(this._unmodified=!1,this._center=t,this._constrain(),this._calcMatrices())}get elevation(){return this._elevation}setElevation(t){t!==this._elevation&&(this._elevation=t,this._constrain(),this._calcMatrices())}get padding(){return this._edgeInsets.toJSON()}setPadding(t){this._edgeInsets.equals(t)||(this._unmodified=!1,this._edgeInsets.interpolate(this._edgeInsets,t,1),this._calcMatrices())}get centerPoint(){return this._edgeInsets.getCenter(this._width,this._height)}get pixelsPerMeter(){return this._pixelPerMeter}get unmodified(){return this._unmodified}get cameraToCenterDistance(){return this._cameraToCenterDistance}get nearZ(){return this._nearZ}get farZ(){return this._farZ}get autoCalculateNearFarZ(){return this._autoCalculateNearFarZ}overrideNearFarZ(t,i){this._autoCalculateNearFarZ=!1,this._nearZ=t,this._farZ=i,this._calcMatrices()}clearNearFarZOverride(){this._autoCalculateNearFarZ=!0,this._calcMatrices()}isPaddingEqual(t){return this._edgeInsets.equals(t)}interpolatePadding(t,i,h){this._unmodified=!1,this._edgeInsets.interpolate(t,i,h),this._constrain(),this._calcMatrices()}resize(t,i,h=!0){this._width=t,this._height=i,h&&this._constrain(),this._calcMatrices()}getMaxBounds(){return this._latRange&&this._latRange.length===2&&this._lngRange&&this._lngRange.length===2?new Xe([this._lngRange[0],this._latRange[0]],[this._lngRange[1],this._latRange[1]]):null}setMaxBounds(t){t?(this._lngRange=[t.getWest(),t.getEast()],this._latRange=[t.getSouth(),t.getNorth()],this._constrain()):(this._lngRange=null,this._latRange=[-s.ah,s.ah])}getConstrained(t,i){return this._callbacks.getConstrained(t,i)}getCameraQueryGeometry(t,i){if(i.length===1)return[i[0],t];{let{minX:h,minY:c,maxX:m,maxY:v}=s.a1.fromPoints(i).extend(t);return[new s.P(h,c),new s.P(m,c),new s.P(m,v),new s.P(h,v),new s.P(h,c)]}}_constrain(){if(!this.center||!this._width||!this._height||this._constraining)return;this._constraining=!0;let t=this._unmodified,{center:i,zoom:h}=this.getConstrained(this.center,this.zoom);this.setCenter(i),this.setZoom(h),this._unmodified=t,this._constraining=!1}_calcMatrices(){if(this._width&&this._height){this._pixelsToGLUnits=[2/this._width,-2/this._height];let t=s.af(new Float64Array(16));s.N(t,t,[this._width/2,-this._height/2,1]),s.M(t,t,[1,-1,0]),this._clipSpaceToPixelsMatrix=t,t=s.af(new Float64Array(16)),s.N(t,t,[1,-1,1]),s.M(t,t,[-1,-1,0]),s.N(t,t,[2/this._width,2/this._height,1]),this._pixelsToClipSpaceMatrix=t,this._cameraToCenterDistance=.5/Math.tan(this.fovInRadians/2)*this._height}this._callbacks.calcMatrices()}calculateCenterFromCameraLngLatAlt(t,i,h,c){let m=h!==void 0?h:this.bearing,v=c=c!==void 0?c:this.pitch,b=s.a0.fromLngLat(t,i),P=-Math.cos(s.ad(v)),E=Math.sin(s.ad(v)),k=E*Math.sin(s.ad(m)),L=-E*Math.cos(s.ad(m)),D=this.elevation,O=i-D,$;P*O>=0||Math.abs(P)<.1?($=1e4,D=i+$*P):$=-O/P;let J,K,Q=s.aP(1,b.y),et=0;do{if(et+=1,et>10)break;K=$/Q,J=new s.a0(b.x+k*K,b.y+L*K),Q=1/J.meterInMercatorCoordinateUnits()}while(Math.abs($-K*Q)>1e-12);return{center:J.toLngLat(),elevation:D,zoom:s.aj(this.height/2/Math.tan(this.fovInRadians/2)/K/this.tileSize)}}recalculateZoomAndCenter(t){if(this.elevation-t==0)return;let i=s.ai(1,this.center.lat)*this.worldSize,h=this.cameraToCenterDistance/i,c=s.a0.fromLngLat(this.center,this.elevation),m=at(this.center,this.elevation,this.pitch,this.bearing,h);this._elevation=t;let v=this.calculateCenterFromCameraLngLatAlt(m.toLngLat(),s.aP(m.z,c.y),this.bearing,this.pitch);this._elevation=v.elevation,this._center=v.center,this.setZoom(v.zoom)}getCameraPoint(){let t=Math.tan(this.pitchInRadians)*(this.cameraToCenterDistance||1);return this.centerPoint.add(new s.P(t*Math.sin(this.rollInRadians),t*Math.cos(this.rollInRadians)))}getCameraAltitude(){return Math.cos(this.pitchInRadians)*this._cameraToCenterDistance/this._pixelPerMeter+this.elevation}getCameraLngLat(){let t=s.ai(1,this.center.lat)*this.worldSize;return at(this.center,this.elevation,this.pitch,this.bearing,this.cameraToCenterDistance/t).toLngLat()}getMercatorTileCoordinates(t){if(!t)return[0,0,1,1];let i=t.canonical.z>=0?1<<t.canonical.z:Math.pow(2,t.canonical.z);return[t.canonical.x/i,t.canonical.y/i,1/i/s.$,1/i/s.$]}}class Fo{constructor(t,i){this.min=t,this.max=i,this.center=s.aQ([],s.aR([],this.min,this.max),.5)}quadrant(t){let i=[t%2==0,t<2],h=s.aS(this.min),c=s.aS(this.max);for(let m=0;m<i.length;m++)h[m]=i[m]?this.min[m]:this.center[m],c[m]=i[m]?this.center[m]:this.max[m];return c[2]=this.max[2],new Fo(h,c)}distanceX(t){return Math.max(Math.min(this.max[0],t[0]),this.min[0])-t[0]}distanceY(t){return Math.max(Math.min(this.max[1],t[1]),this.min[1])-t[1]}intersectsFrustum(t){let i=!0;for(let h=0;h<t.planes.length;h++){let c=this.intersectsPlane(t.planes[h]);if(c===0)return 0;c===1&&(i=!1)}return i?2:t.aabb.min[0]>this.max[0]||t.aabb.min[1]>this.max[1]||t.aabb.min[2]>this.max[2]||t.aabb.max[0]<this.min[0]||t.aabb.max[1]<this.min[1]||t.aabb.max[2]<this.min[2]?0:1}intersectsPlane(t){let i=t[3],h=t[3];for(let c=0;c<3;c++)t[c]>0?(i+=t[c]*this.min[c],h+=t[c]*this.max[c]):(h+=t[c]*this.min[c],i+=t[c]*this.max[c]);return i>=0?2:h<0?0:1}}class th{distanceToTile2d(t,i,h,c){let m=c.distanceX([t,i]),v=c.distanceY([t,i]);return Math.hypot(m,v)}getWrap(t,i,h){return h}getTileBoundingVolume(t,i,h,c){var m,v;let b=h,P=h;if(c?.terrain){let k=new s.Z(t.z,i,t.z,t.x,t.y),L=c.terrain.getMinMaxElevation(k);b=(m=L.minElevation)!==null&&m!==void 0?m:h,P=(v=L.maxElevation)!==null&&v!==void 0?v:h}let E=1<<t.z;return new Fo([i+t.x/E,t.y/E,b],[i+(t.x+1)/E,(t.y+1)/E,P])}allowVariableZoom(t,i){let h=t.fov*(Math.abs(Math.cos(t.rollInRadians))*t.height+Math.abs(Math.sin(t.rollInRadians))*t.width)/t.height,c=s.ag(78.5-h/2,0,60);return!!i.terrain||t.pitch>c}allowWorldCopies(){return!0}prepareNextFrame(){}}class hr{constructor(t,i,h){this.points=t,this.planes=i,this.aabb=h}static fromInvProjectionMatrix(t,i=1,h=0,c,m){let v=m?[[6,5,4],[0,1,2],[0,3,7],[2,1,5],[3,2,6],[0,4,5]]:[[0,1,2],[6,5,4],[0,3,7],[2,1,5],[3,2,6],[0,4,5]],b=Math.pow(2,h),P=[[-1,1,-1,1],[1,1,-1,1],[1,-1,-1,1],[-1,-1,-1,1],[-1,1,1,1],[1,1,1,1],[1,-1,1,1],[-1,-1,1,1]].map((D=>(function(O,$,J,K){let Q=s.av([],O,$),et=1/Q[3]/J*K;return s.aX(Q,Q,[et,et,1/Q[3],et])})(D,t,i,b)));c&&(function(D,O,$,J){let K=J?4:0,Q=J?0:4,et=0,nt=[],it=[];for(let rt=0;rt<4;rt++){let gt=s.aT([],D[rt+Q],D[rt+K]),Et=s.aY(gt);s.aQ(gt,gt,1/Et),nt.push(Et),it.push(gt)}for(let rt=0;rt<4;rt++){let gt=s.aZ(D[rt+K],it[rt],$);et=gt!==null&&gt>=0?Math.max(et,gt):Math.max(et,nt[rt])}let ht=(function(rt,gt){let Et=s.aT([],rt[gt[0]],rt[gt[1]]),Mt=s.aT([],rt[gt[2]],rt[gt[1]]),St=[0,0,0,0];return s.aU(St,s.aV([],Et,Mt)),St[3]=-s.aW(St,rt[gt[0]]),St})(D,O),ut=(function(rt,gt){let Et=s.a_(rt),Mt=s.a$([],rt,1/Et),St=s.aT([],gt,s.aQ([],Mt,s.aW(gt,Mt))),It=s.a_(St);if(It>0){let Qt=Math.sqrt(1-Mt[3]*Mt[3]),Yt=s.aQ([],Mt,-Mt[3]),Gt=s.aR([],Yt,s.aQ([],St,Qt/It));return s.b0(gt,Gt)}return null})($,ht);if(ut!==null){let rt=ut/s.aW(it[0],ht);et=Math.min(et,rt)}for(let rt=0;rt<4;rt++){let gt=Math.min(et,nt[rt]);D[rt+Q]=[D[rt+K][0]+it[rt][0]*gt,D[rt+K][1]+it[rt][1]*gt,D[rt+K][2]+it[rt][2]*gt,1]}})(P,v[0],c,m);let E=v.map((D=>{let O=s.aT([],P[D[0]],P[D[1]]),$=s.aT([],P[D[2]],P[D[1]]),J=s.aU([],s.aV([],O,$)),K=-s.aW(J,P[D[1]]);return J.concat(K)})),k=[Number.POSITIVE_INFINITY,Number.POSITIVE_INFINITY,Number.POSITIVE_INFINITY],L=[Number.NEGATIVE_INFINITY,Number.NEGATIVE_INFINITY,Number.NEGATIVE_INFINITY];for(let D of P)for(let O=0;O<3;O++)k[O]=Math.min(k[O],D[O]),L[O]=Math.max(L[O],D[O]);return new hr(P,E,new Fo(k,L))}}class Ai{get pixelsToClipSpaceMatrix(){return this._helper.pixelsToClipSpaceMatrix}get clipSpaceToPixelsMatrix(){return this._helper.clipSpaceToPixelsMatrix}get pixelsToGLUnits(){return this._helper.pixelsToGLUnits}get centerOffset(){return this._helper.centerOffset}get size(){return this._helper.size}get rotationMatrix(){return this._helper.rotationMatrix}get centerPoint(){return this._helper.centerPoint}get pixelsPerMeter(){return this._helper.pixelsPerMeter}setMinZoom(t){this._helper.setMinZoom(t)}setMaxZoom(t){this._helper.setMaxZoom(t)}setMinPitch(t){this._helper.setMinPitch(t)}setMaxPitch(t){this._helper.setMaxPitch(t)}setRenderWorldCopies(t){this._helper.setRenderWorldCopies(t)}setBearing(t){this._helper.setBearing(t)}setPitch(t){this._helper.setPitch(t)}setRoll(t){this._helper.setRoll(t)}setFov(t){this._helper.setFov(t)}setZoom(t){this._helper.setZoom(t)}setCenter(t){this._helper.setCenter(t)}setElevation(t){this._helper.setElevation(t)}setMinElevationForCurrentTile(t){this._helper.setMinElevationForCurrentTile(t)}setPadding(t){this._helper.setPadding(t)}interpolatePadding(t,i,h){return this._helper.interpolatePadding(t,i,h)}isPaddingEqual(t){return this._helper.isPaddingEqual(t)}resize(t,i,h=!0){this._helper.resize(t,i,h)}getMaxBounds(){return this._helper.getMaxBounds()}setMaxBounds(t){this._helper.setMaxBounds(t)}overrideNearFarZ(t,i){this._helper.overrideNearFarZ(t,i)}clearNearFarZOverride(){this._helper.clearNearFarZOverride()}getCameraQueryGeometry(t){return this._helper.getCameraQueryGeometry(this.getCameraPoint(),t)}get tileSize(){return this._helper.tileSize}get tileZoom(){return this._helper.tileZoom}get scale(){return this._helper.scale}get worldSize(){return this._helper.worldSize}get width(){return this._helper.width}get height(){return this._helper.height}get lngRange(){return this._helper.lngRange}get latRange(){return this._helper.latRange}get minZoom(){return this._helper.minZoom}get maxZoom(){return this._helper.maxZoom}get zoom(){return this._helper.zoom}get center(){return this._helper.center}get minPitch(){return this._helper.minPitch}get maxPitch(){return this._helper.maxPitch}get pitch(){return this._helper.pitch}get pitchInRadians(){return this._helper.pitchInRadians}get roll(){return this._helper.roll}get rollInRadians(){return this._helper.rollInRadians}get bearing(){return this._helper.bearing}get bearingInRadians(){return this._helper.bearingInRadians}get fov(){return this._helper.fov}get fovInRadians(){return this._helper.fovInRadians}get elevation(){return this._helper.elevation}get minElevationForCurrentTile(){return this._helper.minElevationForCurrentTile}get padding(){return this._helper.padding}get unmodified(){return this._helper.unmodified}get renderWorldCopies(){return this._helper.renderWorldCopies}get cameraToCenterDistance(){return this._helper.cameraToCenterDistance}get nearZ(){return this._helper.nearZ}get farZ(){return this._helper.farZ}get autoCalculateNearFarZ(){return this._helper.autoCalculateNearFarZ}setTransitionState(t,i){}constructor(t,i,h,c,m){this._posMatrixCache=new Map,this._alignedPosMatrixCache=new Map,this._fogMatrixCacheF32=new Map,this._helper=new Ba({calcMatrices:()=>{this._calcMatrices()},getConstrained:(v,b)=>this.getConstrained(v,b)},t,i,h,c,m),this._coveringTilesDetailsProvider=new th}clone(){let t=new Ai;return t.apply(this),t}apply(t,i,h){this._helper.apply(t,i,h)}get cameraPosition(){return this._cameraPosition}get projectionMatrix(){return this._projectionMatrix}get modelViewProjectionMatrix(){return this._viewProjMatrix}get inverseProjectionMatrix(){return this._invProjMatrix}get mercatorMatrix(){return this._mercatorMatrix}getVisibleUnwrappedCoordinates(t){let i=[new s.b1(0,t)];if(this._helper._renderWorldCopies){let h=this.screenPointToMercatorCoordinate(new s.P(0,0)),c=this.screenPointToMercatorCoordinate(new s.P(this._helper._width,0)),m=this.screenPointToMercatorCoordinate(new s.P(this._helper._width,this._helper._height)),v=this.screenPointToMercatorCoordinate(new s.P(0,this._helper._height)),b=Math.floor(Math.min(h.x,c.x,m.x,v.x)),P=Math.floor(Math.max(h.x,c.x,m.x,v.x)),E=1;for(let k=b-E;k<=P+E;k++)k!==0&&i.push(new s.b1(k,t))}return i}getCameraFrustum(){return hr.fromInvProjectionMatrix(this._invViewProjMatrix,this.worldSize)}getClippingPlane(){return null}getCoveringTilesDetailsProvider(){return this._coveringTilesDetailsProvider}recalculateZoomAndCenter(t){let i=this.screenPointToLocation(this.centerPoint,t),h=t?t.getElevationForLngLatZoom(i,this._helper._tileZoom):0;this._helper.recalculateZoomAndCenter(h)}setLocationAtPoint(t,i){let h=s.ai(this.elevation,this.center.lat),c=this.screenPointToMercatorCoordinateAtZ(i,h),m=this.screenPointToMercatorCoordinateAtZ(this.centerPoint,h),v=s.a0.fromLngLat(t),b=new s.a0(v.x-(c.x-m.x),v.y-(c.y-m.y));this.setCenter(b?.toLngLat()),this._helper._renderWorldCopies&&this.setCenter(this.center.wrap())}locationToScreenPoint(t,i){return i?this.coordinatePoint(s.a0.fromLngLat(t),i.getElevationForLngLatZoom(t,this._helper._tileZoom),this._pixelMatrix3D):this.coordinatePoint(s.a0.fromLngLat(t))}screenPointToLocation(t,i){var h;return(h=this.screenPointToMercatorCoordinate(t,i))===null||h===void 0?void 0:h.toLngLat()}screenPointToMercatorCoordinate(t,i){if(i){let h=i.pointCoordinate(t);if(h!=null)return h}return this.screenPointToMercatorCoordinateAtZ(t)}screenPointToMercatorCoordinateAtZ(t,i){let h=i||0,c=[t.x,t.y,0,1],m=[t.x,t.y,1,1];s.av(c,c,this._pixelMatrixInverse),s.av(m,m,this._pixelMatrixInverse);let v=c[3],b=m[3],P=c[1]/v,E=m[1]/b,k=c[2]/v,L=m[2]/b,D=k===L?0:(h-k)/(L-k);return new s.a0(s.C.number(c[0]/v,m[0]/b,D)/this.worldSize,s.C.number(P,E,D)/this.worldSize,h)}coordinatePoint(t,i=0,h=this._pixelMatrix){let c=[t.x*this.worldSize,t.y*this.worldSize,i,1];return s.av(c,c,h),new s.P(c[0]/c[3],c[1]/c[3])}getBounds(){let t=Math.max(0,this._helper._height/2-W(this));return new Xe().extend(this.screenPointToLocation(new s.P(0,t))).extend(this.screenPointToLocation(new s.P(this._helper._width,t))).extend(this.screenPointToLocation(new s.P(this._helper._width,this._helper._height))).extend(this.screenPointToLocation(new s.P(0,this._helper._height)))}isPointOnMapSurface(t,i){return i?i.pointCoordinate(t)!=null:t.y>this.height/2-W(this)}calculatePosMatrix(t,i=!1,h){var c;let m=(c=t.key)!==null&&c!==void 0?c:s.b2(t.wrap,t.canonical.z,t.canonical.z,t.canonical.x,t.canonical.y),v=i?this._alignedPosMatrixCache:this._posMatrixCache;if(v.has(m)){let E=v.get(m);return h?E.f32:E.f64}let b=Y(t,this.worldSize);s.O(b,i?this._alignedProjMatrix:this._viewProjMatrix,b);let P={f64:b,f32:new Float32Array(b)};return v.set(m,P),h?P.f32:P.f64}calculateFogMatrix(t){let i=t.key,h=this._fogMatrixCacheF32;if(h.has(i))return h.get(i);let c=Y(t,this.worldSize);return s.O(c,this._fogMatrix,c),h.set(i,new Float32Array(c)),h.get(i)}getConstrained(t,i){i=s.ag(+i,this.minZoom,this.maxZoom);let h={center:new s.S(t.lng,t.lat),zoom:i},c=this._helper._lngRange;if(!this._helper._renderWorldCopies&&c===null){let nt=179.9999999999;c=[-nt,nt]}let m=this.tileSize*s.ae(h.zoom),v=0,b=m,P=0,E=m,k=0,L=0,{x:D,y:O}=this.size;if(this._helper._latRange){let nt=this._helper._latRange;v=s.U(nt[1])*m,b=s.U(nt[0])*m,b-v<O&&(k=O/(b-v))}c&&(P=s.aN(s.V(c[0])*m,0,m),E=s.aN(s.V(c[1])*m,0,m),E<P&&(E+=m),E-P<D&&(L=D/(E-P)));let{x:$,y:J}=xt(m,t),K,Q,et=Math.max(L||0,k||0);if(et){let nt=new s.P(L?(E+P)/2:$,k?(b+v)/2:J);return h.center=q(m,nt).wrap(),h.zoom+=s.aj(et),h}if(this._helper._latRange){let nt=O/2;J-nt<v&&(Q=v+nt),J+nt>b&&(Q=b-nt)}if(c){let nt=(P+E)/2,it=$;this._helper._renderWorldCopies&&(it=s.aN($,nt-m/2,nt+m/2));let ht=D/2;it-ht<P&&(K=P+ht),it+ht>E&&(K=E-ht)}if(K!==void 0||Q!==void 0){let nt=new s.P(K??$,Q??J);h.center=q(m,nt).wrap()}return h}calculateCenterFromCameraLngLatAlt(t,i,h,c){return this._helper.calculateCenterFromCameraLngLatAlt(t,i,h,c)}_calculateNearFarZIfNeeded(t,i,h){if(!this._helper.autoCalculateNearFarZ)return;let c=Math.min(this.elevation,this.minElevationForCurrentTile,this.getCameraAltitude()-100),m=t-c*this._helper._pixelPerMeter/Math.cos(i),v=c<0?m:t,b=Math.PI/2+this.pitchInRadians,P=s.ad(this.fov)*(Math.abs(Math.cos(s.ad(this.roll)))*this.height+Math.abs(Math.sin(s.ad(this.roll)))*this.width)/this.height*(.5+h.y/this.height),E=Math.sin(P)*v/Math.sin(s.ag(Math.PI-b-P,.01,Math.PI-.01)),k=W(this),L=Math.atan(k/this._helper.cameraToCenterDistance),D=s.ad(.75),O=L>D?2*L*(.5+h.y/(2*k)):D,$=Math.sin(O)*v/Math.sin(s.ag(Math.PI-b-O,.01,Math.PI-.01)),J=Math.min(E,$);this._helper._farZ=1.01*(Math.cos(Math.PI/2-i)*J+v),this._helper._nearZ=this._helper._height/50}_calcMatrices(){if(!this._helper._height)return;let t=this.centerOffset,i=xt(this.worldSize,this.center),h=i.x,c=i.y;this._helper._pixelPerMeter=s.ai(1,this.center.lat)*this.worldSize;let m=s.ad(Math.min(this.pitch,In)),v=Math.max(this._helper.cameraToCenterDistance/2,this._helper.cameraToCenterDistance+this._helper._elevation*this._helper._pixelPerMeter/Math.cos(m)),b;this._calculateNearFarZIfNeeded(v,m,t),b=new Float64Array(16),s.b3(b,this.fovInRadians,this._helper._width/this._helper._height,this._helper._nearZ,this._helper._farZ),this._invProjMatrix=new Float64Array(16),s.ap(this._invProjMatrix,b),b[8]=2*-t.x/this._helper._width,b[9]=2*t.y/this._helper._height,this._projectionMatrix=s.b4(b),s.N(b,b,[1,-1,1]),s.M(b,b,[0,0,-this._helper.cameraToCenterDistance]),s.b5(b,b,-this.rollInRadians),s.b6(b,b,this.pitchInRadians),s.b5(b,b,-this.bearingInRadians),s.M(b,b,[-h,-c,0]),this._mercatorMatrix=s.N([],b,[this.worldSize,this.worldSize,this.worldSize]),s.N(b,b,[1,1,this._helper._pixelPerMeter]),this._pixelMatrix=s.O(new Float64Array(16),this.clipSpaceToPixelsMatrix,b),s.M(b,b,[0,0,-this.elevation]),this._viewProjMatrix=b,this._invViewProjMatrix=s.ap([],b);let P=[0,0,-1,1];s.av(P,P,this._invViewProjMatrix),this._cameraPosition=[P[0]/P[3],P[1]/P[3],P[2]/P[3]],this._fogMatrix=new Float64Array(16),s.b3(this._fogMatrix,this.fovInRadians,this.width/this.height,v,this._helper._farZ),this._fogMatrix[8]=2*-t.x/this.width,this._fogMatrix[9]=2*t.y/this.height,s.N(this._fogMatrix,this._fogMatrix,[1,-1,1]),s.M(this._fogMatrix,this._fogMatrix,[0,0,-this.cameraToCenterDistance]),s.b5(this._fogMatrix,this._fogMatrix,-this.rollInRadians),s.b6(this._fogMatrix,this._fogMatrix,this.pitchInRadians),s.b5(this._fogMatrix,this._fogMatrix,-this.bearingInRadians),s.M(this._fogMatrix,this._fogMatrix,[-h,-c,0]),s.N(this._fogMatrix,this._fogMatrix,[1,1,this._helper._pixelPerMeter]),s.M(this._fogMatrix,this._fogMatrix,[0,0,-this.elevation]),this._pixelMatrix3D=s.O(new Float64Array(16),this.clipSpaceToPixelsMatrix,b);let E=this._helper._width%2/2,k=this._helper._height%2/2,L=Math.cos(this.bearingInRadians),D=Math.sin(-this.bearingInRadians),O=h-Math.round(h)+L*E+D*k,$=c-Math.round(c)+L*k+D*E,J=new Float64Array(b);if(s.M(J,J,[O>.5?O-1:O,$>.5?$-1:$,0]),this._alignedProjMatrix=J,b=s.ap(new Float64Array(16),this._pixelMatrix),!b)throw new Error("failed to invert matrix");this._pixelMatrixInverse=b,this._clearMatrixCaches()}_clearMatrixCaches(){this._posMatrixCache.clear(),this._alignedPosMatrixCache.clear(),this._fogMatrixCacheF32.clear()}maxPitchScaleFactor(){if(!this._pixelMatrixInverse)return 1;let t=this.screenPointToMercatorCoordinate(new s.P(0,0)),i=[t.x*this.worldSize,t.y*this.worldSize,0,1];return s.av(i,i,this._pixelMatrix)[3]/this._helper.cameraToCenterDistance}getCameraPoint(){return this._helper.getCameraPoint()}getCameraAltitude(){return this._helper.getCameraAltitude()}getCameraLngLat(){let t=s.ai(1,this.center.lat)*this.worldSize;return at(this.center,this.elevation,this.pitch,this.bearing,this._helper.cameraToCenterDistance/t).toLngLat()}lngLatToCameraDepth(t,i){let h=s.a0.fromLngLat(t),c=[h.x*this.worldSize,h.y*this.worldSize,i,1];return s.av(c,c,this._viewProjMatrix),c[2]/c[3]}getProjectionData(t){let{overscaledTileID:i,aligned:h,applyTerrainMatrix:c}=t,m=this._helper.getMercatorTileCoordinates(i),v=i?this.calculatePosMatrix(i,h,!0):null,b;return b=i&&i.terrainRttPosMatrix32f&&c?i.terrainRttPosMatrix32f:v||s.b7(),{mainMatrix:b,tileMercatorCoords:m,clippingPlane:[0,0,0,0],projectionTransition:0,fallbackMatrix:b}}isLocationOccluded(t){return!1}getPixelScale(){return 1}getCircleRadiusCorrection(){return 1}getPitchedTextCorrection(t,i,h){return 1}transformLightDirection(t){return s.aS(t)}getRayDirectionFromPixel(t){throw new Error("Not implemented.")}projectTileCoordinates(t,i,h,c){let m=this.calculatePosMatrix(h),v;c?(v=[t,i,c(t,i),1],s.av(v,v,m)):(v=[t,i,0,1],gs(v,v,m));let b=v[3];return{point:new s.P(v[0]/b,v[1]/b),signedDistanceFromCamera:b,isOccluded:!1}}populateCache(t){for(let i of t)this.calculatePosMatrix(i)}getMatrixForModel(t,i){let h=s.a0.fromLngLat(t,i),c=h.meterInMercatorCoordinateUnits(),m=s.b8();return s.M(m,m,[h.x,h.y,h.z]),s.b5(m,m,Math.PI),s.b6(m,m,Math.PI/2),s.N(m,m,[-c,c,c]),m}getProjectionDataForCustomLayer(t=!0){let i=new s.Z(0,0,0,0,0),h=this.getProjectionData({overscaledTileID:i,applyGlobeMatrix:t}),c=Y(i,this.worldSize);s.O(c,this._viewProjMatrix,c),h.tileMercatorCoords=[0,0,1,1];let m=[s.$,s.$,this.worldSize/this._helper.pixelsPerMeter],v=s.b9();return s.N(v,c,m),h.fallbackMatrix=v,h.mainMatrix=v,h}getFastPathSimpleProjectionMatrix(t){return this.calculatePosMatrix(t)}}function cr(){s.w("Map cannot fit within canvas with the given bounds, padding, and/or offset.")}function ji(f){if(f.useSlerp)if(f.k<1){let t=s.ba(f.startEulerAngles.roll,f.startEulerAngles.pitch,f.startEulerAngles.bearing),i=s.ba(f.endEulerAngles.roll,f.endEulerAngles.pitch,f.endEulerAngles.bearing),h=new Float64Array(4);s.bb(h,t,i,f.k);let c=s.bc(h);f.tr.setRoll(c.roll),f.tr.setPitch(c.pitch),f.tr.setBearing(c.bearing)}else f.tr.setRoll(f.endEulerAngles.roll),f.tr.setPitch(f.endEulerAngles.pitch),f.tr.setBearing(f.endEulerAngles.bearing);else f.tr.setRoll(s.C.number(f.startEulerAngles.roll,f.endEulerAngles.roll,f.k)),f.tr.setPitch(s.C.number(f.startEulerAngles.pitch,f.endEulerAngles.pitch,f.k)),f.tr.setBearing(s.C.number(f.startEulerAngles.bearing,f.endEulerAngles.bearing,f.k))}functi

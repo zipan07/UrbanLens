@@ -1,4 +1,4 @@
-import {installMapDetails,pickMapObjects} from './map-details.js';
+import {installMapDetails,pickMapObjects,objectDetails} from './map-details.js';
 import {installMapGestures} from './map-gestures.js';
 import {installStudioShell} from './studio-shell.js';
 import {packedBytes} from './packed-data.js';
@@ -36,7 +36,10 @@ function sourceData(id,geo){map?.getSource(id)?.setData(geo);
 }
 function ready(action){if(!state.ready){toast('地图仍在加载，请稍后操作。');return;}action();}
 function updateCamera(){if(!map)return;const c=map.getCenter(),p=Math.round(map.getPitch());$('#camera-status').textContent=`${p>1?'3D':'2D'} · ${c.lng.toFixed(4)}° E / ${c.lat.toFixed(4)}° N`;$('#pitch-value').value=`${p}°`;$('#pitch').value=p;$('#compass').style.transform=`rotate(${-map.getBearing()}deg)`;$('.map-title').style.opacity=map.getZoom()>15.5?'.25':'1';state.mode=p>1?'3d':'2d';$$('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===state.mode)));}
-function refreshStateSources(){sourceData('selected',state.selected?{type:'FeatureCollection',features:[state.selected]}:EMPTY());sourceData('imported',state.imported);updateMeasure();studio?.mapLayers();}
+// ValueStudio owns the filtered study source, including imported boundaries.
+// Keep the raw import in state for removal/export without drawing it twice.
+function refreshImportedSource(){sourceData('imported',studio?EMPTY():state.imported);}
+function refreshStateSources(){sourceData('selected',state.selected?{type:'FeatureCollection',features:[state.selected]}:EMPTY());refreshImportedSource();updateMeasure();studio?.mapLayers();}
 function applyStyle(){if(!map||!data)return;detailsUI?.close();for(const fade of layerFades.values()){clearTimeout(fade.timer);cancelAnimationFrame(fade.frame);}layerFades.clear();state.ready=false;$('#export-map').disabled=true;map.setStyle(makeStyle(data,state,base),{diff:false});map.once('style.load',()=>{refreshStateSources();state.ready=true;$('#export-map').disabled=false;updateCamera();});}
 function applyLayerVisibility(){
  detailsUI?.close();
@@ -54,15 +57,23 @@ function applyLayerVisibility(){
  }
 }
 function focusFeature(f){if(!map||!state.ready)return;const c=centerOf(f.geometry),b=boundsOf(f.geometry),span=Math.max(b[2]-b[0],b[3]-b[1]);const zoom=span>.025?13.8:span>.009?14.7:span>.003?15.7:17.1,current=map.getCenter(),distance=distanceMeters([current.lng,current.lat],c),duration=reduced?0:Math.round(Math.min(800,450+Math.min(distance/30,220)+Math.abs(map.getZoom()-zoom)*45));shellUI?.stopOrbit();map.flyTo({center:c,zoom,pitch:state.mode==='3d'?55:0,bearing:map.getBearing(),duration,essential:false});}
+function getViewport(){
+ if(!map)return null;
+ if(map.getBounds){const b=map.getBounds();return [b.getWest(),b.getSouth(),b.getEast(),b.getNorth()];}
+ // CanvasAtlas returns coordinate arrays and has no MapLibre bounds object.
+ const canvas=map.getCanvas(),w=canvas.clientWidth,h=canvas.clientHeight;if(!w||!h)return null;
+ const corners=[[0,0],[w,0],[w,h],[0,h]].map(p=>map.unproject(p)).map(p=>Array.isArray(p)?p:[p.lng,p.lat]);
+ return corners.every(p=>p.every(Number.isFinite))?corners.reduce((b,p)=>[Math.min(b[0],p[0]),Math.min(b[1],p[1]),Math.max(b[2],p[0]),Math.max(b[3],p[1])],[Infinity,Infinity,-Infinity,-Infinity]):null;
+}
+function resetView(){if(!map||!state.ready)return;shellUI?.stopOrbit();const b=manifest.boundary.bbox;map.fitBounds([[b[0],b[1]],[b[2],b[3]]],{padding:{top:80,bottom:70,left:30,right:30},pitch:0,bearing:0,duration:reduced?0:750});}
+function clearObjectSelection(){detailsUI?.close();if(state.selected)$('#panel-object').innerHTML='<div class="object-empty"><h2>请选择地图对象</h2><p>点击建筑、道路或用地查看档案。</p></div>';state.selected=null;sourceData('selected',EMPTY());}
 function select(f,{fly=false}={}){
  state.selected=f;sourceData('selected',{type:'FeatureCollection',features:[f]});renderObject(f);tab('object');if(fly)focusFeature(f);
  $('#search-results').hidden=true;
 }
 function renderObject(f){
- const p=f.properties,c=centerOf(f.geometry),kind=labels[p.category]||'空间对象',height=p.height_source==='osm'?`${p.height_m} m · OSM 标注`:p.height_source==='levels'?`${p.height_m} m · 楼层 × 3 m 推算`:p.category==='building'?'未收录真实高度':'不适用';
- const facts=[['对象类型',kind],['坐标参考','WGS84 / EPSG:4326'],['定位参考点',`${c[0].toFixed(6)} E<br>${c[1].toFixed(6)} N`],...(p.category==='building'?[['高度记录',height],['楼层记录',p.levels?`${p.levels} 层 · OSM`:'未收录']]:[]),['资料来源',p.category==='imported'?'用户本机导入':'OpenStreetMap'],['快照日期',p.category==='imported'?'本次会话':manifest.snapshotAt.slice(0,10)]];
- const note=p.category==='building'?p.height_source==='unknown'?'该对象没有高度记录。开启示意体量时仅用 12 m 表达空间位置，关闭后保留真实轮廓。':'高度来自开放地图标注或楼层推算，未经专业测绘核验，不能用于容积率或安全判断。':p.category==='imported'?'仅完成格式、编号和坐标范围预检；拓扑、来源授权、面积、权属及规划条件尚待核实。':'对象位置与标签来自开放地图。面状对象的定位参考点取包围盒中心，可能不在实际入口或面内。';
- $('#panel-object').innerHTML=`<div class="object-header"><span class="object-kind">${esc(kind)} / SPATIAL RECORD</span><h2>${esc(p.name||'未命名'+kind)}</h2><span class="object-id">${esc(p.osm_id||p.parcel_id||f.id)}</span><button id="locate-selected" class="outline-button object-locate">${icon('focus')} 定位此处</button></div><dl class="object-facts">${facts.map(([k,v])=>`<div><dt>${k}</dt><dd>${k==='定位参考点'?v:esc(v)}</dd></div>`).join('')}</dl><div class="object-note"><strong>数据说明</strong>${esc(note)}</div>${p.osm_id?`<a class="object-link" href="https://www.openstreetmap.org/${esc(p.osm_id)}" target="_blank" rel="noopener"><span>打开 OSM 原始对象</span>↗</a>`:''}<details class="object-tags"><summary>查看原始标签与渲染字段</summary><dl>${Object.entries(p).filter(([k])=>k!=='label').map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v??'未收录')}</dd>`).join('')}</dl></details><div class="object-actions"><button id="download-object" class="outline-button">导出对象 GeoJSON</button><button data-tab="data" class="outline-button">数据覆盖情况</button></div><div class="quality-note">未接入真实宗地及调查台账；此对象不自动视为更新地块，不生成真实更新评分。</div>`;
+ const p=f.properties||{},d=objectDetails(f,manifest),facts=[['对象类型',d.kind],...d.facts,['定位参考点',d.coordinates]];
+ $('#panel-object').innerHTML=`<div class="object-header"><span class="object-kind">${esc(d.kind)} / SPATIAL RECORD</span><h2>${esc(d.name)}</h2><span class="object-id">${esc(d.id)}</span><button id="locate-selected" class="outline-button object-locate">${icon('focus')} 定位此处</button></div><dl class="object-facts">${facts.map(([k,v])=>`<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl><div class="object-note"><strong>数据说明</strong>${esc(d.note)}${f.geometry.type==='Point'?'':' 定位参考点取边界包围盒中心，可能不在实际入口或面内。'}</div>${d.url?`<a class="object-link" href="${d.url}" target="_blank" rel="noopener"><span>打开 OSM 原始对象</span>↗</a>`:''}<details class="object-tags"><summary>查看原始标签与渲染字段</summary><dl>${Object.entries(p).filter(([k])=>k!=='label').map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v??'未收录')}</dd>`).join('')}</dl></details><div class="object-actions"><button id="download-object" class="outline-button">导出对象 GeoJSON</button><button data-tab="data" class="outline-button">数据覆盖情况</button></div><div class="quality-note">未接入真实宗地及调查台账；此对象不自动视为更新地块，不生成真实更新评分。</div>`;
 }
 function renderCatalog(){const m=manifest,c=m.counts,h=m.heights,total=c.buildings;
  $('#district-stats').innerHTML=[['建筑与部件',c.buildings,'个'],['道路 / 轨道 / 水系线',c.roads,'段'],['具名设施与地名',c.pois,'处'],['用地与绿地面',c.land,'个']].map(([name,num,unit])=>`<div><strong>${fmt(num)}</strong><small>${unit}</small><span>${name}</span></div>`).join('');
@@ -104,12 +115,13 @@ async function start(){loadTimer=setTimeout(()=>fail('数据加载较慢。请�
   let movementEnd;
   const moving=()=>{clearTimeout(movementEnd);document.body.classList.add('is-map-moving');$('#map-hover-label').hidden=true;};
   const settled=()=>{clearTimeout(movementEnd);movementEnd=setTimeout(()=>document.body.classList.remove('is-map-moving'),100);};
-  map.on('movestart',moving);map.on('move',moving);map.on('moveend',settled);
+  map.on('movestart',moving);map.on('move',moving);map.on('moveend',()=>{settled();studio?.viewportChanged?.();});map.on('resize',()=>studio?.viewportChanged?.());
+  if(map.fallback)new ResizeObserver(()=>requestAnimationFrame(()=>studio?.viewportChanged?.())).observe(map.getContainer());
   const interrupt=e=>{if(e.type==='keydown'&&!['Escape','+','=','-','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;map.stop?.();shellUI?.stopOrbit();settled();};
   for(const type of ['pointerdown','wheel','keydown'])map.getCanvas().addEventListener(type,interrupt,{capture:true,passive:true});
   map.on('load',()=>{clearTimeout(loadTimer);state.ready=true;$('#map-loading').hidden=true;$('#map-failure').hidden=true;$('#export-map').disabled=false;$('#load-status').textContent=`${map.fallback?'2D 兼容模式 · ':''}OSM ${manifest.snapshotAt.slice(0,10)} · ${fmt(manifest.counts.buildings)} 个建筑与部件`;map.getCanvas().setAttribute('aria-label','玄武区地图。单击选中，右键或长按查看详情。方向键平移，加减键缩放。');updateCamera();studio?.mapLayers();});
   Promise.all([json('data/services.geojson'),json('data/research-units.geojson'),json('data/value-evidence.json')]).then(([services,units,evidence])=>{
-   studio=new ValueStudio({data,services,units,evidence,adapter:{tab,openPanel,toast,download,focus:focusFeature,layers:items=>{for(const [id,geo]of Object.entries(items))sourceData(id,geo);}}});$('#study-hud').hidden=false;
+   studio=new ValueStudio({data,services,units,evidence,adapter:{tab,openPanel,toast,download,focus:focusFeature,getViewport,resetView,showObject:f=>select(f,{fly:true}),clearObjectSelection,layers:items=>{for(const [id,geo]of Object.entries(items))sourceData(id,geo);const visible=items.research?.features;if(visible&&state.selected&&(state.selected.properties.unit_id||state.selected.properties.category==='imported')&&!visible.some(f=>f.properties.unit_id===(state.selected.properties.unit_id||state.selected.properties.parcel_id)))clearObjectSelection();}}});if(state.imported.features.length)studio.addImported(state.imported);refreshImportedSource();$('#study-hud').hidden=false;
   }).catch(e=>{$('#panel-value').innerHTML='<div class="empty-state"><h2>研究资料暂未载入</h2><p>请刷新重试；地图与原始资料仍可使用。</p></div>';console.error(e);});
   map.on('move',updateCamera);
   map.on('pitchend',()=>{if(!state.ready)return;map.setPaintProperty('building-3d','fill-extrusion-height',state.mode==='2d'?0:state.schematic?['get','render_height']:['coalesce',['get','height_m'],0]);map.setPaintProperty('building-3d','fill-extrusion-base',state.mode==='2d'?0:['get','render_base']);if(state.terrain)map.setTerrain(state.mode==='3d'?{source:'dem',exaggeration:1}:null);});
@@ -146,12 +158,12 @@ $('#terrain-toggle').onchange=e=>{state.terrain=e.target.checked;if(state.ready)
 $('#schematic-toggle').onchange=e=>{state.schematic=e.target.checked;if(state.ready)map.setPaintProperty('building-3d','fill-extrusion-height',state.mode==='2d'?0:state.schematic?['get','render_height']:['coalesce',['get','height_m'],0]);};
 $('#pitch').oninput=e=>ready(()=>map.setPitch(Number(e.target.value)));
 $('#north').onclick=()=>ready(()=>map.easeTo({bearing:0,duration:reduced?0:600}));$('#zoom-in').onclick=()=>ready(()=>map.zoomIn());$('#zoom-out').onclick=()=>ready(()=>map.zoomOut());
-$('#overview').onclick=()=>ready(()=>{const b=manifest.boundary.bbox;map.fitBounds([[b[0],b[1]],[b[2],b[3]]],{padding:{top:80,bottom:70,left:30,right:30},pitch:0,bearing:0,duration:reduced?0:750});});
+$('#overview').onclick=()=>ready(resetView);
 $('#measure').onclick=()=>ready(()=>{state.measuring=!state.measuring;$('#measure').setAttribute('aria-pressed',String(state.measuring));$('#measurement').hidden=!state.measuring;map.getCanvas().style.cursor=state.measuring?'crosshair':'';if(state.measuring)map.doubleClickZoom.disable();else map.doubleClickZoom.enable();});
 $('#clear-measure').onclick=()=>{state.measure=[];updateMeasure();};
 $('#about').onclick=()=>$('#about-dialog').showModal();$('#close-about').onclick=()=>$('#about-dialog').close();$('#retry').onclick=()=>location.reload();$('#export-map').onclick=exportMap;
 $('#mobile-panel').onclick=()=>openPanel(!$('#inspector').classList.contains('is-open'));$('#close-panel').onclick=()=>openPanel(false);
-$('#geo-import').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(!data)throw new Error('请先等待城区数据载入。');if(file.size>20*1024*1024)throw new Error('文件超过20 MB。');const incoming=validateImport(JSON.parse(await file.text()),data.boundary.features[0].geometry);studio?.addImported(incoming);state.imported=incoming;sourceData('imported',incoming);$('#import-status').textContent=`已载入 ${incoming.features.length} 条研究范围，仅格式与坐标预检通过。拓扑和权属待核实；已接入研究画像，可关联CSV台账。刷新后范围清除。`;$('#remove-import').hidden=false;select(incoming.features[0],{fly:true});if(studio)tab('value');toast('研究范围已载入本机预览，未上传。');}catch(err){$('#import-status').textContent=`导入失败：${err.message} 原有范围保留。`;}finally{e.target.value='';}};
+$('#geo-import').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(!data)throw new Error('请先等待城区数据载入。');if(file.size>20*1024*1024)throw new Error('文件超过20 MB。');const incoming=validateImport(JSON.parse(await file.text()),data.boundary.features[0].geometry);studio?.addImported(incoming);state.imported=incoming;refreshImportedSource();$('#import-status').textContent=`已载入 ${incoming.features.length} 条研究范围，仅格式与坐标预检通过。拓扑和权属待核实；${studio?'已接入研究画像，可关联CSV台账。':'研究资料载入后接入评估。'}刷新后范围清除。`;$('#remove-import').hidden=false;if(studio){clearObjectSelection();focusFeature(studio.current());tab('value');}else select(incoming.features[0],{fly:true});toast('研究范围已载入本机预览，未上传。');}catch(err){$('#import-status').textContent=`导入失败：${err.message} 原有范围保留。`;}finally{e.target.value='';}};
 $('#remove-import').onclick=()=>{studio?.removeImported();state.imported=EMPTY();sourceData('imported',state.imported);if(state.selected?.properties.category==='imported'){state.selected=null;sourceData('selected',EMPTY());$('#panel-object').innerHTML='<div class="object-empty"><h2>研究范围已移除</h2><p>点击地图查看其他空间对象。</p></div>';}$('#remove-import').hidden=true;$('#import-status').textContent='已移除本次导入。可载入新的研究范围。';};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('#layers-popover').hidden=true;$('#layers-toggle').setAttribute('aria-expanded','false');$('#search-results').hidden=true;openPanel(false);}});
 $$('.inspector-tabs [role=tab]').forEach((b,i)=>b.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();const next=$$('.inspector-tabs [role=tab]')[(i+(e.key==='ArrowRight'?1:3))%4];next.click();next.focus();}}));

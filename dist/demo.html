@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>UrbanLens · 虚构评估工作流样例</title>
-  <meta name="description" content="UrbanLens V0.1 交互原型：地图选地、地块档案、多维评估与地块比较。所有地块均为虚构演示数据。">
+  <meta name="description" content="UrbanLens 历史 Metro 05 样例：12 宗虚构地块及会话内评估。当前玄武工作台、GIS 导入和 DOCX 报告请从首页进入。">
   <link rel="icon" type="image/png" href="./assets/urbanlens-ring-mark.png?v=10.3"><link rel="apple-touch-icon" href="./assets/urbanlens-ring-mark.png?v=10.3">
   <meta name="theme-color" content="#141922">
-  <link rel="stylesheet" href="./styles.css?v=0.6"><script type="module" src="./app.js?v=0.5"></script>
+  <link rel="stylesheet" href="./styles.css?v=0.6"><script type="module" src="./app.js?v=11"></script>
 <link rel="stylesheet" href="./brand.css?v=10.2"></head>
 <body>
 
@@ -16,7 +16,7 @@
     <div class="project-note"><span class="small-label">ACTIVE PROJECT</span><strong>滨河更新<br>示范片区<span aria-hidden="true">↗</span></strong><p>虚构样例 · 非真实地籍</p><span class="outline-tag">V0.1 / METRO 05</span></div>
     <div class="rail-bottom"><span class="avatar">规</span><div>规划研究工作台<small>演示会话 · 刷新后重置</small></div></div>
   </aside>
-  <main><div class="demo-return"><a href="./">← 返回玄武区真实空间图谱</a><span>历史评估样例 · 虚构地块，与玄武区无地理关联</span><span>制作者：蔡子攀｜东南大学建筑学院 · 东南大学城市规划设计研究院</span></div><header class="topbar"><div><span class="eyebrow">URBAN INTELLIGENCE / 城市更新</span><h1>城市更新用地智能评估交互系统</h1></div><button class="quiet" id="about-btn">关于原型 <span aria-hidden="true">↗</span></button></header>
+  <main><div class="demo-return"><a href="./">← 返回 Studio 11 工作台</a><span>历史样例 · 12 宗虚构地块 · 当前 GIS 导入与 DOCX 报告见首页</span><span>制作者：蔡子攀｜东南大学建筑学院 · 东南大学城市规划设计研究院</span></div><header class="topbar"><div><span class="eyebrow">URBAN INTELLIGENCE / 城市更新</span><h1>城市更新用地智能评估交互系统</h1></div><button class="quiet" id="about-btn">关于此历史样例 <span aria-hidden="true">↗</span></button></header>
     <div class="project-heading"><div><div class="breadcrumb"><span class="breadcrumb-slash">/</span> 滨河更新示范片区 <span class="muted-separator">·</span> 项目工作空间</div><h2 id="page-title">空间评估工作台<span class="title-period" aria-hidden="true">.</span></h2></div><div class="heading-meta"><span class="edition">CITY EXPLORER <b>2D / 3D</b></span><span class="demo-tag">演示数据与规则</span></div></div>
     <section id="workbench-page" class="page"><div class="metrics" id="metrics"></div>
       <div class="workspace"><section class="map-panel" aria-label="地图与地块筛选"><div class="map-toolbar"><div class="search-wrap"><label class="sr-only" for="search">搜索12宗更新地块编号或名称</label><input id="search" type="search" placeholder="搜索12宗更新地块编号或名称"></div><label class="sr-only" for="use-filter">现状用途</label><select id="use-filter"><option value="">全部用途</option><option>工业</option><option>商业</option><option>居住</option><option>公共服务</option></select><button class="quiet" id="reset">重置</button></div>

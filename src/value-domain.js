@@ -86,6 +86,21 @@ export function parseBusinessCSV(text,unitIds){
  if(errors.length)throw Error(errors.slice(0,8).join('；')+'。整批未导入。');return accepted;
 }
 
+function matchingDocuments(question,documents){
+ // Remove only browsing/question wording. Any remaining subject must have
+ // textual support; a shared place name must not validate an unknown policy.
+ const focus=question.toLowerCase()
+  .replace(/请问|请|能否|是否|可以|可供|帮我|介绍一下|介绍|说明|解释|列出|列举|推荐|查找|查一下|查询|检索|告诉我|有哪些|有什么|哪些|什么|如何|怎样|怎么样|有何|特点|参考|借鉴|相关|关于|已收录|收录|现有|我们|一下/g,' ')
+  .replace(/南京市|南京|玄武区|玄武|城市更新|更新案例|更新政策|更新规划|更新|政策|案例|资料|信息|文件|文档|片区|项目|情况|内容|的|了|吗|呢|有|和|与|及/g,' ')
+  .match(/[\p{Script=Han}]+|[a-z0-9]+/gu)||[];
+ const matches=(text,term)=>text.includes(term)||(term.length>2&&/^[\p{Script=Han}]+$/u.test(term)&&Array.from({length:term.length-1},(_,i)=>term.slice(i,i+2)).every(part=>text.includes(part)));
+ return documents.filter(d=>{
+  if(!focus.length)return !/案例/.test(question)||d.id?.startsWith('CASE-');
+  const text=[d.title,d.summary,...(d.tags||[])].join(' ').toLowerCase();
+  return focus.every(term=>matches(text,term));
+ }).slice(0,3);
+}
+
 export function answerQuestion(question,{units,analyses,selectedId,compared=[],scope='unit',mode='observed',profile='balanced',uploaded={},runs=[],evidence}){
  const clean=String(question).trim().slice(0,1200),selected=units.find(u=>u.id===selectedId);
  const inScope=scope==='project'?units:scope==='compare'?units.filter(u=>compared.includes(u.id)):[selected].filter(Boolean);
@@ -95,12 +110,16 @@ export function answerQuestion(question,{units,analyses,selectedId,compared=[],s
  const namedOut=units.some(u=>clean.includes(u.properties.name)&&!inScope.includes(u));
  if(explicit.some(id=>!inScope.some(u=>u.id===id.toUpperCase()))||namedOut)return {text:'问题涉及当前范围之外的对象。请切换到“比较清单”或“整个研究项目”，再明确选择需要比较的对象。旧版 UL 地块请打开历史样例。',sources:[],actions:[]};
  const sources=[],actions=[];const add=s=>{sources.push(s);return ` [${s.id}]`;};
- const policy=/政策|案例|百子亭|印刷厂|红山片区|长江路|更新规划|保护/.test(clean);
+ const policy=/政策|案例|百子亭|印刷厂|红山片区|长江路|更新规划|保护|文件|文档/.test(clean);
  if(/地价|成交|市场|多少钱|价值.*元|楼面价|估价/.test(clean)){
   const text=evidence.market.map((m,i)=>{const calc=marketMeasures(m);return `${m.id}（${m.date}）：${m.area_m2} m²，容积率上限 ${m.far_max}，成交 ${m.deal_wan} 万元；按面积×容积率上限折算楼面地价约 ${calc.floorPrice} 元/m²。${add(source('M'+(i+1),m.title,m.note,m.url,m.date))}`;}).join('\n\n');
   return {text:text+'\n\n这两笔不同年份、不同用途与位置的交易只作市场背景，不能直接套用于当前研究单元。缺少权属、规划条件、完整可比成交和时点修正，当前不输出该单元的市场价值。原站正文暂不可达，成交字段经官方检索索引核对。',sources,actions:[{type:'market',label:'打开市场与案例'}]};
  }
- if(policy){const words=clean.match(/百子亭|印刷厂|红山|长江路|锁金|规划|保护/g)||[];const docs=evidence.documents.map(d=>({d,n:words.filter(w=>(d.title+d.summary).includes(w)).length})).sort((a,b)=>b.n-a.n).slice(0,3);return {text:docs.map(({d},i)=>d.title+'\n'+d.summary+add(source('P'+(i+1),d.title,d.summary,d.url,d.date))).join('\n\n')+'\n\n上述资料是片区政策和公开项目参考，不证明当前所选轮廓位于法定控制线内，也不替代项目审批。资料反映各自发布时点。',sources,actions:[{type:'market',label:'查看完整资料卡'}]};}
+ if(policy){
+  const docs=matchingDocuments(clean,evidence.documents||[]);
+  if(!docs.length)return {text:'未检索到支持条目。当前已收录资料没有与这个具体主题相匹配的政策或案例摘要，不能据此确认政策内容或适用条件。可以查看已收录资料，或补充具体文件名称与原文。',sources:[],actions:[{type:'market',label:'查看已收录资料'}]};
+  return {text:docs.map((d,i)=>d.title+'\n'+d.summary+add(source('P'+(i+1),d.title,d.summary,d.url,d.date))).join('\n\n')+'\n\n上述资料是片区政策和公开项目参考，不证明当前所选轮廓位于法定控制线内，也不替代项目审批。资料反映各自发布时点。',sources,actions:[{type:'market',label:'查看完整资料卡'}]};
+ }
  if(/筛选|找出|找一下|寻找/.test(clean)){const type=clean.includes('居住')?'居住社区':clean.includes('产业')?'产业空间':clean.includes('商业')?'商业文旅':'';const maxTransit=/600|六百/.test(clean)?600:/500|五百/.test(clean)?500:null;return {text:`已整理可编辑筛选条件：${type||'全部类型'}${maxTransit?'；交通点位直线距离 ≤ '+maxTransit+' m':''}。点击按钮后应用。距离来自开放地图，不等于步行时间。`,sources:[],actions:[{type:'filter',label:'应用筛选条件',filter:{type,maxTransit}}]};}
  if(!selected)return {text:'请先选择研究单元。',sources:[],actions:[]};
  if(/^(运行|开始|重新).*(评估|分析)/.test(clean))return {text:'将使用当前数据口径与权重配置生成一份可追溯的评估快照。',sources:[],actions:[{type:'evaluate',label:'运行当前评估'}]};

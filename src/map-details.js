@@ -3,15 +3,17 @@ import {projectedArea} from './value-domain.js';
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const number=n=>Number(n).toLocaleString('zh-CN',{maximumFractionDigits:1});
+const recordedNumber=n=>n!==null&&n!==undefined&&String(n).trim()!==''&&Number.isFinite(Number(n));
 const kinds={building:'建筑',road:'道路',rail:'轨道',waterway:'水系',research:'研究地块',imported:'导入地块',residential:'居住用地',commercial:'商业用地',industrial:'工业用地',green:'绿地',civic:'公共服务用地',other:'用地',water:'水体',education:'教育设施',health:'医疗设施',transport:'交通设施',nature:'自然空间',place:'地名',culture:'文化设施',service:'服务设施'};
 const roads={motorway:'高速公路',trunk:'快速路 / 干道',primary:'主要道路',secondary:'次要道路',tertiary:'三级道路',residential:'居住区道路',service:'服务道路',unclassified:'未分级道路',pedestrian:'步行街',footway:'步道',path:'小径',cycleway:'自行车道',steps:'阶梯'};
 
 export function geometryLength(g){const lines=g.type==='LineString'?[g.coordinates]:g.type==='MultiLineString'?g.coordinates:[];return lines.reduce((n,l)=>n+l.slice(1).reduce((s,c,i)=>s+distanceMeters(l[i],c),0),0);}
 export function objectDetails(f,manifest={}){
  const p=f.properties||{},kind=kinds[p.category]||'空间对象',id=p.unit_id||p.parcel_id||p.osm_id||f.id||'未编号',c=centerOf(f.geometry),facts=[];
- facts.push(['所在行政区',p.district_name||'区界附近 / 待核对']);
+ facts.push(p.category==='research'?['所在行政区',p.district_name||'玄武区（研究范围）']:p.category==='imported'?['所属项目范围','玄武区研究项目']:['所在行政区',p.district_name||'区界附近 / 待核对']);
  if(p.category==='building'){
-  facts.push(['建筑高度',p.height_m==null?'未收录':number(p.height_m)+' m · '+(p.height_source==='levels'?'楼层推算':'OSM 标注')],['楼层',p.levels==null?'未收录':number(p.levels)+' 层']);
+  const heightSource=p.height_source==='levels'?'楼层 × 3 m 推算':p.height_source==='osm'?'OSM 标注':'来源待核对';
+  facts.push(['建筑高度',!recordedNumber(p.height_m)||p.height_source==='unknown'?'未收录':number(p.height_m)+' m · '+heightSource],['楼层',!recordedNumber(p.levels)?'未收录':number(p.levels)+' 层']);
  }
  if(f.geometry.type.includes('Polygon')){const area=projectedArea(f.geometry);facts.push([p.category==='building'?'轮廓投影面积':'范围投影面积',area==null?'无法计算':number(area)+' m²']);}
  if(['road','rail','waterway'].includes(p.category)){
@@ -21,8 +23,10 @@ export function objectDetails(f,manifest={}){
  }
  if(p.research_type)facts.push(['研究类型',p.research_type]);
  if(p.landuse||p.amenity)facts.push(['OSM 用途标签',p.landuse||p.amenity]);
+ if(p.category==='imported'&&p.use)facts.push(['导入用途',p.use]);
+ if(p.boundary_source)facts.push(['边界来源',p.boundary_source]);
  facts.push(['数据日期',p.category==='imported'&&!p.source_date?'本次会话':String(p.source_date||manifest.snapshotAt||'未收录').slice(0,10)],['资料来源',p.category==='imported'?'用户导入 / 未复核':'OpenStreetMap']);
- const note=p.category==='imported'?'用户本机导入范围，来源、拓扑、面积及权属均待核实。':p.category==='building'?'面积来自开放轮廓；缺失高度的12 m示意体量不作为事实。':f.geometry.type.includes('LineString')?'长度仅为选中 OSM 分段，非整条道路。缺失标签保留未知。':f.geometry.type.includes('Polygon')?'开放地图轮廓，不是登记宗地或法定更新边界；面积为投影计算参考。':'点位为开放地图参考位置，不保证入口和开放状态。';
+ const note=p.category==='imported'?'用户本机导入范围，来源、拓扑、面积及权属均待核实。':p.category==='building'?'面积来自开放轮廓；高度来自开放标注或楼层推算，未经测绘核验，不用于容积率或安全判断。缺失高度的 12 m 示意体量不作为事实。':f.geometry.type.includes('LineString')?'长度仅为选中 OSM 分段，非整条道路。缺失标签保留未知。':f.geometry.type.includes('Polygon')?'开放地图轮廓，不是登记宗地或法定更新边界；面积为投影计算参考。':'点位为开放地图参考位置，不保证入口和开放状态。';
  return {kind,id,name:p.name||'未命名'+kind,facts,note,coordinates:c.map(x=>x.toFixed(6)).join(', ')+' · WGS84',url:/^(way|relation|node)\/\d+$/.test(p.osm_id||'')?'https://www.openstreetmap.org/'+p.osm_id:null};
 }
 
