@@ -11,7 +11,7 @@
     "build": "esbuild src/city-webgl.js --bundle --minify --format=esm --target=es2022 --outfile=dist/scene.js --legal-comments=eof && esbuild src/atlas-app.js --bundle --minify --format=esm --target=es2022 --outfile=dist/atlas.js --legal-comments=eof",
     "start": "node scripts/serve.mjs",
     "test": "node --test",
-    "check": "node --check dist/app.js && node --check src/atlas-app.js && node --check src/atlas-style.js && node --check src/geo.js && node --check dist/domain.js && node --check dist/assistant.js && node --check server/worker.js"
+    "check": "node --check dist/app.js && node --check src/atlas-app.js && node --check src/atlas-style.js && node --check src/geo.js && node --check src/canvas-atlas.js && node --check dist/domain.js && node --check dist/assistant.js && node --check server/worker.js"
   },
   "dependencies": {
     "@mapbox/tiny-sdf": "2.0.7",

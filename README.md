@@ -87,3 +87,5 @@ npm run check
 拖动平移，双指同时旋转/缩放/平移；桌面滚轮缩放、Shift / 右键拖动旋转；地图聚焦后可用方向键平移、加减键缩放、R 恢复全城。点击更新地块进入原有评估流程；点击其他建筑或设施查看虚构属性。列表搜索只覆盖 12 宗更新地块，城市背景不会被当成可评估地块。
 
 交互参考：[TestFit](https://www.testfit.io/) 的三维环境与地块尺度操作、[UrbanFootprint Base Canvas](https://urbanfootprint.com/video/what-is-the-base-canvas/) 的城市底层空间组织，以及 [LightBox Vision](https://www.lightboxre.com/data/lightbox-vision/) 的地块与建筑图层。当前是独立实现的体量浏览原型，不包含这些产品的真实数据库、生成式规划或商业分析能力。
+
+Atlas 06 图形兼容：支持图形加速时使用 MapLibre 2D / 3D 与真实地形；不可用时自动进入同数据的 Canvas 2D 模式。桌面与390px窄屏页面、搜索、档案、导入/移除已线上检查。当前测试浏览器禁用GPU，真实城区3D的实机视觉验收尚未完成；验证边界详见 XUANWU_DATA.md。
