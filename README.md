@@ -1,3 +1,17 @@
+# UrbanLens · 玄武空间图谱 / Atlas 06
+
+城市更新用地智能评估交互系统。制作者：东南大学建筑学院 蔡子攀。
+
+当前首页：南京市玄武区真实开放地图、建筑轮廓、道路水系、设施与 DEM 地形；2D / 3D、三种地图主题、地标搜索、对象档案、图层控制、测距、PNG 视图导出与 GeoJSON 数据下载。所有运行时地图资源同站保存。
+
+使用 `npm ci && npm run build` 构建，`npm start` 启动；`npm run check && npm test` 验证。发布仅使用 GitHub Pages。
+
+数据来源、数量口径、高度覆盖、缺口与维护方式见 [XUANWU_DATA.md](docs/XUANWU_DATA.md)。旧的12宗虚构地块评估工作流保留在 `demo.html`，与玄武区无地理关联。DeepSeek 接入暂缓。
+
+---
+
+以下为既有演示版本说明，涉及虚拟城市的内容仅适用于历史样例页：
+
 # UrbanLens
 
 **城市更新用地智能评估交互系统**  
@@ -73,3 +87,5 @@ npm run check
 拖动平移，双指同时旋转/缩放/平移；桌面滚轮缩放、Shift / 右键拖动旋转；地图聚焦后可用方向键平移、加减键缩放、R 恢复全城。点击更新地块进入原有评估流程；点击其他建筑或设施查看虚构属性。列表搜索只覆盖 12 宗更新地块，城市背景不会被当成可评估地块。
 
 交互参考：[TestFit](https://www.testfit.io/) 的三维环境与地块尺度操作、[UrbanFootprint Base Canvas](https://urbanfootprint.com/video/what-is-the-base-canvas/) 的城市底层空间组织，以及 [LightBox Vision](https://www.lightboxre.com/data/lightbox-vision/) 的地块与建筑图层。当前是独立实现的体量浏览原型，不包含这些产品的真实数据库、生成式规划或商业分析能力。
+
+Atlas 06 图形兼容：支持图形加速时使用 MapLibre 2D / 3D 与真实地形；不可用时自动进入同数据的 Canvas 2D 模式。桌面与390px窄屏页面、搜索、档案、导入/移除已线上检查。当前测试浏览器禁用GPU，真实城区3D的实机视觉验收尚未完成；验证边界详见 XUANWU_DATA.md。
