@@ -1,7 +1,7 @@
 import {EMPTY} from './geo.js';
 export const THEMES={
- day:{bg:'#e8eddf',green:'#b7c9a1',civic:'#d7dccc',residential:'#e7e3d6',commercial:'#e9d8c3',industrial:'#d9d8df',other:'#dedfcf',water:'#8fbac5',shore:'#7fabaf',road:'#fffdf3',case:'#d6cbb4',rail:'#ab8db5',text:'#49665b',halo:'#f7f9ed',known:'#c5ae82',levels:'#97bfc6',unknown:'#d9d4c9',boundary:'#486d57',shadow:'#547249',sky:'#dbe8e7'},
- night:{bg:'#263b3c',green:'#324f46',civic:'#3f5351',residential:'#3b4b49',commercial:'#574f47',industrial:'#434d5b',other:'#3f4d43',water:'#284e64',shore:'#476e79',road:'#8c8a72',case:'#2c3d3d',rail:'#a991bb',text:'#ccd4b4',halo:'#293d38',known:'#d0b58a',levels:'#89b5b7',unknown:'#6b7a74',boundary:'#b0c992',shadow:'#0b2b30',sky:'#29434a'},
+ day:{bg:'#e4ecf2',green:'#a9cdbb',civic:'#cadcde',residential:'#e1e5ef',commercial:'#e4d1be',industrial:'#d2cbe5',other:'#dce4e7',water:'#8fbed6',shore:'#6b9fb9',road:'#f9fcff',case:'#bfcddd',rail:'#9584b8',text:'#42647b',halo:'#f2f8ff',known:'#b9a889',levels:'#8db4cc',unknown:'#c3cdda',boundary:'#4f8092',shadow:'#4c7283',sky:'#d5e9f5'},
+ night:{bg:'#111e34',green:'#244b48',civic:'#2b4356',residential:'#2b3a55',commercial:'#594b56',industrial:'#454267',other:'#293c52',water:'#184663',shore:'#417f98',road:'#8dabc3',case:'#172a40',rail:'#be9cdf',text:'#bfd7ea',halo:'#15253d',known:'#d7bc8a',levels:'#83c3d1',unknown:'#637d9c',boundary:'#91cdbc',shadow:'#060f24',sky:'#182d47'},
  ink:{bg:'#f1f0e5',green:'#d3dcc7',civic:'#e1e0d3',residential:'#edebdf',commercial:'#e5dfcb',industrial:'#e1dedc',other:'#e7e4d5',water:'#bdcfc9',shore:'#a2b6ae',road:'#fffef7',case:'#d8d4c3',rail:'#9faaa0',text:'#657564',halo:'#faf9f0',known:'#b5ae98',levels:'#a2bdb7',unknown:'#dfdcd0',boundary:'#7f967c',shadow:'#7f8c75',sky:'#f0f0e6'}
 };
 export function makeStyle(data,{theme='day',mode='3d',terrain=true,schematic=true,layers={}},base) {
@@ -15,7 +15,7 @@ export function makeStyle(data,{theme='day',mode='3d',terrain=true,schematic=tru
  const add=(id,type,source,paint,filter,layout={},group=source)=>style.layers.push({id,type,...(source?{source}:{}),...(filter?{filter}:{}),layout:{...layout,visibility:layers[group]===false?'none':'visible'},paint});
  const eq=(p,v)=>['==',['get',p],v];
  add('background','background',null,{'background-color':c.bg});
- add('district-tint','fill','boundary',{'fill-color':theme==='night'?'#31443e':'#f5f4e7','fill-opacity':.25});
+ add('district-tint','fill','boundary',{'fill-color':theme==='night'?'#20334a':'#f2f7fc','fill-opacity':.25});
  add('land','fill','land',{'fill-color':['match',['get','category'],'green',c.green,'civic',c.civic,'residential',c.residential,'commercial',c.commercial,'industrial',c.industrial,c.other],'fill-opacity':.93});
  add('land-outline','line','land',{'line-color':theme==='night'?'#65816a':'#aebb9f','line-opacity':.25,'line-width':.5});
  add('hills','hillshade','hillshade',{'hillshade-shadow-color':c.shadow,'hillshade-highlight-color':theme==='night'?'#5c7761':'#ffffe4','hillshade-accent-color':c.shadow,'hillshade-exaggeration':.32,'hillshade-illumination-direction':315},null,{},'terrain');

@@ -1,14 +1,18 @@
-# UrbanLens · 玄武用地价值研究 / Value Studio 07
+# UrbanLens · 玄武用地价值研究 / Studio 08
 
 城市更新用地智能评估交互系统。制作者：东南大学建筑学院 蔡子攀。
 
-当前首页把玄武区开放地图与用地研究流程放在同一工作台：8个真实轮廓研究单元、2,697个周边设施参考点、五维评估、权重情景、2–3单元比较、来源对话、容量假设与含地图的DOCX报告。点击“开始完整演示”可顺序走通全流程。
+Studio 08 面向路演优化视觉与交互：深色工作台、青柠与冷紫强调色、本地几何字体、清晰的数据层级；新增命令面板（⌘ / Ctrl + K）、路演模式、场景视角预设、可选环绕播放及本机视角保存。设计参考 [TestFit](https://www.testfit.io/) 与 [Giraffe](https://www.giraffe.build/) 的空间工作台与地图操作组织。
+
+地图支持鼠标中键按住拖动旋转；已有3D倾斜视角下，上下拖动调整俯仰。Mac Safari 支持触控板双指旋转；其他 Mac 浏览器可用 Option + 双指滑动旋转。触屏保留原生双指操作，并提供 Q / E 和屏幕旋转按钮。浏览器与实机支持边界见 [STUDIO_08.md](docs/STUDIO_08.md)。
+
+首页保留玄武区8个真实轮廓研究单元、2,697个周边设施参考点、五维评估、权重情景、2–3单元比较、来源对话、容量假设与含地图的DOCX报告。点击“开始完整演示”可顺序走通流程。
 
 默认公共数据模式保留未知业务字段，不输出综合分。完整演示台账使用明确标识的虚构属性，仅用于演示更新研究关注度，不代表真实土地价格或项目可实施性。研究轮廓不是登记宗地或官方更新范围。
 
-使用 `npm ci && npm run build` 构建，`npm start` 启动；`npm run check && npm test` 验证。发布仅使用 GitHub Pages。
+使用 `npm ci && npm run build` 构建，`npm start` 启动；`npm run check && npm test` 验证。发布仅使用 GitHub Pages。当前49项自动测试通过；桌面已检查命令面板、路演与面板联动、巡航暂停、视角保存恢复及日夜主题，390×844手机 iframe 已检查地图、价值画像和操作指南布局无横向溢出。云端GPU不可用，真实三维GPU视觉及各端硬件手势仍需实机验证。
 
-本轮数据、功能边界和演示步骤见 [VALUE_STUDIO.md](docs/VALUE_STUDIO.md)，地图底座见 [XUANWU_DATA.md](docs/XUANWU_DATA.md)。此前12宗虚构地块及旧交互保留在 `demo.html`。DeepSeek暂缓；首页对话使用本机确定性检索和来源解释。报告、评估及对话历史保存在当前浏览器。
+数据、功能边界和演示步骤见 [VALUE_STUDIO.md](docs/VALUE_STUDIO.md)，地图底座见 [XUANWU_DATA.md](docs/XUANWU_DATA.md)。此前12宗虚构地块及旧交互保留在 `demo.html`。DeepSeek暂缓；首页对话使用本机确定性检索和来源解释。报告、评估、对话历史和保存的视角均保存在当前浏览器。
 
 ---
 

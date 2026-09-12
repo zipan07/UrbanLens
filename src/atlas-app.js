@@ -1,3 +1,5 @@
+import {installMapGestures} from './map-gestures.js';
+import {installStudioShell} from './studio-shell.js';
 import {packedBytes} from './packed-data.js';
 import maplibregl from 'maplibre-gl';
 import {makeStyle} from './atlas-style.js';
@@ -13,10 +15,10 @@ const icon=name=>`<svg aria-hidden="true"><use href="#i-${name}"/></svg>`;
 const base=new URL('.',location.href).href;
 const state={theme:'day',mode:'3d',terrain:true,schematic:true,layers:{},selected:null,imported:EMPTY(),measure:[],measuring:false,ready:false};
 const labels={building:'建筑 / 建筑部件',green:'绿地',water:'水体',civic:'公共服务用地',commercial:'商业用地',residential:'居住用地',industrial:'工业等用地',other:'开放地图用地',road:'道路',rail:'轨道',waterway:'水系',education:'教育设施',health:'医疗设施',transport:'交通设施',culture:'文化与游览',nature:'自然空间',place:'地名',service:'服务设施',boundary:'行政边界',imported:'研究范围 / 未复核'};
-let map,manifest,data,studio,objects=[],byId=new Map(),toastTimer,loadTimer;
+let map,manifest,data,studio,shellUI,objects=[],byId=new Map(),toastTimer,loadTimer;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function toast(message){$('#toast').textContent=message;$('#toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').hidden=true,4200);}
-function openPanel(open=true){$('#inspector').classList.toggle('is-open',open);$('#mobile-panel').setAttribute('aria-expanded',String(open));}
+function openPanel(open=true){$('#inspector').classList.toggle('is-open',open);$('#mobile-panel').setAttribute('aria-expanded',String(open));if(document.body.classList.contains('is-presenting')){document.body.classList.toggle('present-panel',open);$('#presentation-panel').setAttribute('aria-pressed',String(open));requestAnimationFrame(()=>map?.resize?.());}}
 function tab(name,open=true){if(!['value','overview','object','data'].includes(name))return;for(const t of ['value','overview','object','data']){$(`#panel-${t}`).hidden=t!==name;$(`#tab-${t}`).setAttribute('aria-selected',String(t===name));}$$('.rail-link[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));if(open)openPanel();$('.inspector-scroll').scrollTop=0;}
 function fail(message){clearTimeout(loadTimer);$('#map-loading').hidden=true;$('#map-failure').hidden=false;$('#map-error').textContent=message;$('#load-status').textContent='地图未就绪 · 资料目录仍可查看';}
 async function json(path){if(path==='data/services.geojson')return JSON.parse(new TextDecoder().decode(await packedBytes('services')));const r=await fetch(`${base}${path}?v=6`,{signal:AbortSignal.timeout(30000)});if(!r.ok)throw new Error(`数据文件加载失败（${r.status}）：${path}`);return r.json();}
@@ -25,7 +27,7 @@ function ready(action){if(!state.ready){toast('地图仍在加载，请稍后操
 function updateCamera(){if(!map)return;const c=map.getCenter(),p=Math.round(map.getPitch());$('#camera-status').textContent=`${p>1?'3D':'2D'} · ${c.lng.toFixed(4)}° E / ${c.lat.toFixed(4)}° N`;$('#pitch-value').value=`${p}°`;$('#pitch').value=p;$('#compass').style.transform=`rotate(${-map.getBearing()}deg)`;$('.map-title').style.opacity=map.getZoom()>15.5?'.25':'1';state.mode=p>1?'3d':'2d';$$('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===state.mode)));}
 function refreshStateSources(){sourceData('selected',state.selected?{type:'FeatureCollection',features:[state.selected]}:EMPTY());sourceData('imported',state.imported);updateMeasure();studio?.mapLayers();}
 function applyStyle(){if(!map||!data)return;state.ready=false;$('#export-map').disabled=true;map.setStyle(makeStyle(data,state,base),{diff:false});map.once('style.load',()=>{refreshStateSources();state.ready=true;$('#export-map').disabled=false;updateCamera();});}
-function focusFeature(f){if(!map||!state.ready)return;const c=centerOf(f.geometry),b=boundsOf(f.geometry),span=Math.max(b[2]-b[0],b[3]-b[1]);const zoom=span>.025?13.8:span>.009?14.7:span>.003?15.7:17.1;map.flyTo({center:c,zoom,pitch:state.mode==='3d'?55:0,bearing:state.mode==='3d'?-22:0,duration:reduced?0:1500,essential:false});}
+function focusFeature(f){if(!map||!state.ready)return;const c=centerOf(f.geometry),b=boundsOf(f.geometry),span=Math.max(b[2]-b[0],b[3]-b[1]);const zoom=span>.025?13.8:span>.009?14.7:span>.003?15.7:17.1;map.flyTo({center:c,zoom,pitch:state.mode==='3d'?55:0,bearing:map.getBearing(),duration:reduced?0:1500,essential:false});}
 function select(f,{fly=false}={}){
  state.selected=f;sourceData('selected',{type:'FeatureCollection',features:[f]});renderObject(f);tab('object');if(fly)focusFeature(f);
  $('#search-results').hidden=true;
@@ -71,8 +73,8 @@ async function start(){loadTimer=setTimeout(()=>fail('数据加载较慢。请�
   objects=[...data.buildings.features,...data.pois.features,...data.land.features,...data.water.features,...data.roads.features];byId=new Map(objects.slice().reverse().map(f=>[f.properties.osm_id,f]));miniMap();$('#place-search').disabled=false;
   installLocalFonts(maplibregl);maplibregl.setWorkerCount(2);
   try{map=new maplibregl.Map({container:'map',style:makeStyle(data,state,base),center:[118.814,32.057],zoom:14.2,pitch:52,bearing:-22,minZoom:10.5,maxZoom:19,maxPitch:70,maxBounds:[[118.60,31.90],[119.08,32.25]],renderWorldCopies:false,attributionControl:false,localIdeographFontFamily:'"Noto Sans CJK SC", "Microsoft YaHei", sans-serif',canvasContextAttributes:{antialias:true,preserveDrawingBuffer:true},fadeDuration:150});}
-  catch(renderError){console.warn('WebGL unavailable; using geographic Canvas 2D.',renderError.message);state.mode='2d';state.terrain=false;$('#terrain-toggle').checked=false;$('#terrain-toggle').disabled=true;$('#pitch').disabled=true;const button=$('[data-mode="3d"]');button.disabled=true;button.title='当前浏览器未启用图形加速，已使用真实地图的 2D 兼容模式。';map=new CanvasAtlas({container:'map',style:makeStyle(data,state,base),center:[118.811,32.059],zoom:13.4});$('.interaction-help').textContent='2D 兼容模式 · 拖动平移 · 滚轮 / 双指缩放旋转';}
-  map.touchZoomRotate.enable();map.touchPitch.enable();map.addControl(new maplibregl.ScaleControl({maxWidth:80,unit:'metric'}),'bottom-left');
+  catch(renderError){console.warn('WebGL unavailable; using geographic Canvas 2D.',renderError.message);state.mode='2d';state.terrain=false;$('#terrain-toggle').checked=false;$('#terrain-toggle').disabled=true;$('#pitch').disabled=true;const button=$('[data-mode="3d"]');button.disabled=true;button.title='当前浏览器未启用图形加速，已使用真实地图的 2D 兼容模式。';map=new CanvasAtlas({container:'map',style:makeStyle(data,state,base),center:[118.811,32.059],zoom:13.4});$('.interaction-help').textContent='2D 兼容 · 中键旋转 · Mac 双指 / ⌥ 滑动 · Q / E 微调';}
+  map.touchZoomRotate.enable();map.touchPitch.enable();installMapGestures(map,{onInteraction:()=>shellUI?.stopOrbit()});shellUI=installStudioShell({map,manifest,studio:()=>studio,toast,tab,openPanel});map.addControl(new maplibregl.ScaleControl({maxWidth:80,unit:'metric'}),'bottom-left');
   map.on('load',()=>{clearTimeout(loadTimer);state.ready=true;$('#map-loading').hidden=true;$('#map-failure').hidden=true;$('#export-map').disabled=false;$('#load-status').textContent=`${map.fallback?'2D 兼容模式 · ':''}OSM ${manifest.snapshotAt.slice(0,10)} · ${fmt(manifest.counts.buildings)} 个建筑与部件`;map.getCanvas().setAttribute('aria-label','玄武区地图。方向键平移，加减键缩放；双指缩放旋转。');updateCamera();studio?.mapLayers();});
   Promise.all([json('data/services.geojson'),json('data/research-units.geojson'),json('data/value-evidence.json')]).then(([services,units,evidence])=>{
    studio=new ValueStudio({data,services,units,evidence,adapter:{tab,openPanel,toast,download,focus:focusFeature,layers:items=>{for(const [id,geo]of Object.entries(items))sourceData(id,geo);}}});$('#study-hud').hidden=false;
@@ -85,14 +87,15 @@ async function start(){loadTimer=setTimeout(()=>fail('数据加载较慢。请�
    const researchHit=map.queryRenderedFeatures(e.point,{layers:['research-fill']})[0];if(researchHit&&studio){studio.select(researchHit.properties.unit_id,{fly:false});return;}
    const layers=['imported-fill','building-3d','building-footprints','poi-dots','station-dots','roads','rail','water','land'].filter(id=>map.getLayer(id));const hits=map.queryRenderedFeatures([[e.point.x-3,e.point.y-3],[e.point.x+3,e.point.y+3]],{layers});const hit=hits[0];if(hit){const id=hit.properties.osm_id;const original=id?byId.get(id):state.imported.features.find(f=>f.properties.parcel_id===hit.properties.parcel_id);if(original)select(original);}
   });
-  map.on('mousemove',e=>{if(!state.ready)return;map.getCanvas().style.cursor=state.measuring?'crosshair':map.queryRenderedFeatures(e.point,{layers:['building-3d','poi-dots','station-dots','imported-fill']}).length?'pointer':'';});
+  map.on('mousemove',e=>{if(!state.ready)return;const hit=map.queryRenderedFeatures(e.point,{layers:['research-fill','building-3d','poi-dots','station-dots','imported-fill']})[0],label=$('#map-hover-label');map.getCanvas().style.cursor=state.measuring?'crosshair':hit?'pointer':'';const name=hit?.properties.name;label.hidden=!name||state.measuring;if(name&&!state.measuring){label.textContent=name;label.style.left=Math.max(8,Math.min(e.point.x+16,map.getContainer().clientWidth-228))+'px';label.style.top=Math.max(10,e.point.y-43)+'px';}});
+  map.getCanvas().addEventListener('pointerleave',()=>$('#map-hover-label').hidden=true);
  }catch(e){console.error(e);fail(e.name==='TimeoutError'?'网络响应超时，请重新载入地图。':e.message?.startsWith('数据文件')?e.message:'地图暂时无法启动。请刷新页面或使用支持 WebGL 的浏览器；数据目录仍可查看。');}
 }
 document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
  if(b.dataset.tab)tab(b.dataset.tab);
  if(b.dataset.place){const f=byId.get(b.dataset.place);if(f)select(f,{fly:true});else toast('该对象尚在加载。');}
  if(b.dataset.feature){const f=byId.get(b.dataset.feature);if(f)select(f,{fly:true});}
- if(b.dataset.mode)ready(()=>{state.mode=b.dataset.mode;map.easeTo({pitch:state.mode==='2d'?0:55,bearing:state.mode==='2d'?0:map.getBearing(),duration:reduced?0:800});});
+ if(b.dataset.mode)ready(()=>{state.mode=b.dataset.mode;map.easeTo({pitch:state.mode==='2d'?0:55,bearing:map.getBearing(),duration:reduced?0:800});});
  if(b.dataset.theme)ready(()=>{state.theme=b.dataset.theme;document.body.classList.toggle('night',state.theme==='night');$$('[data-theme]').forEach(x=>{x.classList.toggle('active',x===b);x.setAttribute('aria-pressed',String(x===b));});applyStyle();});
  if(b.id==='locate-selected'&&state.selected)ready(()=>{focusFeature(state.selected);if(innerWidth<=720)openPanel(false);});
  if(b.id==='download-object'&&state.selected)download('UrbanLens-Xuanwu-object.geojson',JSON.stringify({...state.selected,metadata:{snapshotAt:manifest.snapshotAt,attribution:manifest.attribution,license:manifest.license,creator:manifest.creator}},null,2));
