@@ -1,0 +1,28 @@
+/* UrbanLens — a silver and graphite faceted glass star. */
+.lens-logo{display:grid;place-items:center;background:transparent;border:0;box-shadow:none}
+.lens-logo::before,.lens-logo::after{display:none}
+.lens-logo img{width:44px;height:44px;display:block;object-fit:contain}
+.lens-logo img,.header-mark,.about-mark,.roadshow-identity>strong img{mix-blend-mode:multiply}
+.wordmark{display:flex;align-items:center;gap:9px;white-space:nowrap}
+.header-mark{display:none;object-fit:contain;flex:none}
+.wordmark>.brand-word{font:inherit;color:inherit;letter-spacing:inherit}
+.about-mark{display:block;margin-bottom:20px;object-fit:contain}
+#about-dialog>strong{display:block;line-height:1.8;font-size:14px}
+.roadshow-identity>strong{display:flex;align-items:center;gap:10px;white-space:nowrap}
+.roadshow-identity>strong img{display:block;object-fit:contain;flex:none}
+.roadshow-identity>small{min-width:0}
+#roadshow-credit{max-width:460px;line-height:1.6;white-space:normal}
+.demo-brand-mark{display:block;flex:none;object-fit:contain;background:#fff;border-radius:12px;padding:4px;box-sizing:border-box}
+.demo-return{flex-wrap:wrap;line-height:1.7}
+@media(max-width:720px){
+ .header-mark{display:block;width:30px;height:30px}
+ .wordmark{font-size:25px;gap:7px}
+ .is-presenting .roadshow-identity{flex-direction:column;align-items:flex-start;gap:5px}
+ .roadshow-identity>strong img{width:27px;height:27px}
+ .roadshow-identity>strong{font-size:24px;gap:8px}
+ #roadshow-credit{font-size:11px;line-height:1.55;max-width:100%}
+ .is-presenting .map-tools{top:157px}
+ .is-presenting .layers-popover{top:216px}
+ .is-presenting .district-control{top:157px}
+}
+@media(max-width:380px){.wordmark{font-size:22px;gap:5px}.header-mark{width:24px;height:24px}.topbar{gap:8px}.mobile-panel{padding-inline:10px}}
