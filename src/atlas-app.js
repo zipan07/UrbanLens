@@ -86,7 +86,7 @@ function download(name,content,type='application/geo+json'){const blob=content i
 async function exportMap(){if(!state.ready||!map)return;$('#export-map').disabled=true;try{
  await new Promise(resolve=>{map.once('render',resolve);map.triggerRepaint();});
  const original=map.getCanvas(),canvas=document.createElement('canvas'),ratio=original.width/map.getContainer().clientWidth,width=original.width/ratio;
- const captions=['UrbanLens · 南京市玄武区 / '+(state.mode==='3d'?'3D 空间视图':'2D 空间视图'),`OSM 快照 ${manifest.snapshotAt}`,`高度：OSM 标注 / 楼层推算 / ${state.schematic?'12m 缺失示意':'缺失不拉伸'}`,'© OpenStreetMap contributors · ODbL | Terrain: Mapzen / USGS / NOAA','非测绘及法定规划成果','制作者：东南大学建筑学院 蔡子攀'];
+ const captions=['UrbanLens · 南京市玄武区 / '+(state.mode==='3d'?'3D 空间视图':'2D 空间视图'),`OSM 快照 ${manifest.snapshotAt}`,`高度：OSM 标注 / 楼层推算 / ${state.schematic?'12m 缺失示意':'缺失不拉伸'}`,'© OpenStreetMap contributors · ODbL | Terrain: Mapzen / USGS / NOAA','非测绘及法定规划成果','制作者：蔡子攀｜东南大学建筑学院 · 东南大学城市规划设计研究院'];
  const ctx=canvas.getContext('2d');ctx.font='12px sans-serif';const lines=[];
  for(const text of captions){let line='';for(const char of text){if(ctx.measureText(line+char).width>width-40&&line){lines.push(line);line='';}line+=char;}if(line)lines.push(line);}
  canvas.width=original.width;canvas.height=original.height+Math.ceil((lines.length*19+30)*ratio);ctx.drawImage(original,0,0);ctx.scale(ratio,ratio);ctx.fillStyle='#f8faf1';ctx.fillRect(0,original.height/ratio,width,canvas.height/ratio);ctx.fillStyle='#29483e';ctx.font='12px sans-serif';lines.forEach((line,i)=>ctx.fillText(line,20,original.height/ratio+23+i*19));

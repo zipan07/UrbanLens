@@ -4,7 +4,7 @@ import {centerOf,boundsOf,inGeometry,distanceMeters} from './geo.js';
 
 export {DIMENSIONS};
 export const VALUE_VERSION='VALUE-07';
-export const CREATOR='制作者：东南大学建筑学院 蔡子攀';
+export const CREATOR='制作者：蔡子攀｜东南大学建筑学院 · 东南大学城市规划设计研究院';
 export const PROFILES={balanced:{name:'均衡观察',weights:[.2,.2,.2,.2,.2]},public:{name:'公共改善',weights:[.35,.15,.1,.25,.15]},efficiency:{name:'存量增效',weights:[.15,.35,.15,.1,.25]}};
 export const MODE_NAMES={observed:'公开数据',demo:'完整演示台账',uploaded:'用户台账待核实'};
 export const SERVICE_NAMES={transit:'交通点位',education:'教育设施',health:'医疗服务',park:'公园',daily:'生活服务',heritage:'历史要素'};
