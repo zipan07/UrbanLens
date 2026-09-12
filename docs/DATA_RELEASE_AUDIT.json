@@ -1,0 +1,716 @@
+{
+  "repository": "https://github.com/zipan07/UrbanLens",
+  "published_site": "https://zipan07.github.io/UrbanLens/",
+  "authenticated_user": "zipan07",
+  "verified_repository_permission": "admin",
+  "requested_scope": "User explicitly requested upgrading their existing UrbanLens GitHub Pages application to six Nanjing districts.",
+  "source": "https://overpass-api.de/api/interpreter",
+  "license": "ODbL 1.0",
+  "raw_sources": [
+    {
+      "file": "nanjing-320102-raw.json",
+      "sha256": "392d5eec5ab8fa8b88dd44d9b5c830421a80908cbb3432c4bc1b982c74a96c7b",
+      "osm_snapshot": "2026-09-12T06:54:05Z",
+      "objects": 9958
+    },
+    {
+      "file": "nanjing-320104-raw.json",
+      "sha256": "ec98a3114e6d80b7cde1aaca1dd3426a4393175599703c24f82db8394e292ff8",
+      "osm_snapshot": "2026-09-12T06:55:05Z",
+      "objects": 15615
+    },
+    {
+      "file": "nanjing-320105-raw.json",
+      "sha256": "5bbae79c12e66c9657cb2ddf683a2a3e3e5cbdc97738ba363bc255e5e14dae41",
+      "osm_snapshot": "2026-09-12T06:58:05Z",
+      "objects": 8601
+    },
+    {
+      "file": "nanjing-320106-raw.json",
+      "sha256": "4c5337123aa93d4e7cec998e989e1211956d84eb9798a20251d3aeee42befc63",
+      "osm_snapshot": "2026-09-12T06:54:05Z",
+      "objects": 11881
+    },
+    {
+      "file": "nanjing-320113-raw.json",
+      "sha256": "540c3c52717d57192282e9e8698653862c88eaad563321a31db085c9441a4c9e",
+      "osm_snapshot": "2026-09-12T06:55:05Z",
+      "objects": 40771
+    },
+    {
+      "file": "nanjing-320114-raw.json",
+      "sha256": "11caf497eabb5f34ddd4b5a2c613118492fb7b862e74e725c930f8b815b6027a",
+      "osm_snapshot": "2026-09-12T06:57:06Z",
+      "objects": 6374
+    },
+    {
+      "file": "nanjing-boundary-raw.json",
+      "sha256": "32981efcf172caff1560236da19faebc117b533136fcb29384cb5e50ce8b9491",
+      "osm_snapshot": "2026-09-12T06:54:05Z",
+      "objects": 6
+    }
+  ],
+  "layers": [
+    {
+      "layer": "boundary",
+      "objects": 6,
+      "fields": [
+        "category",
+        "district_name",
+        "division_code",
+        "label",
+        "name",
+        "name:en",
+        "osm_id"
+      ],
+      "uncompressed_bytes": 84930,
+      "sha256": "2a7b3df14f0077ec0bb9d463536f8b2c30a17eef8ade58fbe7eaf23585107df8",
+      "gzip_roundtrip_exact": true,
+      "all_ids_in_public_OSM_responses": true,
+      "parts": [
+        {
+          "path": "dist/packed/boundary-8eebf2264716-01.bin",
+          "sha256": "8eebf2264716cb33138c63c5f2156a4180dab555c63b06641586c621df284e59",
+          "git_blob_sha": "aaed03ac4cbcb54e7a93bd311b580ca2fb8ebc12"
+        }
+      ]
+    },
+    {
+      "layer": "buildings",
+      "objects": 46515,
+      "fields": [
+        "access",
+        "addr:district",
+        "addr:housenumber",
+        "addr:street",
+        "amenity",
+        "building",
+        "building:levels",
+        "building:material",
+        "building:part",
+        "category",
+        "district_method",
+        "district_name",
+        "division_code",
+        "ele",
+        "height",
+        "height_m",
+        "height_source",
+        "historic",
+        "label",
+        "landuse",
+        "layer",
+        "leisure",
+        "levels",
+        "min_height",
+        "name",
+        "name:en",
+        "name:zh",
+        "natural",
+        "opening_hours",
+        "operator",
+        "osm_id",
+        "query_district_codes",
+        "railway",
+        "render_base",
+        "render_height",
+        "roof:colour",
+        "roof:shape",
+        "shop",
+        "source",
+        "start_date",
+        "tourism",
+        "wheelchair"
+      ],
+      "uncompressed_bytes": 33446467,
+      "sha256": "a0f941dd2aa9196d0abe7e294aed65337f83fad19f5758bbedba94634afe0352",
+      "gzip_roundtrip_exact": true,
+      "all_ids_in_public_OSM_responses": true,
+      "parts": [
+        {
+          "path": "dist/packed/buildings-04972d161aac-01.bin",
+          "sha256": "20ec5155a0ae0beafa787bcd803ff672fe8604c006718e72e6c2cbe7ff7e6952",
+          "git_blob_sha": "e7ad5134d93e38a6235ee39d4152b2e5a9da266f"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-02.bin",
+          "sha256": "0f83ed9e677d1e2ab373c2b07a1686ebd4826906748df619bb7bfc8337b342f1",
+          "git_blob_sha": "47bae92ae46351896a80d641b42c3913040b7fcb"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-03.bin",
+          "sha256": "588d225a5947152b4cd78abc2e18765a10d6229a6d637b77f5a2aabfc31cb2cd",
+          "git_blob_sha": "2d4d0fefa0df53702484ac4d898db16a00a8599b"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-04.bin",
+          "sha256": "1b4fb9ac41f7df51de48c9a861f5a2ab9a17c139f3ddb5018109228448e37d0a",
+          "git_blob_sha": "b711ab7b87cf055a5c656c5a8370f9b93955fad0"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-05.bin",
+          "sha256": "544ac68b64f4127c055a56543230c1f8e8b8713eb072169d94ee6c5642db9105",
+          "git_blob_sha": "2b3af5eb3c50221e7f642abcaa6d43618ff337c4"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-06.bin",
+          "sha256": "38d3a368c977d3e6354ba6c762d35b5328bfaf5fbd6b2e606e5c5482281b5ef9",
+          "git_blob_sha": "77f638e4140c766da7af4a9af1c6d022eea686ca"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-07.bin",
+          "sha256": "96d86d0e13cd070b437624848586acc0792f155278c7be4042a22e1542d94d3a",
+          "git_blob_sha": "8282b63b88a342a28349f2fd2435bcd6a03555e0"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-08.bin",
+          "sha256": "d247c8145859fe47338c7a881f89011444f625bc8177633e29d76f8d017eeba4",
+          "git_blob_sha": "1d1ccb1a4d70290c3c6f22893c147f3b19840821"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-09.bin",
+          "sha256": "04facdb7cd20d3c73c7e339c831fde22b178b127e57c7181d0c88f5bf600ac4d",
+          "git_blob_sha": "1896638a980c585ef947db91ddb0c3bcfd7e8798"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-10.bin",
+          "sha256": "75f05cebc45093d63043e77d0a74bdad1978a037baffec48397896e14c418a35",
+          "git_blob_sha": "db1dd5044ae2e138e5379f3f7bbe37cd4461cb49"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-11.bin",
+          "sha256": "590b8f884592fb7dedbe487f8bbe409d1f5e634ebec361423a499ea1b147661b",
+          "git_blob_sha": "f6efa8fc9e95d9f15ba58d79da9f64c0044ed838"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-12.bin",
+          "sha256": "588c5a95a59acaf7df7cef38b176c5a4a8a9753663a91efbce0586a9d680f3b4",
+          "git_blob_sha": "353a8c2121d466e6b4febd4f25df247ebb62476f"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-13.bin",
+          "sha256": "c27ccea17e5f3cf154c5e247f0be5d4d2538539990e6afd365004a714e8980e1",
+          "git_blob_sha": "0a9a5f3ad638dd79f1a400a9bb2e257f95c5eab1"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-14.bin",
+          "sha256": "a484f3b7ca004a93e72a89d8c146b8ed1da55b63fd1b53181530c84bc4ead654",
+          "git_blob_sha": "b967f46c706994528cde325bfe2909237c843c6b"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-15.bin",
+          "sha256": "2df71ae5b7e78b01878d08c558dfb127712842eac3f34b7841655756cfda118a",
+          "git_blob_sha": "55023fe79694242808bf88e2d3577c78f23255cb"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-16.bin",
+          "sha256": "84f5683631a8443b932a3c82a3ff93a7bedf4c9eaf41e5a5784099cd50174606",
+          "git_blob_sha": "3486e4a87a9d654019646ecb0c7817c89c6a94f3"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-17.bin",
+          "sha256": "9e33ee1e687c92067b3d678ad9feea34a0c25691cf99c307580ec3f53b8c7c21",
+          "git_blob_sha": "255cc6cbc9eb2a71d753318abca9d1fb6b926589"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-18.bin",
+          "sha256": "13be89dc62cc279bab760fa585cfef93100d74be0f2cabf29859a7e5bb5daaf9",
+          "git_blob_sha": "ceeada59bdc8f44229f295072782acd452c81a69"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-19.bin",
+          "sha256": "276e3db8900c939372ff7171e70bad014b016a8a515524b03b8db79069383fde",
+          "git_blob_sha": "e73e74bd18563ca43635587549205578175c403c"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-20.bin",
+          "sha256": "375f4b15d9543c46558462767c38e069ba7459cc25725e2d8eb3b17fe65eb79e",
+          "git_blob_sha": "8c84651438f61583d74a77eba83e7160179d79ae"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-21.bin",
+          "sha256": "2448aa8da45b0d313616a549f2f98c7367023eb980876aa09f5f338417a233c9",
+          "git_blob_sha": "2cb517b257e946047a1dd0a1c8c71b90eb047917"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-22.bin",
+          "sha256": "d24bd4a0370a67658bfb7e9533a59f793c60f37d1bc42f1e73e4a4319ac482a2",
+          "git_blob_sha": "4e936f9ac5ea87ba4febee83b72a6a81d774a03c"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-23.bin",
+          "sha256": "cf760309422485b25edcddb10d5cff2386c77ce697a2172aa5a70894d83eefed",
+          "git_blob_sha": "83079e2a9cebeaec42c07737726f0a7b37a0f185"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-24.bin",
+          "sha256": "15185a0599fce7e7d60596fcd12673ec9ed9a36850cc0ba935407e7d23a89b28",
+          "git_blob_sha": "34b37c89386ce2b3a1d139e069d7796ff2132f4a"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-25.bin",
+          "sha256": "bc83a1a44e8079bbe96940221e035c238b6f528959a6fc600ebd778770e7f528",
+          "git_blob_sha": "59712dacd18dec098b0aaf541307fd6b2a343885"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-26.bin",
+          "sha256": "7d2896393398cd7a276b26d44540c1b8ffdfb7bfe92bcd004f4d2f10b2f3a085",
+          "git_blob_sha": "998ea51536041f20e157fe2a65de230c291d1541"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-27.bin",
+          "sha256": "6794810baa737c4dd4a7d56e8686e0cca3b0090d9fcd61691d94fbad9798b063",
+          "git_blob_sha": "54fbb3aaa560662312ac509a1fff1ba733b21955"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-28.bin",
+          "sha256": "b1d3df451575dc63e2d7ecd677db7d564ceb90b4bde56493126f5ad729cd2bb0",
+          "git_blob_sha": "06493dbe31c3f5711ce06f472a4b57a6421c3ebb"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-29.bin",
+          "sha256": "34221cfc628c9b17c570996498f15fd783cd3f159443ca5111bd4ffb7c176cef",
+          "git_blob_sha": "623c2ae76ee78fa8c51910aa7e14692ee99ab776"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-30.bin",
+          "sha256": "0c95e9f19d334163f78667d7f5e749da02703231042d7179c9f6f9a1bd34d009",
+          "git_blob_sha": "02082ba0132990fa3f7eff474f42f954cae242c8"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-31.bin",
+          "sha256": "bb5d480acb002620e6b851bad1a22c629a5efec9432ca2aece3732aca2f3a9bf",
+          "git_blob_sha": "8516b0cb8c40434003e336e22ab52bb0ebbd5391"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-32.bin",
+          "sha256": "6d822c719b67ad8954c7647b5dc96f4f6ce2b4b746bed3c79754b94ad25a8493",
+          "git_blob_sha": "54c3d96565514aa34f4ead86cf83b9bdfc15dd5e"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-33.bin",
+          "sha256": "ba3a8bf0a403cfbd7e141faa566b3fccafbe59abc23633e393987234eec5e1a3",
+          "git_blob_sha": "31dc0c941bd5b24bca663e3acbe045c2123bb164"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-34.bin",
+          "sha256": "06e939f5b8006df86f55760e68d9c3d6cb62d705aa060c4da63078210c85935f",
+          "git_blob_sha": "ea670f50b890b37780b619b9a86b3d04a5403746"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-35.bin",
+          "sha256": "74141aa09577dc9b2bf39a6edf204d3eba565e65542c19c1d7dc862ab183a41d",
+          "git_blob_sha": "80b4c33df6c7b8377324012473a7fc274f373318"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-36.bin",
+          "sha256": "d43f61e1273cab11b639963f43ce6f4a1ba1a113f1a985c8e99d8d066ecb5847",
+          "git_blob_sha": "e07e598035ee9c25bf78ec86a020548061213c6c"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-37.bin",
+          "sha256": "590ccd80f61718ef4ca792afdec0c01d84b0ffcd66edcb39f56336fa6621fe74",
+          "git_blob_sha": "6a5635aadd04f2f22f0234e235fe620633b9aa27"
+        },
+        {
+          "path": "dist/packed/buildings-04972d161aac-38.bin",
+          "sha256": "01c014326aff27072a577520c1d6bf2c4853113c0ac965a19a5e658828e5d349",
+          "git_blob_sha": "0c6810cd5332ef06a14f50e2b6194341650d4feb"
+        }
+      ]
+    },
+    {
+      "layer": "roads",
+      "objects": 29994,
+      "fields": [
+        "access",
+        "addr:street",
+        "bridge",
+        "category",
+        "district_method",
+        "district_name",
+        "division_code",
+        "highway",
+        "label",
+        "lanes",
+        "layer",
+        "maxspeed",
+        "name",
+        "name:en",
+        "name:zh",
+        "oneway",
+        "opening_hours",
+        "operator",
+        "osm_id",
+        "query_district_codes",
+        "railway",
+        "road_class",
+        "source",
+        "start_date",
+        "surface",
+        "tunnel",
+        "underground",
+        "waterway",
+        "wheelchair",
+        "width"
+      ],
+      "uncompressed_bytes": 17562881,
+      "sha256": "8b5c5d4d847e68d04d1f44692f81cecd6c6dff254e3fc044f88a1089bed16c07",
+      "gzip_roundtrip_exact": true,
+      "all_ids_in_public_OSM_responses": true,
+      "parts": [
+        {
+          "path": "dist/packed/roads-38b3d282e597-01.bin",
+          "sha256": "db261a34eecd9d0088480b2ae26005955e12f3535715aa55d8135b2acda678c5",
+          "git_blob_sha": "9c3295ff600cb6003626a1c35b6d38f20fb6a655"
+        },
+        {
+          "path": "dist/packed/roads-38b3d282e597-02.bin",
+          "sha256": "66bb34f8813f39c87a9fe18c5bede31778788416d2040f54dc89c422071fb27a",
+          "git_blob_sha": "e36279b3c83d0d6d351f5db9eac79d29454a8e0b"
+        },
+        {
+          "path": "dist/packed/roads-38b3d282e597-03.bin",
+          "sha256": "dd1e6473d102f9d8544f7247b65e107b60233281611abb6c77a8b36b8cace765",
+          "git_blob_sha": "b960493747b30fabb22e5262e7dfedba58d3c0e7"
+        },
+        {
+          "path": "dist/packed/roads-38b3d282e597-04.bin",
+          "sha256": "7dd76f26b00242831af002d1bca66956545a664003ac5cf0fb659414c74a0e1c",
+          "git_blob_sha": "bb2b6548eb3c4f8c41e4c831fe1b3106b08bd663"
+        },
+        {
+          "path": "dist/packed/roads-38b3d282e597-05.bin",
+          "sha256": "f1d37942da2a9185e6c594f63881f1c8787d5d6beb84a43f934989b56da74738",
+          "git_blob_sha": "630e4a5c32d2c58f6c29914c600f67ff58781c0f"
+        },
+        {
+          "path": "dist/packed/roads-38b3d282e597-06.bin",
+          "sha256": "9a961ea9c842a2a569340215537a8aa1bee55f14034761f8cb0e589a4f116df1",
+          "git_blob_sha": "ac9da88f7f265a24c64e41f5e08353f975360fff"
+        },
+        {
+          "path": "dist/packed/roads-38b3d282e597-07.bin",
+          "sha256": "d29dcdfacdcc93d377beabbff2ab4a3bd99493e3de1d1453417b4e4824dd4a47",
+          "git_blob_sha": "d21afec2cf22571726bf9f537661850d6585a64f"
+        },
+        {
+          "path": "dist/packed/roads-38b3d282e597-08.bin",
+          "sha256": "e81c4ca6f61cff0a8031409a664838e730094adb430b341fea72a02e5a774cc7",
+          "git_blob_sha": "29f75f0b776f622b148d758aa1366e815ee60f38"
+        },
+        {
+          "path": "dist/packed/roads-38b3d282e597-09.bin",
+          "sha256": "73ac5cba24e8f66315282924b005e72d108a476c94fed431904898e1db35668b",
+          "git_blob_sha": "32c8496302417fcb3c21ee7d06ab134499503ae6"
+        },
+        {
+          "path": "dist/packed/roads-38b3d282e597-10.bin",
+          "sha256": "c0a4dd582a6b428252378e6dc97ba6164309915dc22313204fae26029bc50249",
+          "git_blob_sha": "4298399936978dc26f03c7b675b350043ee9c636"
+        },
+        {
+          "path": "dist/packed/roads-38b3d282e597-11.bin",
+          "sha256": "16e332525fe67dc4999039e76b0f6a3ff2da563ac045295d0a6cdce4b84fd2a0",
+          "git_blob_sha": "8c84b9b74159297ff9f44ba3286b082fd4b41e22"
+        },
+        {
+          "path": "dist/packed/roads-38b3d282e597-12.bin",
+          "sha256": "289bfaecbb5f69730f85d71020dab483e93ef3656b0244f737f060a644ccfd72",
+          "git_blob_sha": "cf09843e0adac62458f3a2d63bec44553f164266"
+        },
+        {
+          "path": "dist/packed/roads-38b3d282e597-13.bin",
+          "sha256": "cd922c9c8f69c7a31f8b1963f4ed147d0dde2625eac9d1c17b4e41d2c420c59a",
+          "git_blob_sha": "c720d140b16dc48073e805109e5100e4ce84235f"
+        },
+        {
+          "path": "dist/packed/roads-38b3d282e597-14.bin",
+          "sha256": "5c473c42b7b8db2a6246cf0828a5618dad0ec3c0248246570ddccc0e13c6db68",
+          "git_blob_sha": "4fc97c4fa141ed87964e0c9189faad63f12b3100"
+        },
+        {
+          "path": "dist/packed/roads-38b3d282e597-15.bin",
+          "sha256": "444c5222ed5dc0eb16be2edcc33e4c70afbdc585fb09c5b25e039ae3fcf2778b",
+          "git_blob_sha": "08891914fe16bffbdcc9c12324eafa58cfc635ec"
+        },
+        {
+          "path": "dist/packed/roads-38b3d282e597-16.bin",
+          "sha256": "f1b54ada938daa3912550523d5049cbb458f54d5aa54c3143e8282219b66a126",
+          "git_blob_sha": "e9382218d74bc299c27ff765343be9de2d03fb84"
+        },
+        {
+          "path": "dist/packed/roads-38b3d282e597-17.bin",
+          "sha256": "1f7eadff8fcac0b06d7e039fdbda482db1c736d8ec953e5a2d5b290017c8d1fc",
+          "git_blob_sha": "6731aa12a1987a49b41ef23716386538eb837381"
+        },
+        {
+          "path": "dist/packed/roads-38b3d282e597-18.bin",
+          "sha256": "3cef4d9bf8ce6ed2236736e4e5cd79747b596de7a7541715ca43c93e649fffe5",
+          "git_blob_sha": "59ca521734a411149b1719fe8c7f51fbea3cd69d"
+        },
+        {
+          "path": "dist/packed/roads-38b3d282e597-19.bin",
+          "sha256": "2a97b2b90646f654afc9ffcd511421f87dc8b10e18e58693517424596aab95b6",
+          "git_blob_sha": "a3b1c88d37ab7f10263704efcceebad216f241aa"
+        },
+        {
+          "path": "dist/packed/roads-38b3d282e597-20.bin",
+          "sha256": "1ab5dc97809a17a4ccecc2badbe8c8de01e176e175e0e4d29d1f78e0dee11bd4",
+          "git_blob_sha": "58bd73e00a13e215fbffd6dfa0a18567095cf597"
+        },
+        {
+          "path": "dist/packed/roads-38b3d282e597-21.bin",
+          "sha256": "efc08a4b532411d9b56b7964185167b917bf1beb826b0b306b4c36b10ac863b1",
+          "git_blob_sha": "0dba90dd249e28beb298ee4c57b4f9642a68f5d5"
+        },
+        {
+          "path": "dist/packed/roads-38b3d282e597-22.bin",
+          "sha256": "8afbdbab90fcb78a5a5924fe181f115d7fb2ba05cc18e7b29832b4a789e909f4",
+          "git_blob_sha": "d0af3a6d07caeb0283152d00045d27f2eae5dead"
+        }
+      ]
+    },
+    {
+      "layer": "land",
+      "objects": 6743,
+      "fields": [
+        "access",
+        "addr:district",
+        "addr:housenumber",
+        "addr:street",
+        "amenity",
+        "building",
+        "building:levels",
+        "building:part",
+        "category",
+        "district_method",
+        "district_name",
+        "division_code",
+        "height",
+        "highway",
+        "kind",
+        "label",
+        "landuse",
+        "lanes",
+        "layer",
+        "leisure",
+        "name",
+        "name:en",
+        "name:zh",
+        "natural",
+        "opening_hours",
+        "operator",
+        "osm_id",
+        "place",
+        "query_district_codes",
+        "railway",
+        "shop",
+        "source",
+        "start_date",
+        "surface",
+        "tourism",
+        "wheelchair"
+      ],
+      "uncompressed_bytes": 5088544,
+      "sha256": "50e5d62e7a90175c4a5dd91a89a84c92ba4bd65d9593429d5611b260555eb74c",
+      "gzip_roundtrip_exact": true,
+      "all_ids_in_public_OSM_responses": true,
+      "parts": [
+        {
+          "path": "dist/packed/land-9d9d5a39026e-01.bin",
+          "sha256": "93349a3bce3efc011861853f1a8acdf449d9ec92812d71364687106145b73017",
+          "git_blob_sha": "39fb3216d768ac50ff9a80917f334ae6e28873a3"
+        },
+        {
+          "path": "dist/packed/land-9d9d5a39026e-02.bin",
+          "sha256": "6fb1aba29f7407a9d0b29df4badb5d63882f0184022b67b5da27256d6dcb30da",
+          "git_blob_sha": "a3a935726a553a2864cffce04251679e4b7a801b"
+        },
+        {
+          "path": "dist/packed/land-9d9d5a39026e-03.bin",
+          "sha256": "f8593cc87b5e618619e2bc0b2e01eccf1cf6f3bcd93536d6745b1d1917f15951",
+          "git_blob_sha": "ff48fedbb49cfff020bbce937a45c555e98a6294"
+        },
+        {
+          "path": "dist/packed/land-9d9d5a39026e-04.bin",
+          "sha256": "43a91dcb5bdd8a0d93f7ab66543a30a43ffe7003aaabad7b31f82362db5daf08",
+          "git_blob_sha": "1a170d6219a195f39ddaf162870a89b260947d55"
+        },
+        {
+          "path": "dist/packed/land-9d9d5a39026e-05.bin",
+          "sha256": "c879ed402de3b42d54747f2b43e45149a69556be5fec1d7763515d220c343447",
+          "git_blob_sha": "33f338c2b38490bc71d378d504f259f737222b4a"
+        },
+        {
+          "path": "dist/packed/land-9d9d5a39026e-06.bin",
+          "sha256": "ac0cbbaac331b0ec34211e9418733f4d17255f2a0642c8c632238f9f3bb24088",
+          "git_blob_sha": "a4ad0304807b85d490ee540e90a564109e512581"
+        },
+        {
+          "path": "dist/packed/land-9d9d5a39026e-07.bin",
+          "sha256": "deda9bc7ec7ec0a4bc17be2146bd3a70ae14c1007de9d9048799d958d606270d",
+          "git_blob_sha": "ad2824cbe7e28671b6848b19f9296e738294eb09"
+        },
+        {
+          "path": "dist/packed/land-9d9d5a39026e-08.bin",
+          "sha256": "d1017784a6d30c21b3649ff555430df9f7d3d6e19a9f6f3c89c048741b5c1925",
+          "git_blob_sha": "924f125e9323d8f7d3c40b465cf2d3b201ed9def"
+        },
+        {
+          "path": "dist/packed/land-9d9d5a39026e-09.bin",
+          "sha256": "f540effeeafacecf18be970f2ec6d005e56124cd1b178bd663b959dce636b547",
+          "git_blob_sha": "cdcac657e375f195bd73caa8cfe847ca0bf3bb32"
+        },
+        {
+          "path": "dist/packed/land-9d9d5a39026e-10.bin",
+          "sha256": "6600d1c4f32b7cbf653968d432488c2d247b5490de5be6c51b71f14226e886de",
+          "git_blob_sha": "617fd7b851f9e484354ed8eabf223e44a71cb0e5"
+        }
+      ]
+    },
+    {
+      "layer": "water",
+      "objects": 999,
+      "fields": [
+        "amenity",
+        "building",
+        "category",
+        "district_method",
+        "district_name",
+        "division_code",
+        "label",
+        "name",
+        "name:en",
+        "name:zh",
+        "natural",
+        "osm_id",
+        "query_district_codes",
+        "source"
+      ],
+      "uncompressed_bytes": 1573840,
+      "sha256": "a5320c3ddfa94cc004548e7b59ab862b0bd4a2c72a6e0fab22e69088306e83c7",
+      "gzip_roundtrip_exact": true,
+      "all_ids_in_public_OSM_responses": true,
+      "parts": [
+        {
+          "path": "dist/packed/water-6856da07891a-01.bin",
+          "sha256": "becce1c4f291c448c2e57122fd33957ea07a8158e0a9c527a0f06e16f473b4f0",
+          "git_blob_sha": "a3c15fb1b2fb8318dc1a876c2aa399e72cabf763"
+        },
+        {
+          "path": "dist/packed/water-6856da07891a-02.bin",
+          "sha256": "b973320c58ae1dfe91ec2fbac53a428498c85a0f78577609d89cace20cbc448a",
+          "git_blob_sha": "8f7416b6ab463381abeac1909875ba913c976fc4"
+        },
+        {
+          "path": "dist/packed/water-6856da07891a-03.bin",
+          "sha256": "60aa921ad56a55e35cc5e96ce8968155c5692ff2813498904a48774d75ae28a1",
+          "git_blob_sha": "9b525be92f4834d70e23358c4e9d2074232d7040"
+        },
+        {
+          "path": "dist/packed/water-6856da07891a-04.bin",
+          "sha256": "3bdbb90f2da959c6d0f3f0268c8f162fcbd83318a4f20afbbe9fe58caaa9b0f9",
+          "git_blob_sha": "70163d629fedc83c82ec9bc9ed28b95d6e7699e7"
+        }
+      ]
+    },
+    {
+      "layer": "pois",
+      "objects": 4071,
+      "fields": [
+        "access",
+        "addr:district",
+        "addr:housenumber",
+        "addr:street",
+        "amenity",
+        "building",
+        "building:levels",
+        "category",
+        "district_method",
+        "district_name",
+        "division_code",
+        "ele",
+        "height",
+        "highway",
+        "historic",
+        "label",
+        "landuse",
+        "layer",
+        "leisure",
+        "name",
+        "name:en",
+        "name:zh",
+        "natural",
+        "opening_hours",
+        "operator",
+        "original_geometry",
+        "osm_id",
+        "place",
+        "query_district_codes",
+        "railway",
+        "shop",
+        "source",
+        "start_date",
+        "surface",
+        "tourism",
+        "tunnel",
+        "wheelchair"
+      ],
+      "uncompressed_bytes": 1865519,
+      "sha256": "de2b159e90343d794d2ac894f3a64a97e18246979b8a6168b8c9a7293c02f228",
+      "gzip_roundtrip_exact": true,
+      "all_ids_in_public_OSM_responses": true,
+      "parts": [
+        {
+          "path": "dist/packed/pois-37cf2f113c02-01.bin",
+          "sha256": "0460fa77352977a01c334b11d476418113f8e18d2bbe53d16e775b6efe5aada1",
+          "git_blob_sha": "0a54c03f59a001b5302b9408d854eaec4132a270"
+        },
+        {
+          "path": "dist/packed/pois-37cf2f113c02-02.bin",
+          "sha256": "81425a6e0d40f0350875cfe0d52749684d4e7819aff19216e5bd879fc335e1d4",
+          "git_blob_sha": "afc1036b19b9eb6352012d6fc67286eb77e6abf8"
+        }
+      ]
+    },
+    {
+      "layer": "services",
+      "objects": 4395,
+      "fields": [
+        "access",
+        "category",
+        "district_method",
+        "district_name",
+        "division_code",
+        "kind",
+        "location_method",
+        "name",
+        "named",
+        "original_name",
+        "osm_id",
+        "query_district_codes",
+        "related_osm_ids",
+        "source_date"
+      ],
+      "uncompressed_bytes": 2422339,
+      "sha256": "28d4ae65cc8debede4135fe87a2f4f797991066e0344a8a92b212d667333bfa6",
+      "gzip_roundtrip_exact": true,
+      "all_ids_in_public_OSM_responses": true,
+      "parts": [
+        {
+          "path": "dist/packed/services-da4ea004b11d-01.bin",
+          "sha256": "c2d4ba9cb405c468ec98133dce145d308da5ec3ec82c6270e65f0d99e750a3ad",
+          "git_blob_sha": "307c89350a3fa39e95b99a55035f91de99e5b2b7"
+        },
+        {
+          "path": "dist/packed/services-da4ea004b11d-02.bin",
+          "sha256": "7f30a5a27d8e6ffc7bd1d4bc40ed8a942b31eaddc1e1f83ed4b228c66df73e60",
+          "git_blob_sha": "4b909a86be0b64ad32bd7f3f24a6e5b47d3955e9"
+        }
+      ]
+    }
+  ],
+  "credential_pattern_matches": 0,
+  "unmatched_public_object_ids": 0
+}
