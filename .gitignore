@@ -6,3 +6,6 @@ node_modules/
 .sites-artifacts/
 .DS_Store
 coverage/
+
+# Reconstructed from the versioned packed data during build
+dist/data/services.geojson
