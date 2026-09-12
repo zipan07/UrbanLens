@@ -8,4 +8,6 @@
 
 The mark was made with the built-in image generation tool. Design prompt: one original premium UrbanLens symbol; a bold near-black rounded open U integrated into a circular lens contour; generous negative space; precise optical proportions; flat monochrome; crisp vector-like edges; no wordmark, literal buildings, magnifying-glass handle or background; a centered transparent production asset. References were the simplicity and finish of major technology identities, without reproducing their marks.
 
-No geometry or evidence datasets are added. Source syntax, CSS parsing and the production build are checked. Browser validation is recorded after reviewing the deployed preview.
+No geometry or evidence datasets are added. Source syntax, CSS parsing and the production build pass. The runtime parts reconstruct the exact 1,254,774-byte frontend build (SHA-256 `edff26e651178bce1c2bc35983537b2ea9700d54101168a542da994d91dc758b`).
+
+The deployed desktop and 390 × 844 preview loaded the map and the transparent logo successfully. Light/dark map glass and the two-affiliation footer were visually reviewed. The mobile inspector has matching content/scroll widths of 379 px; the new footer is approximately 97 px high. The desktop roadshow identity and map controls do not overlap. Dark-theme secondary text was then strengthened to maintain readability through the lighter glass. Browser review used Canvas 2D; no claim is made about native GPU or hardware-gesture verification.

@@ -172,6 +172,13 @@
   .presentation-bar button {border-radius:14px;min-height:40px}
   .is-presenting .roadshow-identity {border-radius:22px}
 
+  /* Dark map colours can pass through; secondary copy stays legible. */
+  .night :is(.search-line,.search-line input,.search-line>span,.study-hud small,.study-hud .hud-eyebrow,
+      .rotation-dock small,.view-memory button,.theme-options button,.view-dock,
+      .roadshow-identity small,.roadshow-identity small span) {color:#353b43}
+  .night .search-line input::placeholder {color:#454c55;opacity:1}
+  .night .map-details :is(dt,.map-details-note,.map-details-coordinates,.map-details-id,.map-details-head small,.map-details-switch) {color:#484e57}
+
   /* During map movement, opaque glass avoids repeatedly blurring moving tiles. */
   :is(.is-map-moving,.is-map-interacting) :is(.search-line,.search-results,.segmented,.tool-button,.district-control,.layers-popover,
       .map-navigation,.theme-options,.view-dock,.rotation-dock,.view-memory button,.study-hud,.map-hover-label,
