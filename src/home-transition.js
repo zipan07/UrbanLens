@@ -1,7 +1,7 @@
 export function installHomeTransition(onHome){
- const link=document.querySelector('#brand-home');if(!link)return;
+ const links=document.querySelectorAll('[data-home-link]');if(!links.length)return;
  let running=false;
- link.addEventListener('click',event=>{
+ links.forEach(link=>link.addEventListener('click',event=>{
   if(event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
   event.preventDefault();if(running)return;running=true;
   const icon=link.querySelector('img'),rect=icon.getBoundingClientRect(),overlay=icon.cloneNode();
@@ -17,5 +17,5 @@ export function installHomeTransition(onHome){
   ],{duration:reduced?120:1000,easing:'cubic-bezier(.22,.65,.3,1)',fill:'forwards'});
   animation.finished.catch(()=>{}).finally(()=>{overlay.remove();running=false;});
   }catch(error){overlay.remove();running=false;throw error;}
- });
+ }));
 }
