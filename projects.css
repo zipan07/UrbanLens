@@ -17,3 +17,6 @@
 @media(max-width:720px){.is-presenting .roadshow-identity {right:auto;top:15px;left:15px}.is-presenting .map-tools {top:20px}.is-presenting .district-control {top:83px}.is-presenting .map-bottom {left:15px;bottom:146px}.is-presenting .study-hud {bottom:207px}.is-presenting .theme-options button {font-size:14px}}
 
 .draw-area-actions {display:flex;gap:8px;margin:16px 0}.draw-area-actions button {flex:1;font-size:14px}.is-drawing .study-hud,.is-drawing .map-title {display:none}.evidence-table td small {white-space:normal}.evidence-table details {font-size:12px}
+
+/* Studio 16.2: compact single-line workspace action. */
+.top-actions #project-open{height:42px;min-height:42px;padding-block:0;flex-direction:row;align-items:center;justify-content:flex-start}
