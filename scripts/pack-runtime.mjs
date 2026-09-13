@@ -14,6 +14,11 @@ const runtime=result.outputFiles[0].text,hash=createHash('sha256').update(runtim
 for(const file of readdirSync(dir).filter(f=>f.startsWith('atlas-')))unlinkSync(dir+'/'+file);
 for(let i=0;i<runtime.length;i+=90000){const file=`atlas-${hash}-${String(parts.length+1).padStart(2,'0')}.txt`;writeFileSync(dir+'/'+file,runtime.slice(i,i+90000));parts.push(file);}
 writeFileSync(dir+'/atlas.json',JSON.stringify({encoding:'utf-8',parts,bytes:Buffer.byteLength(runtime)}));
+// Tie the HTML bootstrap URL and manifest request to the exact runtime build.
+let html=readFileSync('dist/index.html','utf8').replace(/<meta name="urbanlens-runtime" content="[^"]*">/g,'');
+html=html.replace('<head>','<head><meta name="urbanlens-runtime" content="'+hash+'">').replace(/src="\.\/atlas\.js(?:\?[^" ]*)?"/,'src="./atlas.js?v='+hash+'"');
+writeFileSync('dist/index.html',html);
+
 await build({entryPoints:['src/atlas-bootstrap.js'],bundle:true,minify:true,format:'esm',target:'es2022',outfile:'dist/atlas.js',legalComments:'eof'});
 
 await build({entryPoints:['src/cloud-connect.js'],bundle:true,minify:true,format:'esm',target:'es2022',outfile:'dist/connect.js'});
