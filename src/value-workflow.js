@@ -9,7 +9,7 @@ const canonical = value => {
 };
 const serialize = value => JSON.stringify(canonical(value));
 const without = (value, keys) => Object.fromEntries(Object.entries(value || {}).filter(([key]) => !keys.includes(key)));
-const assessmentContent = result => without(result, ['id', 'createdAt', 'review', 'projectId', 'projectDataVersion', 'createdBy', 'createdByName', 'geometry']);
+const assessmentContent = result => without(result, ['id', 'createdAt', 'review', 'projectId', 'projectDataVersion', 'createdBy', 'createdByName', 'geometry', 'trial']);
 const matchesRun = (result, run) => Boolean(run?.id && result && serialize(assessmentContent(result)) === serialize(assessmentContent(run)));
 
 /** One comparability decision for the table, bars and exported evidence. */

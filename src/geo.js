@@ -1,3 +1,4 @@
+import {geometriesOverlap} from './custom-area-geometry.js';
 // Coordinate math is deliberately independent of the renderer.
 export const EMPTY = () => ({type:'FeatureCollection',features:[]});
 export function coordinates(geometry) {
@@ -54,7 +55,7 @@ export function validateImport(input,boundary) {
       for(const c of ring){points++;if(points>200000)throw new Error('边界过于复杂，请简化到20万个坐标点以内。');if(!Array.isArray(c)||!Number.isFinite(c[0])||!Number.isFinite(c[1])||c[0]<118.65||c[0]>119.02||c[1]<31.9||c[1]>32.2)throw new Error(`${id} 坐标超出南京研究范围，请核对 WGS84。`);}
       const a=ring[0],b=ring.at(-1);if(a[0]!==b[0]||a[1]!==b[1])throw new Error(`${id} 边界环没有闭合。`);
     }}
-    if(!coordinates(g).some(c=>inGeometry(c,boundary)))throw new Error(`${id} 没有位于玄武区内的边界点，请核对研究范围。`);
+    if(!geometriesOverlap(g,boundary))throw new Error(`${id} 未与玄武区相交，请核对研究范围。`);
     return {type:'Feature',id,properties:{parcel_id:id,name:String(f.properties.name||id).slice(0,200),category:'imported',source:'用户导入 / 未复核',use:String(f.properties.use||'待补充').slice(0,100)},geometry:structuredClone(g)};
   });return {type:'FeatureCollection',features};
 }

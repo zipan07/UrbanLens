@@ -2,10 +2,15 @@ export const FIELD_DEFS=[['area','研究面积','m²'],['distance','交通直线
 export const VALIDITY={valid:'有效',missing:'缺失',invalid:'无效',conflict:'来源冲突',expired:'已过期'};
 export const CONSTRAINTS={planning:'规划',title:'权属',safety:'安全'};
 export const CONSTRAINT_STATUS={unknown:'资料不足',issue:'发现事项',checked:'已核对资料中未发现事项'};
+export function evidenceBasis(input,analysis,context,key){const spatial=['area','distance'].includes(key),p=input.fieldSources?.[key];
+ if(p?.kind==='uploaded')return {mode:'uploaded',value:input[key]??null,source:p.source,date:p.date,geometry:context.geometry};
+ const basis={mode:spatial?'spatial':context.mode,value:input[key]??null,source:spatial?null:input.source,date:key==='area'?analysis.geometryDate:spatial?analysis.spatialDate:input.date,geometry:context.geometry};
+ return spatial&&p?.kind==='derived'?basis:{...basis,...(p?{provenance:p}:{})};}
 export function evidenceSnapshot(input,analysis,record={},context={}){
- const fields=FIELD_DEFS.map(([key,label,unit])=>{const spatial=['area','distance'].includes(key),stored=record.fields?.[key],value=input[key]??null,basis={mode:spatial?'spatial':context.mode,value,source:spatial?null:input.source,date:key==='area'?analysis.geometryDate:spatial?analysis.spatialDate:input.date,geometry:context.geometry},m=stored&&JSON.stringify(stored.basis)===JSON.stringify(basis)?stored:{};
+ const fields=FIELD_DEFS.map(([key,label,unit])=>{const spatial=['area','distance'].includes(key),stored=record.fields?.[key],value=input[key]??null,basis=evidenceBasis(input,analysis,context,key),m=stored&&JSON.stringify(stored.basis)===JSON.stringify(basis)?stored:{};
   const missing=value===null||value==='待核实',invalid=!missing&&(key==='industry'?!['符合','待调整'].includes(value):!Number.isFinite(value)||value<0||key==='area'&&value===0||key==='condition'&&(!Number.isInteger(value)||value<1||value>4)||key==='vacancy'&&value>100);
-  return {key,label,value,unit,source:m.source||(spatial?'OSM 开放地图 / 研究轮廓':input.source),date:m.date||(key==='area'?analysis.geometryDate:spatial?analysis.spatialDate:input.date),validity:missing?'missing':invalid?'invalid':m.validity||'valid',verification:m.verification||'unverified',reason:m.reason||'',refs:m.refs||[],recordVersion:record.recordVersion||1};});
+  const provenance=input.fieldSources?.[key],simulated=provenance?.kind==='simulated';
+  return {key,label,value,unit,...(provenance||{}),source:simulated?provenance.source:m.source||provenance?.source||(spatial?'OSM 开放地图 / 研究轮廓':input.source),date:simulated?provenance.date:m.date||provenance?.date||(key==='area'?analysis.geometryDate:spatial?analysis.spatialDate:input.date),validity:missing?'missing':invalid?'invalid':m.validity||'valid',verification:simulated?'unverified':m.verification||'unverified',reason:m.reason||'',refs:m.refs||[],recordVersion:record.recordVersion||1};});
  const constraints=Object.entries(CONSTRAINTS).map(([category,label])=>({category,label,status:'unknown',summary:'',refs:[],date:null,...(record.geometry===context.geometry?record.constraints?.[category]:{}),recordVersion:record.recordVersion||1}));
  return {fields,constraints};
 }

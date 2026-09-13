@@ -1,6 +1,6 @@
 {
   "name": "urbanlens",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "description": "UrbanLens 项目、数据版本与权限工作区",

@@ -1,3 +1,4 @@
+import {completeInput,simulationValues,simulationSource,SIMULATION_VERSION,SIMULATION_DATE,validInput} from './assessment-completion.js';
 import {evidenceSnapshot,ruleSnapshot,VALIDITY,CONSTRAINT_STATUS} from './assessment-evidence.js';
 import proj4 from 'proj4';
 import {evaluate as evaluateLegacy, DIMENSIONS} from '../dist/domain.js';
@@ -7,7 +8,7 @@ export {DIMENSIONS};
 export const VALUE_VERSION='VALUE-07';
 export const CREATOR='制作者：蔡子攀｜东南大学建筑学院 · 东南大学城市规划设计研究院';
 export const PROFILES={balanced:{name:'均衡观察',weights:[.2,.2,.2,.2,.2]},public:{name:'公共改善',weights:[.35,.15,.1,.25,.15]},efficiency:{name:'存量增效',weights:[.15,.35,.15,.1,.25]}};
-export const MODE_NAMES={observed:'公开数据',demo:'完整演示台账',uploaded:'用户台账待核实'};
+export const MODE_NAMES={hybrid:'公开数据＋模拟补齐',observed:'公开数据',demo:'完整演示台账',uploaded:'用户台账待核实'};
 export const SERVICE_NAMES={transit:'交通点位',education:'教育设施',health:'医疗服务',park:'公园',daily:'生活服务',heritage:'历史要素'};
 const utm=proj4('EPSG:4326','+proj=utm +zone=50 +datum=WGS84 +units=m +no_defs');
 const finite=n=>typeof n==='number'&&Number.isFinite(n);
@@ -25,19 +26,27 @@ export function analyzeUnit(unit,data,services){
  const nearest=Object.fromEntries(Object.keys(SERVICE_NAMES).map(k=>[k,nearby.find(f=>f.properties.category===k)||null]));
  const counts=Object.fromEntries(Object.keys(SERVICE_NAMES).map(k=>[k,nearby.filter(f=>f.distance<=600&&f.properties.category===k).length]));
  const buildings=data.buildings.features.filter(f=>!f.properties['building:part']&&inGeometry(centerOf(f.geometry),unit.geometry));
- return {point,area:area===null?null:Math.round(area),nearest,counts,nearby:nearby.filter(f=>f.distance<=600),buildingCount:buildings.length,heightKnown:buildings.filter(f=>f.properties.height_m!==null).length,spatialDate:services.metadata.snapshotAt,geometryDate:unit.properties.source_date||data.land.metadata.snapshotAt,method:'面积：WGS84 / UTM 50N（EPSG:32650）投影平面面积；区位：面内参考点至设施参考点的球面直线距离；600m为演示观察半径，非步行可达性或法定服务标准。'};
+ const buildingStats=buildings.reduce((r,f)=>{const footprint=projectedArea(f.geometry)||0,raw=Number(f.properties['building:levels']??f.properties.levels),known=Number.isFinite(raw)&&raw>0&&raw<=150;r.footprint+=footprint;r.area+=footprint*(known?raw:3);r.assumed+=known?0:1;return r;},{footprint:0,area:0,assumed:0});
+ return {buildingFootprintArea:Math.round(buildingStats.footprint),buildingAreaEstimate:Math.round(buildingStats.area),assumedBuildingCount:buildingStats.assumed,point,area:area===null?null:Math.round(area),nearest,counts,nearby:nearby.filter(f=>f.distance<=600),buildingCount:buildings.length,heightKnown:buildings.filter(f=>f.properties.height_m!==null).length,spatialDate:services.metadata.snapshotAt,geometryDate:unit.properties.source_date||data.land.metadata.snapshotAt,method:'面积：WGS84 / UTM 50N（EPSG:32650）投影平面面积；区位：面内参考点至设施参考点的球面直线距离；600m为演示观察半径，非步行可达性或法定服务标准。'};
 }
-const demoRows=[{far:1.05,vacancy:48,industry:'待调整',condition:3},{far:1.8,vacancy:18,industry:'符合',condition:2},{far:1.55,vacancy:9,industry:'符合',condition:3},{far:1.25,vacancy:32,industry:'待调整',condition:4},{far:2.1,vacancy:14,industry:'符合',condition:2},{far:.95,vacancy:56,industry:'待调整',condition:3},{far:1.35,vacancy:null,industry:'待核实',condition:null},{far:1.65,vacancy:0,industry:'符合',condition:1}];
+const demoRows=[{far:1.05,vacancy:48,industry:'待调整',condition:3},{far:1.8,vacancy:18,industry:'符合',condition:2},{far:1.55,vacancy:9,industry:'符合',condition:3},{far:1.25,vacancy:32,industry:'待调整',condition:4},{far:2.1,vacancy:14,industry:'符合',condition:2},{far:.95,vacancy:56,industry:'待调整',condition:3},{far:1.35,vacancy:27,industry:'待调整',condition:3},{far:1.65,vacancy:0,industry:'符合',condition:1}];
 export function businessInput(unit,analysis,mode='observed',uploaded={}){
  let record={buildingArea:null,vacancy:null,industry:'待核实',condition:null,source:'未接入调查台账',date:null};
- if(mode==='demo'){const row=demoRows[(Number(unit.id.match(/\d+$/)?.[0]||1)-1)%demoRows.length];record={buildingArea:analysis.area?Math.round(analysis.area*row.far):null,vacancy:row.vacancy,industry:row.industry,condition:row.condition,source:'UrbanLens 虚构业务台账，仅演示流程；不描述该真实对象的经营、质量或空置情况',date:'2026-09-12'};}
- if(mode==='uploaded'&&uploaded[unit.id])record={...uploaded[unit.id]};
- return {id:unit.id,name:unit.properties.name,area:analysis.area,distance:analysis.nearest.transit?.distance??null,...record,dataVersion:VALUE_VERSION+' / '+mode};
+ if(mode==='demo'){const row=demoRows[((Number(String(unit.id).match(/\d+$/)?.[0]||1)-1)%demoRows.length+demoRows.length)%demoRows.length];record={buildingArea:analysis.area?Math.round(analysis.area*row.far):null,vacancy:row.vacancy,industry:row.industry,condition:row.condition,source:'UrbanLens 虚构业务台账，仅演示流程；不描述该真实对象的经营、质量或空置情况',date:'2026-09-12'};}
+ if(['uploaded','hybrid'].includes(mode)&&uploaded[unit.id])record={...uploaded[unit.id]};
+ const input={id:unit.id,name:unit.properties.name,area:analysis.area,distance:analysis.nearest.transit?.distance??null,...record,dataVersion:VALUE_VERSION+' / '+mode};
+ if(mode!=='hybrid')return input;
+ input.fieldSources={area:{kind:'derived',source:'研究轮廓 / EPSG:32650 投影计算',date:analysis.geometryDate,method:'WGS84 轮廓投影至 UTM 50N，扣除孔洞'},distance:{kind:'derived',source:'OSM 交通点位 / 球面直线距离',date:analysis.spatialDate,method:'面内参考点至最近收录交通点位'}};
+ for(const key of ['buildingArea','industry','condition','vacancy'])if(validInput(key,input[key]))input.fieldSources[key]={kind:'uploaded',source:record.source,date:record.date,method:'项目台账，待核实'};
+ if(!validInput('buildingArea',input.buildingArea)&&analysis.buildingAreaEstimate>0){input.buildingArea=analysis.buildingAreaEstimate;input.fieldSources.buildingArea={kind:analysis.assumedBuildingCount?'simulated':'derived',source:analysis.assumedBuildingCount?'OSM 建筑轮廓＋模拟楼层 · '+SIMULATION_VERSION:'OSM 建筑轮廓＋楼层标签推算',date:analysis.spatialDate,method:'按建筑中心落入范围计入整栋；轮廓面积 × 楼层，缺楼层按 3 层假设，非测绘建筑面积',originalValue:record.buildingArea??null};}
+ const filled=completeInput(input,unit,analysis);filled.source='逐项采用公开空间数据、项目台账及模拟假设';filled.date=SIMULATION_DATE;return filled;
 }
 export function fingerprint(input,profile,analysis){const s=JSON.stringify([input,profile,analysis.geometryDate,analysis.spatialDate,analysis.counts]);let h=2166136261;for(let i=0;i<s.length;i++)h=Math.imul(h^s.charCodeAt(i),16777619);return (h>>>0).toString(16);}
 export function computeAssessment(unit,analysis,{mode='observed',profile='balanced',uploaded={},evidenceRecords={}}={}){
  if(!PROFILES[profile]||!MODE_NAMES[mode])throw Error('无效的评估口径');
- const input=businessInput(unit,analysis,mode,uploaded),evidence=evidenceSnapshot(input,analysis,evidenceRecords[unit.id],{mode,geometry:JSON.stringify(unit.geometry)}),calculation={...input};
+ const input=businessInput(unit,analysis,mode,uploaded),evidence=evidenceSnapshot(input,analysis,evidenceRecords[unit.id],{mode,geometry:JSON.stringify(unit.geometry)});
+ if(mode==='hybrid'){const fallback={area:analysis.area,...simulationValues(unit,analysis)};for(const f of evidence.fields)if(f.validity!=='valid'&&(f.key!=='area'||analysis.area>0)){const originalEvidence=structuredClone(f),provenance=simulationSource(f.key,f.value);input[f.key]=fallback[f.key];input.fieldSources[f.key]=provenance;Object.assign(f,{value:input[f.key],...provenance,validity:'valid',verification:'unverified',refs:[],reason:'原依据不可用于计算，已模拟补齐',originalEvidence});}}
+ const calculation={...input};
  for(const field of evidence.fields)if(field.validity!=='valid')calculation[field.key]=field.key==='industry'?'待核实':null;
  const legacy=evaluateLegacy(calculation),weights=PROFILES[profile].weights;
  const scores=legacy.scores,coverage=rounded(weights.reduce((s,w,i)=>s+(scores[i]===null?0:w),0)*100);
@@ -45,17 +54,20 @@ export function computeAssessment(unit,analysis,{mode='observed',profile='balanc
  const fieldSources=[{id:'spatial',title:'交通直线距离',date:analysis.spatialDate,source:'OSM 设施点位与研究轮廓',url:'https://www.openstreetmap.org/copyright'},{id:'business',title:MODE_NAMES[mode],date:input.date,source:input.source}];
  const raw=[input.distance===null?'缺失':`${Math.round(input.distance)} m`,legacy.ratio===null?'缺失':legacy.ratio.toFixed(2),input.industry,input.condition===null?'缺失':`${input.condition} 级`,input.vacancy===null?'缺失':`${input.vacancy}%`];
  const methods=['min(100, 交通直线距离 ÷ 15)','max(0, min(100, (2 − 容积率) ÷ 2 × 100))；2 为演示基准','符合 = 20；待调整 = 80；待核实 = 缺失','演示等级 1–4 线性映射为 0–100；不等于安全鉴定','使用状态得分 = 空置率（%）'];
- const dimensions=DIMENSIONS.map((name,i)=>({name,raw:raw[i],score:scores[i],weight:weights[i],method:methods[i],status:scores[i]===null?'资料不足':i===0?'开放数据计算':mode==='demo'?'虚构演示':mode==='uploaded'?'用户填报待核实':'资料不足',sourceId:i===0?'spatial':'business',date:i===0?analysis.spatialDate:input.date}));
- return {fieldEvidence:evidence.fields,constraints:evidence.constraints,analysisSnapshot:structuredClone(analysis),ruleSnapshot:ruleSnapshot(profile,weights),unitId:unit.id,name:unit.properties.name,mode,profile,ruleVersion:`DEMO-VALUE-07-${profile}`,ruleStatus:'演示规则，未获业务核准',dataVersion:input.dataVersion,geometryDate:analysis.geometryDate,spatialDate:analysis.spatialDate,input,ratio:legacy.ratio,scores,coverage,total,dimensions,missing:dimensions.filter(d=>d.score===null).map(d=>d.name),fingerprint:fingerprint({...input,evidence},profile,analysis),sources:fieldSources,limitations:['研究轮廓不是地籍宗地或官方更新边界','综合分仅为更新研究关注度，不表示地价、投资回报或实施可行性','权属、法定规划条件、建筑安全与经营台账尚未核验','开放设施点位覆盖不完整，未检索到不代表不存在']};
+ const dimensionFields=[['distance'],['area','buildingArea'],['industry'],['condition'],['vacancy']];
+ const dimensions=DIMENSIONS.map((name,i)=>({name,raw:raw[i],score:scores[i],weight:weights[i],method:methods[i],status:scores[i]===null?'资料不足':mode==='hybrid'?dimensionFields[i].some(k=>input.fieldSources[k]?.kind==='simulated')?'含模拟假设':dimensionFields[i].some(k=>input.fieldSources[k]?.kind==='uploaded')?'项目台账待核实':'开放数据推算':i===0?'开放数据计算':mode==='demo'?'虚构演示':mode==='uploaded'?'用户填报待核实':'资料不足',sourceId:i===0?'spatial':'business',date:i===0?analysis.spatialDate:input.date}));
+ const simulatedFields=evidence.fields.filter(f=>f.kind==='simulated').map(f=>f.key),nonSimulatedCoverage=mode==='hybrid'?rounded(weights.reduce((sum,w,i)=>sum+(dimensionFields[i].some(k=>simulatedFields.includes(k))?0:w),0)*100):null;
+ return {simulation:mode==='hybrid'?{...input.simulation,fields:simulatedFields,count:simulatedFields.length}:null,nonSimulatedCoverage,fieldEvidence:evidence.fields,constraints:evidence.constraints,analysisSnapshot:structuredClone(analysis),ruleSnapshot:ruleSnapshot(profile,weights),unitId:unit.id,name:unit.properties.name,mode,profile,ruleVersion:`DEMO-VALUE-07-${profile}`,ruleStatus:'演示规则，未获业务核准',dataVersion:input.dataVersion,geometryDate:analysis.geometryDate,spatialDate:analysis.spatialDate,input,ratio:legacy.ratio,scores,coverage,total,dimensions,missing:dimensions.filter(d=>d.score===null).map(d=>d.name),fingerprint:fingerprint({...input,evidence},profile,analysis),sources:fieldSources,limitations:[...(mode==='hybrid'?['模拟补齐仅用于试算；指标齐全不表示真实资料齐全，规划、权属和安全仍需独立核验']:[]),'研究轮廓不是地籍宗地或官方更新边界','综合分仅为更新研究关注度，不表示地价、投资回报或实施可行性','权属、法定规划条件、建筑安全与经营台账尚未核验','开放设施点位覆盖不完整，未检索到不代表不存在']};
 }
 export function createRun(unit,analysis,options){const result=computeAssessment(unit,analysis,options);return {...structuredClone(result),id:`RUN-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,createdAt:new Date().toISOString(),review:{status:'未复核',note:'',name:'',date:null}};}
 export function compareRuns(runs){
  if(runs.length<2||runs.length>3)return {ranked:[],reason:'请选择 2–3 个研究单元。'};
  if(new Set(runs.map(r=>r.mode)).size!==1)return {ranked:[],reason:'数据口径不同，暂不排序。'};
  if(new Set(runs.map(r=>r.ruleVersion)).size!==1)return {ranked:[],reason:'规则版本不同，请统一规则重算。'};
- if(new Set(runs.map(r=>JSON.stringify([r.geometryDate,r.spatialDate,r.input.date,r.fieldEvidence?.map(f=>f.date)]))).size!==1)return {ranked:[],reason:'数据时点不同，只比较原始指标，暂不排序。'};
+ if(runs[0].mode==='hybrid'){if(new Set(runs.map(r=>JSON.stringify([r.spatialDate,r.simulation?.version]))).size!==1)return {ranked:[],reason:'空间快照或补齐规则不同，请统一口径重算。'};}
+ else if(new Set(runs.map(r=>JSON.stringify([r.geometryDate,r.spatialDate,r.input.date,r.fieldEvidence?.map(f=>f.date)]))).size!==1)return {ranked:[],reason:'数据时点不同，只比较原始指标，暂不排序。'};
  if(runs.some(r=>r.total===null))return {ranked:[],reason:'数据不完整，暂不排序；可比较原始指标与缺失项。'};
- return {ranked:[...runs].sort((a,b)=>b.total-a.total),reason:'同口径更新研究关注度排序；不代表投资或更新实施优先级。'};
+ return {ranked:[...runs].sort((a,b)=>b.total-a.total),reason:runs[0].mode==='hybrid'?'含模拟假设的同口径试算比较；各范围绘制日期可不同，来源差异见逐项依据。':'同口径更新研究关注度排序；不代表投资或更新实施优先级。'};
 }
 export function capacityScenario(area,currentBuilding,params){
  const {far,retain,publicShare}=params;
