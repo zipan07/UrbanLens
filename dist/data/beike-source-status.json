@@ -1,0 +1,29 @@
+{
+  "id": "BEIKE-XW-20260913",
+  "title": "贝壳玄武区住宅租售数据接入状态",
+  "provider": "贝壳找房",
+  "checkedAt": "2026-09-13",
+  "status": "requires_authorized_source",
+  "verifiedRecordCount": 0,
+  "records": [],
+  "accessChecks": [
+    {"url": "https://nj.ke.com/ershoufang/xuanwu/", "kind": "sale_listing", "result": "captcha", "detail": "页面返回人机验证，未取得可核验房源。"},
+    {"url": "https://nj.zu.ke.com/zufang/xuanwu/", "kind": "rent_listing", "result": "captcha", "detail": "页面跳转至人机验证，未取得可核验房源。"},
+    {"url": "https://nj.lianjia.com/xiaoqu/xuanwu/", "kind": "community_price", "result": "captcha", "detail": "页面返回人机验证，未取得可核验小区价格。"}
+  ],
+  "officialIntegration": {
+    "url": "https://open.ke.com/",
+    "status": "public_product_information_verified_no_account_or_api_access",
+    "services": ["房屋价值分析服务", "房屋价值分析报告", "成交案例库", "RealData企业版"],
+    "note": "官方开放平台介绍网页版与 API 产品；尚未取得服务账号、接口合同或授权凭据，不能宣称已连接实时数据。"
+  },
+  "reuse": {
+    "url": "https://www.ke.com/zhuanti/serviceProtocol",
+    "policyEffectiveDate": "2026-08-03",
+    "status": "not_open_data",
+    "note": "当前服务协议第六条及第七条对未经授权复制、传播、自动化获取及使用平台内容作出限制。仅发现可访问页面不等于获得再分发或产品使用授权。"
+  },
+  "uiLabel": "贝壳：待接入授权样本",
+  "fallbackLabel": "UrbanLens 模拟房价（非贝壳数据）",
+  "calculationNote": "本次未获得可核验的玄武区贝壳住宅租售记录。来源名不得用于标注模拟数据；未核实的搜索摘要不进入评估。"
+}

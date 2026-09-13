@@ -13,6 +13,7 @@ export function objectDetails(f,manifest={}){
  facts.push(p.category==='research'?['所在行政区',p.district_name||'玄武区（研究范围）']:p.category==='imported'?['所属项目范围','玄武区研究项目']:['所在行政区',p.district_name||'区界附近 / 待核对']);
  if(p.category==='building'){
   const heightSource=p.height_source==='levels'?'楼层 × 3 m 推算':p.height_source==='osm'?'OSM 标注':'来源待核对';
+  if(p.render_height_source==='estimated')facts.push(['显示高度',number(p.render_height)+' m · 示意推算'],['推算方法',p.height_estimate_method]);if(p.roof_form)facts.push(['屋顶 / 外立面',({flat:'平屋顶',gabled:'坡屋顶',dome:'穹顶示意'})[p.roof_form]+' · '+p.facade_source]);
   facts.push(['建筑高度',!recordedNumber(p.height_m)||p.height_source==='unknown'?'未收录':number(p.height_m)+' m · '+heightSource],['楼层',!recordedNumber(p.levels)?'未收录':number(p.levels)+' 层']);
  }
  if(f.geometry.type.includes('Polygon')){const area=projectedArea(f.geometry);facts.push([p.category==='building'?'轮廓投影面积':'范围投影面积',area==null?'无法计算':number(area)+' m²']);}
@@ -26,7 +27,7 @@ export function objectDetails(f,manifest={}){
  if(p.category==='imported'&&p.use)facts.push(['导入用途',p.use]);
  if(p.boundary_source)facts.push(['边界来源',p.boundary_source]);
  facts.push(['数据日期',p.category==='imported'&&!p.source_date?'本次会话':String(p.source_date||manifest.snapshotAt||'未收录').slice(0,10)],['资料来源',p.category==='imported'?'用户导入 / 未复核':'OpenStreetMap']);
- const note=p.category==='imported'?'用户本机导入范围，来源、拓扑、面积及权属均待核实。':p.category==='building'?'面积来自开放轮廓；高度来自开放标注或楼层推算，未经测绘核验，不用于容积率或安全判断。缺失高度的 12 m 示意体量不作为事实。':f.geometry.type.includes('LineString')?'长度仅为选中 OSM 分段，非整条道路。缺失标签保留未知。':f.geometry.type.includes('Polygon')?'开放地图轮廓，不是登记宗地或法定更新边界；面积为投影计算参考。':'点位为开放地图参考位置，不保证入口和开放状态。';
+ const note=p.category==='imported'?'用户本机导入范围，来源、拓扑、面积及权属均待核实。':p.category==='building'?'面积来自开放轮廓；高度来自开放标注或楼层推算，未经测绘核验，不用于容积率或安全判断。缺失高度按类型、轮廓及邻近标注推算；外立面、颜色和屋顶为示意，不是实景重建。':f.geometry.type.includes('LineString')?'长度仅为选中 OSM 分段，非整条道路。缺失标签保留未知。':f.geometry.type.includes('Polygon')?'开放地图轮廓，不是登记宗地或法定更新边界；面积为投影计算参考。':'点位为开放地图参考位置，不保证入口和开放状态。';
  return {kind,id,name:p.name||'未命名'+kind,facts,note,coordinates:c.map(x=>x.toFixed(6)).join(', ')+' · WGS84',url:/^(way|relation|node)\/\d+$/.test(p.osm_id||'')?'https://www.openstreetmap.org/'+p.osm_id:null};
 }
 

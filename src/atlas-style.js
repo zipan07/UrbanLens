@@ -7,7 +7,7 @@ export const THEMES={
 export function makeStyle(data,{theme='day',mode='3d',terrain=true,schematic=true,layers={}},base) {
  const c=THEMES[theme],sources={};
  for(const id of ['boundary','land','water','roads','buildings','pois'])sources[id]={type:'geojson',data:data[id],maxzoom:17,tolerance:.45};
- for(const id of ['districtFocus','selected','imported','measure','research','studySelected','context','radius'])sources[id]={type:'geojson',data:EMPTY()};
+ for(const id of ['districtFocus','selected','imported','measure','research','studySelected','context','radius','population'])sources[id]={type:'geojson',data:EMPTY()};
  sources.districtLabels={type:'geojson',data:{type:'FeatureCollection',features:data.boundary.features.map(f=>({type:'Feature',properties:f.properties,geometry:{type:'Point',coordinates:centerOf(f.geometry)}}))}};
  const dem={type:'raster-dem',tiles:[`${base}data/terrain/{z}/{x}/{y}.png`],encoding:'terrarium',tileSize:256,minzoom:12,maxzoom:12,bounds:[118.72,31.98,118.96,32.15]};
  sources.dem={...dem};sources.hillshade={...dem};
@@ -31,7 +31,8 @@ export function makeStyle(data,{theme='day',mode='3d',terrain=true,schematic=tru
  add('rail','line','roads',{'line-color':c.rail,'line-width':['interpolate',['linear'],['zoom'],11,1,17,3],'line-opacity':.8},eq('category','rail'),{},'rail');
  add('rail-sleepers','line','roads',{'line-color':c.road,'line-width':1,'line-dasharray':[1,3],'line-opacity':.65},eq('category','rail'),{},'rail');
  add('waterways','line','roads',{'line-color':c.water,'line-width':['interpolate',['linear'],['zoom'],11,1,17,6]},eq('category','waterway'),{},'water');
- const color=['match',['get','height_source'],'osm',c.known,'levels',c.levels,c.unknown];
+ add('population-fill','fill','population',{'fill-color':'#8eb7d2','fill-opacity':.58},null,{},'population');
+ const color=['coalesce',['get',`appearance_${theme}`],['match',['get','height_source'],'osm',c.known,'levels',c.levels,c.unknown]];
  add('building-footprints','fill','buildings',{'fill-color':color,'fill-opacity':.87});
  add('building-edges','line','buildings',{'line-color':theme==='night'?'#84947c':'#b3b5a5','line-opacity':.4,'line-width':.45});
  add('building-3d','fill-extrusion','buildings',{'fill-extrusion-color':color,'fill-extrusion-height':mode==='2d'?0:schematic?['get','render_height']:['coalesce',['get','height_m'],0],'fill-extrusion-base':mode==='2d'?0:['get','render_base'],'fill-extrusion-opacity':1,'fill-extrusion-vertical-gradient':true});

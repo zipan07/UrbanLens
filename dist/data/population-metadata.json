@@ -1,0 +1,108 @@
+{
+  "version": "XW-POP-SIM-1",
+  "generatedAt": "2026-09-13",
+  "referenceYear": 2023,
+  "scope": "南京市玄武区，按现有 OSM 区界裁切",
+  "crs": "EPSG:4326",
+  "gridCRS": "EPSG:32650",
+  "gridSizeM": 500,
+  "gridCount": 366,
+  "boundaryAreaM2": 75191797.86,
+  "nightTotal": 536900,
+  "dayTotal": 617435,
+  "nightKind": "simulated",
+  "dayKind": "simulated",
+  "nightLabel": "夜间人口（居住分布推算）",
+  "dayLabel": "白天人口（活动情景推算）",
+  "nightMethod": "以居住用地面积×0.12与建筑面积×假设层数×居住权重形成空间权重，归一化至2023年末全区常住人口536900人。常住人口总量为官方资料；格网及夜间存在均为假设，不是手机信令或夜间观测。",
+  "dayMethod": "白天总量暂设夜间总量的1.15倍；格网分布取40%夜间归一化权重＋60%就业建筑及设施归一化权重。总量倍率与分配系数均为演示假设，尚无通勤OD、访客或日间实测校准。",
+  "parameters": {
+    "dayTotalMultiplier": 1.15,
+    "dayResidentialShare": 0.4,
+    "dayEmploymentShare": 0.6,
+    "nightResidentialLandWeight": 0.12,
+    "buildingLevels": "优先OSM层数；其次OSM高度÷3.2m；否则住宅6、就业类5、未分类4；范围1–60",
+    "nightBuildingWeights": {
+      "residential": 1,
+      "insideResidentialLand": 0.7,
+      "employment": 0.12,
+      "unclassified": 0.35
+    },
+    "dayBuildingWeights": {
+      "employment": 1,
+      "residential": 0.12,
+      "unclassified": 0.45
+    },
+    "poiWeights": {
+      "daily": 1000,
+      "education": 2400,
+      "health": 2000,
+      "transit": 800,
+      "heritage": 500,
+      "park": 250
+    }
+  },
+  "sources": [
+    {
+      "id": "POP-XW-2023",
+      "title": "2023年南京市常住人口954.7万人",
+      "publisher": "南京市政府门户网站 / 南京日报，转述南京市统计局数据",
+      "url": "https://www.nanjing.gov.cn/zzb/ywdt/msxx/202403/t20240312_5125829.html",
+      "publishedAt": "2024-03-12",
+      "period": "2023-12-31",
+      "value": 536900,
+      "unit": "人",
+      "geography": "全区",
+      "status": "官方正文核对",
+      "use": "总量锚点；非夜间测量"
+    },
+    {
+      "id": "OSM-XW-20260912",
+      "title": "玄武区建筑、用地与设施快照",
+      "publisher": "OpenStreetMap contributors / UrbanLens分类整理",
+      "url": "https://www.openstreetmap.org/copyright",
+      "date": "2026-09-12",
+      "license": "ODbL 1.0",
+      "attribution": "© OpenStreetMap contributors",
+      "use": "构建人口情景空间权重，收录不完整、不是建筑和设施普查"
+    },
+    {
+      "id": "WORLDPOP-2023-CHECK",
+      "title": "WorldPop Global2 China 2023 R2025A v1，100m人口模型",
+      "url": "https://api.stac.worldpop.org/collections/CHN/items/chn_pop_2023_CN_100m_R2025A_v1",
+      "documentationUrl": "https://data.worldpop.org/repo/prj/Global_2015_2030/R2025A/doc/Global2_Release_Statement_R2025A_v1.pdf",
+      "doi": "10.5258/SOTON/WP00839",
+      "license": "CC BY 4.0",
+      "unit": "人/像元",
+      "referenceDate": "2023-01-01",
+      "status": "官方API已返回区界总人口572286.12；未下载栅格，未用于本格网计算",
+      "apiTotal": 572286.12,
+      "apiAreaKm2": 75.1961,
+      "apiTask": "fc9fe82a-7e6e-48bc-a672-bedf51f8b0e3",
+      "use": "候选真实开放人口模型接入核对。与年末统计总量存在时点、边界和模型差异，不把两者视为同一观测。"
+    },
+    {
+      "id": "NANJING-30M-2023",
+      "title": "南京市中心城区30m常住人口分布数据集(2023年)",
+      "url": "https://www.geodata.cn/data/datadetails.html?dataguid=241440575070762",
+      "status": "找到元数据索引；未取得完整数据及公开再分发许可",
+      "use": "科研候选数据；不捆绑公开产品"
+    }
+  ],
+  "limitations": [
+    "500m格网是显示与情景计算尺度，不表示人口精度；格内按面积计算自定义片区人口也是模拟。",
+    "2023人口总量与2026 OSM空间快照时间不同。",
+    "建筑及设施收录不完整，山体公园等区域可能有昼间活动但缺乏对应点位。",
+    "不是手机信令热力，不提供实时、分小时或个体轨迹。",
+    "不等同实际服务人数、就业岗位、户数或市场需求。"
+  ],
+  "license": "ODbL 1.0 (derived OSM database); retain source attribution and make modified database available",
+  "attribution": "人口总量：南京市统计局公开资料；空间情景：UrbanLens；© OpenStreetMap contributors",
+  "nightSimulated": true,
+  "daySimulated": true,
+  "simulated": true,
+  "date": "2023-12-31",
+  "nightSource": "玄武区2023常住人口总量＋UrbanLens居住分布推算",
+  "daySource": "UrbanLens白天活动情景（夜间总量×1.15）",
+  "url": "https://www.nanjing.gov.cn/zzb/ywdt/msxx/202403/t20240312_5125829.html"
+}

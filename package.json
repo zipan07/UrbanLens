@@ -1,6 +1,6 @@
 {
   "name": "urbanlens",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "description": "UrbanLens 项目、数据版本与权限工作区",
@@ -20,7 +20,8 @@
     "maplibre-gl": "5.6.1",
     "pbf": "3.3.0",
     "proj4": "2.22.0",
-    "three": "0.180.0"
+    "three": "0.180.0",
+    "earcut": "3.2.3"
   },
   "devDependencies": {
     "esbuild": "0.25.9",
