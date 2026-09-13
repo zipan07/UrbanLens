@@ -1,3 +1,4 @@
+import {ringSelfIntersects} from './custom-area-geometry.js';
 import {parseBusinessCSV,projectedArea} from './value-domain.js';
 import {validateImport,boundsOf} from './geo.js';
 export const FIELDS=[['parcel_id','地块编号'],['building_area_m2','建筑面积'],['vacancy_pct','空置率'],['industry','产业标签'],['condition','建筑调查等级'],['source','数据来源'],['date','调查日期']];
@@ -32,7 +33,7 @@ export function previewImport({kind,text,mapping={},areaUnit='m2',vacancyUnit='p
     const prepared={...f,properties:{...p,parcel_id:id,name:p[mapping.name||'name']||id}};
     const valid=validateImport({type:'FeatureCollection',features:[prepared]},boundary).features[0];const area=projectedArea(valid.geometry);if(!area||area<=0)throw Error('边界退化或面积为零');
     const g=valid.geometry,polys=g.type==='Polygon'?[g.coordinates]:g.coordinates;
-    for(const poly of polys)for(const ring of poly){if(ring.length>3000)throw Error('单环最多 3,000 个点，请先简化边界');for(let a=1;a<ring.length;a++)for(let b=a+2;b<ring.length;b++){if(a===1&&b===ring.length-1)continue;const cross=(p,q,r)=>(q[0]-p[0])*(r[1]-p[1])-(q[1]-p[1])*(r[0]-p[0]);const [p,q,r,s]=[ring[a-1],ring[a],ring[b-1],ring[b]];if(cross(p,q,r)*cross(p,q,s)<0&&cross(r,s,p)*cross(r,s,q)<0)throw Error('边界自相交');}}
+    for(const poly of polys)for(const ring of poly){if(ring.length>3000)throw Error('单环最多 3,000 个点，请先简化边界');if(ringSelfIntersects(ring))throw Error('边界自相交或重叠');}
     const unit={...valid,id,properties:{...valid.properties,unit_id:id,research_type:'用户研究范围',imported:true,source_date:new Date().toISOString().slice(0,10),boundary_source:'用户导入，待核实'}};
     const old=data.units.find(u=>u.id===id);if(!old)added++;else if(JSON.stringify(old.geometry)===JSON.stringify(unit.geometry)&&old.properties.name===unit.properties.name)unchanged++;else{updated++;conflicts.push({id,fields:['geometry','properties'],old,incoming:unit});}
     features.push(unit);const b=boundsOf(g);extent=extent?[Math.min(extent[0],b[0]),Math.min(extent[1],b[1]),Math.max(extent[2],b[2]),Math.max(extent[3],b[3])]:b;
