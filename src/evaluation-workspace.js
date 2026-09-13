@@ -18,7 +18,7 @@ export class EvaluationWorkspace{
   const intros={2:['资料如何影响判断','先核对面积、建筑、使用状态与空间联系，再独立检查规划、权属和安全。每项输入都保留来源和状态，模拟补齐只用于情景探索，不能替代真实调查。'],3:['从指标到更新重点','空间距离、开发强度、功能适配、建筑状况和使用状态按当前权重分别计算，再形成更新研究关注度。总分用于提示调查重点；具体行动仍需结合约束、成本与实施条件。'],4:['从评估走向行动','将计算快照、资料缺口和建议一起复核，明确哪些判断已得到证据支持、哪些仍需调查。报告用于组织下一阶段工作，不能替代审批、安全鉴定或投资决策。']};
   const intro=intros[step];if(intro){const box=document.createElement('section');box.className='stage-intro';const h=document.createElement('h3'),p=document.createElement('p');h.textContent=intro[0];p.textContent=intro[1];box.append(h,p);root.querySelector('.assessment-steps').after(box);}
   if(run&&step>=3){root.insertAdjacentHTML('beforeend',analysisHTML(run));const key=run.id||run.fingerprint;if(!this.budgets.has(key))this.budgets.set(key,{});bindBudget(root,run,this.budgets.get(key));}
-  const revealKey=[u.id,step,run?.id||run?.fingerprint||preview.fingerprint].join(':');if(!this.revealed.has(revealKey)){this.revealed.add(revealKey);revealAssessment(root);}
+  const revealKey=[u.id,step,run?.id||run?.fingerprint||preview.fingerprint].join(':');cancelAnimationFrame(this.revealFrame);if(s.state.view==='detail'&&!this.revealed.has(revealKey)){this.revealFrame=requestAnimationFrame(()=>{this.revealed.add(revealKey);revealAssessment(root);});}
   bindUrbanContext(s);
   const form=$('#assessment-review');if(form)form.onsubmit=async e=>{e.preventDefault();e.submitter.disabled=true;try{const {review}=await this.cloud.mutation('reviews',{runId:run.id,...Object.fromEntries(new FormData(form))});this.cloud.current.reviews=[...(this.cloud.current.reviews||[]),review];this.render();s.adapter.toast('复核记录已保存');}catch(err){this.cloud.showError(err);}finally{e.submitter.disabled=false;}};
  }
