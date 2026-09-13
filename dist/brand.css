@@ -26,3 +26,20 @@
  .is-presenting .district-control{top:157px}
 }
 @media(max-width:380px){.wordmark{font-size:22px;gap:5px}.header-mark{width:24px;height:24px}.topbar{gap:8px}.mobile-panel{padding-inline:10px}}
+
+/* Studio 16.3: a single aligned product identity on the white header. */
+.topbar .brand-lockup{display:flex;align-items:center;gap:14px;min-width:0;--identity-size:clamp(12px,1.8vw,26px)}
+.topbar .wordmark{font-size:var(--identity-size);line-height:1.2;gap:5px}
+.topbar .system-title{display:block;font-size:var(--identity-size);line-height:1.2;font-weight:500;padding:0;border:0;white-space:nowrap;letter-spacing:0}
+#brand-home{display:flex;align-items:center;justify-content:center;flex:none;border-radius:9px;text-decoration:none}
+#brand-home .header-mark{display:block;width:38px;height:38px;transition:filter .18s ease}
+#brand-home:hover .header-mark{filter:brightness(1.12)}
+#brand-home:focus-visible{outline:2px solid #0071e3;outline-offset:4px}
+.nav-rail .rail-links{margin-top:24px}
+.home-reveal-mark{position:fixed;z-index:100000;pointer-events:none;object-fit:contain;transform-origin:center;will-change:transform,opacity;mix-blend-mode:multiply}
+.topbar .top-actions #project-open{min-width:0;max-width:none;width:auto;flex:0 0 auto;height:42px;min-height:42px;padding:0 14px;border-radius:10px;line-height:1.2;transition:background .18s ease,border-color .18s ease,box-shadow .18s ease}
+.topbar .top-actions #project-open span{font:inherit;max-width:200px}
+.topbar .top-actions #project-open:hover{background:#fafdff;border-color:#abc6e8;box-shadow:0 5px 16px #28578615,inset 0 1px 0 #fff}
+@media(max-width:1100px){.topbar{flex-wrap:wrap;height:auto;min-height:76px;padding-block:10px;gap:10px}.topbar .top-actions{margin-left:auto}.topbar .brand-lockup{gap:10px}}
+@media(max-width:600px){.topbar .brand-lockup{gap:8px}#brand-home .header-mark{width:28px;height:28px}.topbar .wordmark{gap:3px;letter-spacing:-.5px}.topbar .top-actions #project-open{padding-inline:10px}}
+@media(prefers-reduced-motion:reduce){#brand-home .header-mark,.topbar .top-actions #project-open{transition:none}}

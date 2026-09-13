@@ -14,7 +14,7 @@ export class ProjectWorkspace{
  get isAdmin(){return this.current?.project.role==='admin';}
  get pid(){return this.current?.project.id;}
  mount(){
-  const b=document.createElement('button');b.id='project-open';b.className='project-switch';b.innerHTML='<span>项目工作区</span>';$('.top-actions').prepend(b);b.onclick=()=>this.list();
+  const b=document.createElement('button');b.id='project-open';b.className='project-switch outline-button';b.innerHTML='<span>项目工作区</span>';$('.top-actions').prepend(b);b.onclick=()=>this.list();
   const rail=document.createElement('button');rail.className='rail-link';rail.innerHTML='<span class="rail-chat-glyph">▦</span><span>项目</span>';rail.title='项目工作区';rail.onclick=()=>this.list();$('.rail-links').prepend(rail);
   const el=document.createElement('dialog');el.id='project-dialog';el.className='project-dialog';el.innerHTML='<button id="project-close" class="dialog-close" aria-label="关闭项目窗口">×</button><div id="project-content"></div>';document.body.append(el);$('#project-close').onclick=()=>el.close();
   const panel=document.createElement('section');panel.id='project-tools';panel.className='import-card';$('#panel-data').prepend(panel);
