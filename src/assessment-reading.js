@@ -4,6 +4,7 @@ export function installReadingView(map){
  const sync=()=>{document.querySelector('.workspace').style.setProperty('--reading-edge',panel.getBoundingClientRect().width+'px');};
  const observer=new ResizeObserver(sync);observer.observe(panel);sync();button.addEventListener('click',()=>set(!document.body.classList.contains('reading-wide')));
  document.addEventListener('urbanlens:home',()=>set(false));document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.body.classList.contains('reading-wide')&&!document.querySelector('dialog[open]'))set(false);});
+ document.addEventListener('urbanlens:reading-close',()=>set(false));
  document.querySelector('#close-panel').addEventListener('click',()=>set(false));
 }
 export function revealAssessment(root){

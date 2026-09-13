@@ -1,5 +1,6 @@
 import {installReadingView} from './assessment-reading.js';
 import {installHomeTransition} from './home-transition.js';
+import {installPhoneWorkspace} from './phone-workspace.js';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function installStudioShell({map,manifest,studio,toast,tab,openPanel}){
  const $=s=>document.querySelector(s),motionPreference=matchMedia('(prefers-reduced-motion: reduce)');
@@ -45,6 +46,7 @@ export function installStudioShell({map,manifest,studio,toast,tab,openPanel}){
  // A small identity cue stays visible while the rest of the interface yields to the map.
 
  installReadingView(map);
+ installPhoneWorkspace({map,studio,openPanel});
  installHomeTransition(()=>{document.dispatchEvent(new Event('urbanlens:home'));if(presenting)presentation(false);document.querySelectorAll('dialog[open]').forEach(d=>d.close());$('#layers-popover').hidden=true;$('#layers-toggle').setAttribute('aria-expanded','false');studio()?.setView('list');focusView('city');});
  return {presentation,stopOrbit};
 }
