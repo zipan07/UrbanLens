@@ -150,7 +150,7 @@
   "sourceUrl": "https://www.openstreetmap.org/relation/2138698",
   "queryEndpoint": "https://overpass-api.de/api/interpreter",
   "scopeNote": "OSM 玄武区范围检索，包含与区界相交的完整对象；数量是本次快照收录量，不是城区普查总量。",
-  "heightNote": "height 为 OSM 标注，未经测绘复核；building:levels × 3 m 为推算；无高度记录时仅显示 12 m 示意体量，可关闭。所有显示高度均不参与真实用地评估。",
+  "heightNote": "OSM 标注及楼层×3m优先保留；缺失高度按类型、轮廓、街区和邻近高度推算，可关闭。颜色及可选外立面、屋顶为程序化示意；显示高度不回填业务台账。",
   "missing": [
     "权属与宗地台账",
     "法定规划条件与控制线",
