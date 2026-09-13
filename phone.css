@@ -1,0 +1,57 @@
+/* Studio 18: isolated handheld layout. Desktop has no phone-ui class. */
+.phone-only{display:none}
+.phone-ui{--phone-bottom:calc(56px + env(safe-area-inset-bottom,0px));overflow:hidden}
+.phone-ui .shell{margin-left:0;height:100dvh;min-height:0;overflow:hidden}
+.phone-ui .topbar{display:flex;position:relative;flex-wrap:wrap;flex:0 0 auto;height:auto;min-height:48px;padding:5px max(10px,env(safe-area-inset-right)) 5px max(10px,env(safe-area-inset-left));gap:4px;background:#fff;z-index:50}
+.phone-ui .topbar .brand-lockup{flex:1;max-width:calc(100% - 46px);overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;touch-action:pan-x;gap:8px;--identity-size:13px}
+.phone-ui .topbar .wordmark,.phone-ui .topbar .system-title{flex:none;white-space:nowrap}
+.phone-ui #brand-home .header-mark{width:28px;height:28px}
+.phone-ui .phone-header-toggle{display:flex;align-items:center;justify-content:center;flex:0 0 40px;width:40px;height:40px;border:1px solid #e1e6ed;border-radius:12px;background:#f8fafc;color:#47627c;font-size:24px}
+.phone-ui .topbar .top-actions{display:none;width:100%;max-width:100%;flex:0 0 100%;margin:0;padding:4px 0 7px;overflow-x:auto;overflow-y:hidden;gap:8px;scrollbar-width:thin;scrollbar-color:#98aabb #eef2f6;touch-action:pan-x;overscroll-behavior:contain}
+.phone-ui.phone-header-open .topbar .top-actions{display:flex}
+.phone-ui .topbar .top-actions>button{display:inline-flex!important;flex:0 0 auto;min-height:44px;width:auto!important;white-space:nowrap}
+.phone-ui .topbar .top-actions .desktop-study-button{display:none!important}
+.phone-ui .topbar #command-open>span,.phone-ui .topbar #export-map>span{display:inline}
+.phone-ui .topbar #command-open::before,.phone-ui .top-actions::before{display:none}
+.phone-ui .topbar #command-open kbd{display:none}
+.phone-ui .nav-rail{display:none;position:fixed;inset:calc(var(--phone-header-height,48px) + 6px) auto calc(var(--phone-bottom) + 6px) max(6px,env(safe-area-inset-left));width:76px;height:auto;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#98aabb #eef2f6;overscroll-behavior:contain;border:1px solid #dce4ed;border-radius:17px;background:#fffffff5;z-index:65;box-shadow:0 8px 30px #29405b20;padding:8px 0}
+.phone-ui.phone-menu-open .nav-rail{display:flex}
+.phone-ui .nav-rail .rail-links{display:flex;flex-direction:column;gap:6px;margin:0;padding:0 7px;width:100%;flex:none}
+.phone-ui .nav-rail .rail-link{min-height:54px;flex:none}.phone-ui .nav-rail .rail-about{margin:14px auto 6px;min-height:44px;flex:none}.phone-ui .nav-rail .rail-sign{display:none}
+.phone-ui .workspace{position:relative;flex:1;min-height:0;overflow:hidden}
+.phone-ui .map-workspace{width:100%;min-width:0;flex:1}
+.phone-ui .phone-dock{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));height:var(--phone-bottom);padding:3px max(6px,env(safe-area-inset-right)) env(safe-area-inset-bottom,0px) max(6px,env(safe-area-inset-left));flex:none;border-top:1px solid #e0e6ee;background:#fffffff5;z-index:80;gap:4px}
+.phone-ui .phone-dock button{display:flex;align-items:center;justify-content:center;gap:6px;min-height:48px;border:0;border-radius:11px;background:transparent;font-size:19px;color:#526578}.phone-ui .phone-dock button span{font-size:13px}.phone-ui .phone-dock button[aria-pressed=true],.phone-ui .phone-dock button[aria-expanded=true]{background:#edf5ff;color:#0671d9}
+.phone-ui .statusbar{display:none}
+.phone-ui .workspace .inspector,.phone-ui.reading-wide .workspace .inspector{display:none!important;position:absolute;inset:0;transform:none;width:100%;height:100%;min-width:0;max-width:none;border:0;border-radius:0;background:#fff;z-index:55;box-shadow:none;opacity:1;visibility:visible}
+.phone-ui .workspace .inspector.is-open,.phone-ui.reading-wide .workspace .inspector{display:flex!important}
+.phone-ui .inspector-top{padding:8px 12px;flex:none;min-height:48px}.phone-ui .close-panel{min-width:44px;min-height:40px;font-size:23px}
+.phone-ui .inspector-tabs{flex:none;overflow-x:auto;overflow-y:hidden;max-width:100%;white-space:nowrap;scrollbar-width:thin;touch-action:pan-x;justify-content:flex-start;gap:12px;padding:0 12px;margin:0}
+.phone-ui .inspector-tabs button{flex:0 0 auto;min-height:44px;padding:8px 10px!important;white-space:nowrap}
+.phone-ui .inspector-scroll,.phone-ui.reading-wide .inspector-scroll{min-height:0;flex:1;width:100%;max-width:none;margin:0;padding:12px 16px 28px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.phone-ui .creator{display:none}.phone-ui .reading-toggle{display:none!important}
+.phone-ui .value-tabs,.phone-ui .assessment-steps{overflow-x:auto;white-space:nowrap;scrollbar-width:thin;touch-action:pan-x}.phone-ui .assessment-steps button,.phone-ui .value-tabs button{flex:0 0 auto;min-height:44px}
+.phone-ui .analysis-grid,.phone-ui.reading-wide .analysis-grid,.phone-ui.reading-wide .dimension-list{grid-template-columns:1fr}
+.phone-ui .evidence-table{max-width:100%;overflow:auto}.phone-ui .budget-fields{grid-template-columns:1fr}
+.phone-ui input,.phone-ui select,.phone-ui textarea{font-size:16px!important}.phone-ui .value-mode{flex-wrap:wrap}.phone-ui .value-mode select{max-width:100%;min-width:0}
+.phone-ui .phone-tools-panel:not([hidden]){display:flex;flex-direction:column;position:absolute;inset:8px 8px 8px auto;width:min(390px,calc(100% - 16px));max-height:calc(100% - 16px);z-index:60;background:#fffffff7;border:1px solid #dce4ed;border-radius:18px;box-shadow:0 10px 40px #1d35502b;overflow:hidden;backdrop-filter:blur(12px)}
+.phone-ui .phone-tools-heading{display:flex;align-items:center;justify-content:space-between;min-height:48px;padding:4px 12px;border-bottom:1px solid #e5eaf0;flex:none}.phone-ui .phone-tools-heading button{width:44px;height:40px;font-size:24px;background:transparent;border:0}
+.phone-ui .phone-tools-content{min-height:0;flex:1;padding:12px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-width:thin;touch-action:pan-y}
+.phone-ui .phone-tools-content>:not([hidden]){position:relative!important;inset:auto!important;transform:none!important;width:100%!important;max-width:100%!important;max-height:none!important;margin:0 0 14px!important;box-shadow:none;pointer-events:auto}
+.phone-ui .phone-tools-content>[hidden]{display:none!important}
+.phone-ui .phone-tools-content .map-search{display:block}.phone-ui .phone-tools-content .search-line{height:46px;padding:0 9px;gap:6px}.phone-ui .phone-tools-content .search-line>span{display:none}.phone-ui .phone-tools-content .search-results{position:relative;top:auto;max-height:210px}
+.phone-ui .phone-tools-content .map-tools{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px}.phone-ui .phone-tools-content .layers-popover{padding:12px;border-radius:12px;overflow:visible}
+.phone-ui .phone-tools-content .tool-button span{display:inline}.phone-ui .phone-tools-content .view-dock button:not([hidden]){display:inline-flex}
+.phone-ui .map-source .source-credit{max-width:100%;width:auto;text-align:left}.phone-ui .maplibregl-ctrl-bottom-left{bottom:38px!important;left:8px!important}.phone-ui .maplibregl-ctrl-scale{transform:none}
+.phone-ui .phone-tools-content .map-navigation{display:flex;flex-direction:row;flex-wrap:wrap;justify-content:space-between}.phone-ui .phone-tools-content .map-navigation button{flex:1;min-width:44px;min-height:44px}
+.phone-ui .phone-tools-content .view-dock,.phone-ui .phone-tools-content .view-memory,.phone-ui .phone-tools-content .rotation-dock{display:flex;flex-wrap:wrap;gap:6px}.phone-ui .phone-tools-content .view-dock button,.phone-ui .phone-tools-content .view-memory button,.phone-ui .phone-tools-content .rotation-dock button{min-height:44px;min-width:44px}
+.phone-ui .phone-tools-content .map-bottom{display:flex;flex-direction:column;align-items:stretch;gap:10px}.phone-ui .phone-tools-content .theme-options{display:flex;justify-content:space-around;flex-wrap:wrap}.phone-ui .phone-tools-content .theme-options button{min-height:44px}.phone-ui .phone-tools-content .map-legend{display:flex;flex-wrap:wrap;gap:10px}
+.phone-ui .phone-tools-content .presentation-bar{display:flex;flex-wrap:wrap;gap:6px;overflow:visible;padding:10px}.phone-ui .phone-tools-content .presentation-bar button{min-height:44px}.phone-ui .phone-tools-content .presentation-bar>span{display:none}
+.phone-ui .map-title,.phone-ui .map-wash,.phone-ui .map-hover-label{display:none!important}.phone-ui .map-source{bottom:3px;left:5px;right:5px;max-width:calc(100% - 10px);font-size:9px;pointer-events:auto}.phone-ui .map-source #camera-status{display:none}.phone-ui .source-credit{font-size:9px;white-space:normal;line-height:1.3;background:#ffffffa8;border-radius:5px;padding:2px 4px}
+.phone-ui .measurement{top:8px;left:8px;right:8px;bottom:auto;max-width:calc(100% - 16px);width:auto}.phone-ui .measurement button{min-height:44px}
+.phone-ui .map-details{position:absolute!important;left:8px!important;right:8px!important;top:8px!important;bottom:auto!important;width:auto!important;max-width:calc(100% - 16px)!important;max-height:calc(100% - 16px)!important;overflow-y:auto}.phone-ui .map-details-head button{min-width:44px;min-height:44px}
+.phone-ui .custom-area-toolbar{max-width:calc(100% - 16px);flex-wrap:wrap;max-height:45%;overflow:auto;left:8px;right:8px;bottom:8px}.phone-ui .custom-area-toolbar button{min-height:44px}
+.phone-ui.is-presenting .topbar{display:none}.phone-ui.is-presenting.phone-menu-open .topbar{display:flex}.phone-ui.is-presenting .shell{margin:0}.phone-ui.is-presenting .phone-dock{display:grid}.phone-ui.is-presenting .roadshow-identity{top:max(8px,env(safe-area-inset-top));left:max(8px,env(safe-area-inset-left));bottom:auto;right:auto;width:auto;max-width:180px;padding:6px 10px;border-radius:12px;background:#ffffffd9;z-index:40}.phone-ui.is-presenting .roadshow-identity>strong{font-size:17px;gap:7px}.phone-ui.is-presenting .roadshow-identity img{width:28px;height:28px}
+.phone-ui.phone-tools-open .roadshow-identity,.phone-ui.phone-reading .roadshow-identity,.phone-ui.phone-menu-open .roadshow-identity{display:none!important}
+.phone-ui dialog{width:calc(100vw - 16px);max-width:calc(100vw - 16px);max-height:calc(100dvh - 20px);overflow-y:auto;margin:auto;padding:20px 16px;border-radius:16px}.phone-ui dialog .dialog-close{min-width:44px;min-height:44px}.phone-ui #toast{bottom:calc(var(--phone-bottom) + 10px);max-width:calc(100vw - 20px);left:10px;right:10px;transform:none;z-index:90}
+@media(orientation:landscape){.phone-ui .topbar{min-height:42px;padding-block:2px}.phone-ui .phone-header-toggle{height:36px}.phone-ui .phone-dock{--phone-bottom:calc(48px + env(safe-area-inset-bottom,0px))}.phone-ui .phone-dock button{min-height:42px}.phone-ui .inspector-top{min-height:40px;padding-block:2px}.phone-ui .analysis-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.phone-ui .budget-fields{grid-template-columns:repeat(3,minmax(0,1fr))}}
