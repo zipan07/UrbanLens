@@ -3,6 +3,23 @@ import {zipSync,strToU8} from 'fflate';
 import {CREATOR,MODE_NAMES,PROFILES} from './value-domain.js';
 import {comparisonPresentation} from './value-workflow.js';
 export const xml=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c])).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'');
+const display=value=>typeof value==='number'&&Number.isFinite(value)?String(Number(value.toFixed(2))):value??'未提供';
+const auxiliarySections=run=>{
+ const a=run.auxiliary;if(!a)return [];
+ const population=a.population||{},housing=a.housing||{},basis=a.basis==='transaction'?'成交':'挂牌',rate=n=>display(typeof n==='number'?n*100:null)+'%',scopes={'within-unit':'片区内','within-600m':'距片区边界 600m 内','simulated':'模拟情景','none':'无样本'};
+ const fields=[['昼间人口情景',population.day,'人',population.detail?.day],['夜间人口代理',population.night,'人',population.detail?.night],['昼间人口密度',population.dayDensity,'人/km²',population.detail?.day],['夜间人口密度',population.nightDensity,'人/km²',population.detail?.night]];
+ const rows=[['指标 / 数值','来源 / 时点','口径 / 状态'],...fields.map(([label,value,unit,d])=>[label+' / '+display(value)+' '+unit,(d?.source||population.source||'未接入')+' / '+((d?.dates||[]).join('、')||population.date||'未提供'),d?.simulated?'含模拟假设':'人口模型代理，非信令实测']),...['sale','rent'].map(key=>{const h=housing[key]||{};return [(key==='sale'?'住宅售单价':'住宅租单价')+' / '+display(h.unitPrice)+' '+(h.unit||(key==='sale'?'元/m²':'元/m²/月')),(h.source||'未接入')+' / '+(h.dateRange?.join('—')||h.date||'未提供'),basis+'；'+(h.simulated?'模拟值（非贝壳数据）':display(h.count)+' 条，用户提供待核实')+'；'+(scopes[h.scope]||h.scope||'未注明范围')];})];
+ const urls=[...new Set(['day','night'].flatMap(key=>population.detail?.[key]?.urls||[]))];
+ const sections=[{title:'人口与住宅市场辅助评估',rows,paragraphs:[
+  `基础五维分 ${display(run.baseTotal)}；辅助分 ${display(a.score)}。辅助${a.enabled?'启用':'关闭'}，设置权重 ${rate(a.weight)}，实际权重 ${rate(a.effectiveWeight)}。综合分 = 基础五维分 × (1 − 实际权重) + 辅助分 × 实际权重。`,
+  `辅助规则 ${a.version||'未提供'}；统计日期 ${a.asOf||'未提供'}；人口格网版本 ${population.version||'未提供'}。${a.rule?.formula||''}`,
+  population.method||'人口模型和空间代理统计。',housing.method||'住宅样本分组统计。',
+  ...urls.map(url=>'人口来源原链接：'+url),...(a.limitations||[])
+ ]}];
+ const samples=['sale','rent'].flatMap(key=>(housing[key]?.samples||[]).map(sample=>({...sample,kind:key})));
+ if(samples.length)sections.push({title:'采用的住宅样本',rows:[['样本 / 口径','单价 / 面积','来源 / 日期','原链接'],...samples.slice(0,60).map(sample=>[sample.name+' / '+(sample.kind==='sale'?'售':'租')+' / '+(sample.basis==='transaction'?'成交':'挂牌'),display(sample.unitPrice)+' '+(sample.kind==='sale'?'元/m²':'元/m²/月')+' / '+display(sample.area_m2)+' m² / 距边界 '+display(sample.distanceM)+' m',sample.source+' / '+sample.date,sample.url])],paragraphs:[`本次采用 ${samples.length} 条住宅样本，表格列示前 ${Math.min(60,samples.length)} 条；全部采用样本及其他口径记录均保存在评估完整快照中。导入来源尚待核实。`]});
+ return sections;
+};
 export function reportModel(run,analysis,{note='',reviewer='',reviewNote='',comparison=[],evidence,review=null}={}){
  analysis=run.analysisSnapshot||analysis;
  const status=review?.status==='reviewed'?'项目内已复核':review?.status==='changes'?'需补充资料':'未复核';
@@ -11,11 +28,12 @@ export function reportModel(run,analysis,{note='',reviewer='',reviewNote='',comp
   {title:'研究摘要',paragraphs:[`本报告用于展示 ${run.name} 的空间条件与更新研究画像。数据口径为${MODE_NAMES[run.mode]}，使用${PROFILES[run.profile].name}演示权重。${run.total===null?'当前资料不足，不输出综合关注度。':'演示更新研究关注度为 '+run.total+' / 100。'}结果不代表土地市场价值或实施可行性。`,note||'建议优先核对研究边界、法定规划条件、计容面积、权属及建筑和经营调查。']},
   {title:'研究范围与数据',paragraphs:[`研究轮廓面积约 ${analysis.area} m²，采用 WGS84 / UTM 50N 投影计算；不是登记宗地面积。关联 ${analysis.buildingCount} 个已收录地上建筑主体参考对象（按包围盒中心落入研究范围筛选，非栋数普查）。`,`几何快照 ${run.geometryDate}；设施快照 ${run.spatialDate}。${analysis.method}`,`业务来源：${run.input.source}。业务日期：${run.input.date||'未提供'}。`]},
   {title:'多维评估',rows:[['维度','原始值','分值','权重','证据状态'],...run.dimensions.map(d=>[d.name,d.raw,d.score===null?'缺失':String(d.score),Math.round(d.weight*100)+'%',d.status])],paragraphs:[`有效指标加权覆盖率 ${run.coverage}%。缺失维度：${run.missing.join('、')||'当前演示指标无缺失'}。覆盖率是字段有效性，不是事实可信度。`,...run.dimensions.map(d=>`${d.name}：${d.method}。来源日期 ${d.date||'缺失'}。`)]},
+  ...auxiliarySections(run),
   {title:'逐项依据',rows:[['字段 / 原始值 / 单位','来源 / 日期','有效性 / 核实','附件页码'],...(run.fieldEvidence||[]).map(f=>[`${f.label} / ${f.value??'缺失'} ${f.unit}`,`${f.source||'未提供'} / ${f.date||'未提供'}${f.method?'；'+f.method:''}${f.originalEvidence?'；原依据：'+f.originalEvidence.source+'（'+VALIDITY[f.originalEvidence.validity]+'），原值 '+f.originalEvidence.value:''}`,`${f.kind==='simulated'?'模拟假设 / ':''}${VALIDITY[f.validity]} / ${f.verification==='verified'?'已核对':'待核实'}`,f.refs.map(r=>`${r.title} 第 ${r.page} 页`).join('；')||'无附件引用'])],paragraphs:(run.fieldEvidence||[]).flatMap(f=>f.refs.map(r=>`${f.label} — ${r.title} 第 ${r.page} 页：${r.text}（${r.extraction}）`))},
   {title:'独立约束',rows:[['类别','核对状态','事项 / 日期','依据'],...(run.constraints||[]).map(c=>[c.label,CONSTRAINT_STATUS[c.status],`${c.summary||'未补充'} / ${c.date||'未提供'}`,c.refs.map(r=>`${r.title} 第 ${r.page} 页`).join('；')||'无附件引用'])],paragraphs:['规划、权属和安全事项独立列示，不计入五维分数。资料不足不等于没有约束。']},
   {title:'规则适用范围',paragraphs:[run.ruleSnapshot?.scope||'玄武研究流程演示',run.ruleSnapshot?.limitations||'演示规则，未正式发布。']},
   {title:'周边配套',rows:[['类别','最近收录参考点','直线距离'],...Object.entries(analysis.nearest).map(([k,f])=>[({transit:'交通',education:'教育',health:'医疗',park:'公园',daily:'生活服务',heritage:'历史要素'})[k],f?.properties.name||'未收录',f?Math.round(f.distance)+' m':'未知'])],paragraphs:['点位可能是面对象包围盒中心；不代表入口、步行时间、开放时段或服务容量。']},
-  ...(comparison.length? [{title:'研究单元比较',rows:[['对象 / 运行记录','数据口径','资料时点','关注度','覆盖率'],...comparison.map((r,i)=>[r.name+' / '+(comparisonView.items[i].runId||'即时原始指标'),MODE_NAMES[r.mode],'边界 '+r.geometryDate+'；设施 '+r.spatialDate+'；业务 '+(r.input.date||'未提供'),comparisonView.items[i].scoreText,r.coverage+'%'])],paragraphs:[comparisonView.reason,'仅在数据模式、规则和时点一致且指标完整时允许关注度排序；此表不构成项目投资排序。']}]:[]),
+  ...(comparison.length? [{title:'研究单元比较',rows:[['对象 / 运行记录','数据口径','资料时点','关注度','覆盖率'],...comparison.map((r,i)=>[r.name+' / '+(comparisonView.items[i].runId||'即时原始指标'),MODE_NAMES[r.mode],'边界 '+r.geometryDate+'；设施 '+r.spatialDate+'；业务 '+(r.input.date||'未提供'),comparisonView.items[i].scoreText,r.coverage+'%'])],paragraphs:[comparisonView.reason,'仅在数据模式、评分规则、辅助权重与格网口径一致且指标完整时允许关注度排序；住宅样本日期另列，不构成项目投资排序。',...comparison.filter(r=>r.auxiliary).map(r=>`${r.name}：基础 ${comparisonView.canCompare?display(r.baseTotal):'暂不比较'} 分，辅助 ${comparisonView.canCompare?display(r.auxiliary.score):'暂不比较'} 分，辅助实际权重 ${display(r.auxiliary.effectiveWeight*100)}%，${r.auxiliary.basis==='transaction'?'成交':'挂牌'}；人口 ${r.auxiliary.population?.date||'未提供'}，售价 ${r.auxiliary.housing?.sale?.date||'未提供'}，租价 ${r.auxiliary.housing?.rent?.date||'未提供'}。`)]}]:[]),
   {title:'待核实事项与来源',paragraphs:[...run.limitations,...(evidence?.documents||[]).slice(0,3).map(d=>`${d.title}（${d.date}），${d.publisher}。${d.url}`),'OSM 来源与许可 https://www.openstreetmap.org/copyright']},
   {title:'版本与复核',paragraphs:[`${run.projectId?'项目编号 '+run.projectId+'；项目数据 V'+run.projectDataVersion+'；保存账户 '+(run.createdByName||run.createdBy)+'。':''}评估运行 ${run.id}；运行时间 ${run.createdAt}；规则 ${run.ruleVersion}；输入标识 ${run.fingerprint}。`,`复核状态：${status}。${review?'账户：'+review.actorName+' / '+review.actorId+'；时间：'+review.reviewedAt+'；意见：'+review.note:'尚无账户复核记录。'} 项目内复核不构成业务审批，规则仍为演示规则。`,CREATOR]}
  ]};

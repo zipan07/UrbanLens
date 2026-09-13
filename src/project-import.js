@@ -1,3 +1,4 @@
+import {HOUSING_FIELDS,validateHousingSamples} from './urban-context.js';
 import {ringSelfIntersects} from './custom-area-geometry.js';
 import {parseBusinessCSV,projectedArea} from './value-domain.js';
 import {validateImport,boundsOf} from './geo.js';
@@ -25,6 +26,14 @@ export function previewImport({kind,text,mapping={},areaUnit='m2',vacancyUnit='p
     accepted[id]=record;const old=data.uploaded[id];if(!old)added++;else if(JSON.stringify(old)===JSON.stringify(record))unchanged++;else{updated++;conflicts.push({id,fields:Object.keys(record).filter(k=>JSON.stringify(old[k])!==JSON.stringify(record[k])),old,incoming:record});}
    }catch(e){errors.push({row:i+2,message:e.message});}});
    candidate.uploaded={...data.uploaded,...accepted};
+  }else if(kind==='housing'){
+   const rows=csvRows(text),head=rows.shift()?.map(x=>x.trim()),selected=HOUSING_FIELDS.map(k=>mapping[k]||k);
+   if(!head?.length||new Set(head).size!==head.length||new Set(selected).size!==selected.length||selected.some(k=>!head.includes(k)))throw Error('请将住宅样本字段映射到不同的有效列');
+   const accepted=validateHousingSamples(rows.map((r,i)=>{if(r.length!==head.length)throw Error(`第 ${i+2} 行列数不一致`);return Object.fromEntries(HOUSING_FIELDS.map((k,j)=>[k,r[head.indexOf(selected[j])].trim()]));}),{asOf:new Date().toISOString().slice(0,10)});if(!accepted.length)throw Error('请提供至少一条住宅样本');
+   count=accepted.length;const oldRows=data.housing||[],ids=new Set(accepted.map(r=>r.id));
+   for(const record of accepted){const old=oldRows.find(r=>r.id===record.id);if(!old)added++;else if(JSON.stringify(old)===JSON.stringify(record))unchanged++;else{updated++;conflicts.push({id:record.id,fields:Object.keys(record).filter(k=>JSON.stringify(old[k])!==JSON.stringify(record[k])),old,incoming:record});}}
+   candidate.housing=[...oldRows.filter(r=>!ids.has(r.id)),...accepted];validateHousingSamples(candidate.housing,{asOf:new Date().toISOString().slice(0,10)});
+   warnings.push('售：总价万元；租：月租元。挂牌与成交分别统计；样本为用户提供，尚未独立核实。');
   }else if(kind==='geojson'){
    const input=JSON.parse(text);if(!Array.isArray(input?.features)||input.type!=='FeatureCollection')throw Error('请使用 GeoJSON FeatureCollection');if(input.crs)throw Error('请先转换为 WGS84 并移除 crs');
    count=input.features.length;if(!count||count>1000)throw Error('每批导入 1–1,000 条');const seen=new Set(),features=[];
@@ -45,6 +54,7 @@ export function previewImport({kind,text,mapping={},areaUnit='m2',vacancyUnit='p
 }
 export function resolveImport(preview,decisions={}){
  if(!preview.canCommit)throw Error('存在阻断错误，整批未提交');const data=structuredClone(preview.candidate);
- for(const c of preview.conflicts){const choice=decisions[c.id];if(!['incoming','existing'].includes(choice))throw Error('请逐项选择冲突的生效来源');if(choice==='existing'){if(preview.kind==='csv')data.uploaded[c.id]=c.old;else data.units=data.units.map(u=>u.id===c.id?c.old:u);}}
+ for(const c of preview.conflicts){const choice=decisions[c.id];if(!['incoming','existing'].includes(choice))throw Error('请逐项选择冲突的生效来源');if(choice==='existing'){if(preview.kind==='csv')data.uploaded[c.id]=c.old;else if(preview.kind==='housing')data.housing=data.housing.map(r=>r.id===c.id?c.old:r);else data.units=data.units.map(u=>u.id===c.id?c.old:u);}}
+ if(preview.kind==='housing')validateHousingSamples(data.housing,{asOf:new Date().toISOString().slice(0,10)});
  return data;
 }

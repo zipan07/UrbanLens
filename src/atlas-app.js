@@ -4,6 +4,8 @@ import {installMapDetails,pickMapObjects,objectDetails} from './map-details.js';
 import {installMapGestures} from './map-gestures.js';
 import {installStudioShell} from './studio-shell.js';
 import {packedBytes} from './packed-data.js';
+import {prepareBuildingAppearance} from './building-appearance.js';
+import {installBuildingRealism} from './building-realism.js';
 import maplibregl from 'maplibre-gl';
 import {makeStyle} from './atlas-style.js';
 import {installLocalFonts} from './local-fonts.js';
@@ -16,9 +18,9 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const fmt=n=>Number(n).toLocaleString('zh-CN');
 const icon=name=>`<svg aria-hidden="true"><use href="#i-${name}"/></svg>`;
 const base=new URL('.',location.href).href;
-const state={theme:'day',mode:'3d',terrain:true,schematic:true,layers:{},selected:null,imported:EMPTY(),measure:[],measuring:false,ready:false};
+const state={theme:'day',mode:'3d',terrain:true,schematic:true,realism:false,population:'none',layers:{},selected:null,imported:EMPTY(),measure:[],measuring:false,ready:false};
 const labels={building:'建筑 / 建筑部件',green:'绿地',water:'水体',civic:'公共服务用地',commercial:'商业用地',residential:'居住用地',industrial:'工业等用地',other:'开放地图用地',road:'道路',rail:'轨道',waterway:'水系',education:'教育设施',health:'医疗设施',transport:'交通设施',culture:'文化与游览',nature:'自然空间',place:'地名',service:'服务设施',boundary:'行政边界',imported:'研究范围 / 未复核'};
-let map,manifest,data,studio,shellUI,detailsUI,objects=[],byId=new Map(),toastTimer,loadTimer;
+let realismUI,map,manifest,data,studio,shellUI,detailsUI,objects=[],byId=new Map(),toastTimer,loadTimer;
 const motionPreference=matchMedia('(prefers-reduced-motion: reduce)'),layerFades=new Map(),selectionFrames=new Map(),selectionKeys=new Map();
 let reduced=motionPreference.matches;
 motionPreference.addEventListener?.('change',e=>{reduced=e.matches;if(reduced){map?.stop?.();shellUI?.stopOrbit();if(state.ready&&data)applyLayerVisibility();}});
@@ -26,7 +28,7 @@ function toast(message){$('#toast').textContent=message;$('#toast').hidden=false
 function openPanel(open=true){$('#inspector').classList.toggle('is-open',open);$('#mobile-panel').setAttribute('aria-expanded',String(open));if(document.body.classList.contains('is-presenting')){document.body.classList.toggle('present-panel',open);$('#presentation-panel').setAttribute('aria-pressed',String(open));requestAnimationFrame(()=>map?.resize?.());}}
 function tab(name,open=true){if(!['value','overview','object','data'].includes(name))return;for(const t of ['value','overview','object','data']){$(`#panel-${t}`).hidden=t!==name;$(`#tab-${t}`).setAttribute('aria-selected',String(t===name));}$$('.rail-link[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));if(open)openPanel();$('.inspector-scroll').scrollTop=0;}
 function fail(message){clearTimeout(loadTimer);$('#map-loading').hidden=true;$('#map-failure').hidden=false;$('#map-error').textContent=message;$('#load-status').textContent='地图未就绪 · 资料目录仍可查看';}
-async function json(path){if(path==='data/services.geojson')return JSON.parse(new TextDecoder().decode(await packedBytes('services')));const r=await fetch(`${base}${path}?v=6`,{signal:AbortSignal.timeout(30000)});if(!r.ok)throw new Error(`数据文件加载失败（${r.status}）：${path}`);return r.json();}
+async function json(path){if(path==='data/services.geojson')return JSON.parse(new TextDecoder().decode(await packedBytes('services')));const r=await fetch(`${base}${path}?v=15`,{signal:AbortSignal.timeout(30000)});if(!r.ok)throw new Error(`数据文件加载失败（${r.status}）：${path}`);return r.json();}
 function sourceData(id,geo){map?.getSource(id)?.setData(geo);
  if(!['selected','studySelected'].includes(id))return;
  if(!geo.features?.length){selectionKeys.delete(id);return;}
@@ -41,7 +43,8 @@ function updateCamera(){if(!map)return;const c=map.getCenter(),p=Math.round(map.
 // ValueStudio owns the filtered study source, including imported boundaries.
 // Keep the raw import in state for removal/export without drawing it twice.
 function refreshImportedSource(){sourceData('imported',studio?EMPTY():state.imported);}
-function refreshStateSources(){sourceData('selected',state.selected?{type:'FeatureCollection',features:[state.selected]}:EMPTY());refreshImportedSource();updateMeasure();studio?.mapLayers();}
+function applyPopulation(){const mode=state.population;$('#population-mode').value=mode;const legend=$('#population-legend');legend.hidden=mode==='none';legend.querySelector('strong').textContent=mode==='day'?'白天活动情景':'夜间居住推算';if(!map?.getSource('population'))return;sourceData('population',mode==='none'?EMPTY():data.populationGrid||EMPTY());map.setPaintProperty('population-fill','fill-color',['interpolate',['linear'],['get',mode==='day'?'day_density':'night_density'],0,'#c5e7ef',5000,'#8eb7d2',15000,'#776fb7',30000,'#ce668b',60000,'#efad66']);}
+function refreshStateSources(){applyPopulation();sourceData('selected',state.selected?{type:'FeatureCollection',features:[state.selected]}:EMPTY());refreshImportedSource();updateMeasure();studio?.mapLayers();}
 function applyStyle(){if(!map||!data)return;detailsUI?.close();for(const fade of layerFades.values()){clearTimeout(fade.timer);cancelAnimationFrame(fade.frame);}layerFades.clear();state.ready=false;$('#export-map').disabled=true;map.setStyle(makeStyle(data,state,base),{diff:false});map.once('style.load',()=>{refreshStateSources();state.ready=true;$('#export-map').disabled=false;updateCamera();});}
 function applyLayerVisibility(){
  detailsUI?.close();
@@ -82,7 +85,7 @@ function renderCatalog(){const m=manifest,c=m.counts,h=m.heights,total=c.buildin
  const en=['LAKE & ISLANDS','CAMPUS & CITY','HISTORY & MEMORY','TEMPLE & CITY WALL','ART & CULTURE','MOUNTAIN & HERITAGE','HERITAGE & LANDSCAPE','RAILWAY GATEWAY'];
  $('#landmarks').innerHTML=m.landmarks.map((p,i)=>`<button class="landmark" data-place="${esc(p.id)}"><span class="place-glyph">${String(i+1).padStart(2,'0')}</span><span><strong>${esc(p.name.replace('东南大学(四牌楼校区)','东南大学 · 四牌楼').replace('南京站（南站房）','南京站'))}</strong><small>${en[i]}</small></span>${icon('arrow')}</button>`).join('');
  const rows=[['boundary','行政区边界',1,'OSM relation / 320102','#5e7d5c'],['buildings','地上建筑与建筑部件',c.buildings,'轮廓、标签、可用高度','#c5ae82'],['roads','道路、轨道与线状水系',c.roads,'路网分段；含相交区界对象','#c2b5a0'],['land','用地与绿地',c.land,'开放地图分类，非法定用地性质','#adc297'],['water','湖泊与水体',c.water,'面状水体及岸线','#8fbac5'],['pois','具名设施与地名',c.pois,'标签转为点位；非完整设施普查','#b7a2c3']];
- const coverage=[['OSM 高度标注',h.osm,'#c5ae82'],['楼层 × 3 m 推算',h.levels,'#97bfc6'],['高度缺失',h.unknown,'#d9d4c9']];
+ const coverage=[['OSM 高度标注',h.osm,'#c5ae82'],['楼层 × 3 m 推算',h.levels,'#97bfc6'],['原高度缺失 · 已推算显示',h.unknown,'#d9d4c9']];
  $('#catalog').innerHTML=`<div class="catalog-header"><div class="section-eyebrow">EVIDENCE BEFORE INSIGHT</div><h2>每一层，都有来处。</h2><p>真实开放数据作为空间参考，业务结论建立在经过核实的项目台账之上。</p></div><div class="catalog-meta">数据快照 ${esc(m.snapshotAt)}<br>坐标 ${m.coordinateSystem}<br>许可 ODbL 1.0 · © OpenStreetMap contributors<br>${esc(m.scopeNote)}</div>${rows.map(([file,name,count,desc,color])=>`<div class="catalog-row"><i style="--c:${color}"></i><span>${name}<small>${desc}</small></span><b>${fmt(count)}</b><a href="./data/${file}.geojson" download="UrbanLens-Xuanwu-${file}.geojson" aria-label="下载${name}" title="下载 GeoJSON">↓</a></div>`).join('')}<div class="catalog-row"><i style="--c:#92a777"></i><span>地形高程<small>Mapzen / USGS / NOAA · 12 张区域 DEM 瓦片<br>真实地形网格，非测绘级；原始采集年份不一</small></span><a href="./data/terrain/metadata.json" download aria-label="下载地形元数据">↓</a></div><div class="height-coverage"><h3>建筑高度覆盖情况</h3><div class="coverage-bar" aria-hidden="true">${coverage.map(([,n,c])=>`<i style="width:${n/total*100}%;--c:${c}"></i>`).join('')}</div><div class="coverage-labels">${coverage.map(([name,n])=>`<div><span>${name}</span><b>${fmt(n)} · ${(n/total*100).toFixed(1)}%</b></div>`).join('')}</div><p class="quality-note">${esc(m.heightNote)}</p></div><div class="missing-data"><h3>真实评估仍需补齐</h3><ul>${m.missing.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div><a class="object-link" href="./data/manifest.json" download>下载数据清单与来源记录 <span>↓</span></a>`;
 }
 function miniMap(){const g=data.boundary.features[0].geometry,b=boundsOf(g),cos=Math.cos((b[1]+b[3])/2*Math.PI/180),scale=Math.min(245/((b[2]-b[0])*cos),102/(b[3]-b[1])),project=([x,y])=>[142+(x-(b[0]+b[2])/2)*cos*scale,61-(y-(b[1]+b[3])/2)*scale];
@@ -99,7 +102,7 @@ function download(name,content,type='application/geo+json'){const blob=content i
 async function exportMap(){if(!state.ready||!map)return;$('#export-map').disabled=true;try{
  await new Promise(resolve=>{map.once('render',resolve);map.triggerRepaint();});
  const original=map.getCanvas(),canvas=document.createElement('canvas'),ratio=original.width/map.getContainer().clientWidth,width=original.width/ratio;
- const captions=['UrbanLens · 南京市玄武区 / '+(state.mode==='3d'?'3D 空间视图':'2D 空间视图'),`OSM 快照 ${manifest.snapshotAt}`,`高度：OSM 标注 / 楼层推算 / ${state.schematic?'12m 缺失示意':'缺失不拉伸'}`,'© OpenStreetMap contributors · ODbL | Terrain: Mapzen / USGS / NOAA','非测绘及法定规划成果','制作者：蔡子攀｜东南大学建筑学院 · 东南大学城市规划设计研究院'];
+ const captions=['UrbanLens · 南京市玄武区 / '+(state.mode==='3d'?'3D 空间视图':'2D 空间视图'),`OSM 快照 ${manifest.snapshotAt}`,`高度：OSM 标注 / 楼层推算 / ${state.schematic?'类型 / 轮廓 / 邻近高度推算':'缺失不拉伸'}`,'© OpenStreetMap contributors · ODbL | Terrain: Mapzen / USGS / NOAA',`人口：${state.population==='none'?'未显示':state.population==='day'?'白天情景推算':'夜间居住推算'}；${state.realism?'外立面与屋顶为程序化示意':'基础体量'}`,'非测绘及法定规划成果','制作者：蔡子攀｜东南大学建筑学院 · 东南大学城市规划设计研究院'];
  const ctx=canvas.getContext('2d');ctx.font='12px sans-serif';const lines=[];
  for(const text of captions){let line='';for(const char of text){if(ctx.measureText(line+char).width>width-40&&line){lines.push(line);line='';}line+=char;}if(line)lines.push(line);}
  canvas.width=original.width;canvas.height=original.height+Math.ceil((lines.length*19+30)*ratio);ctx.drawImage(original,0,0);ctx.scale(ratio,ratio);ctx.fillStyle='#f8faf1';ctx.fillRect(0,original.height/ratio,width,canvas.height/ratio);ctx.fillStyle='#29483e';ctx.font='12px sans-serif';lines.forEach((line,i)=>ctx.fillText(line,20,original.height/ratio+23+i*19));
@@ -108,11 +111,12 @@ async function exportMap(){if(!state.ready||!map)return;$('#export-map').disable
 async function start(){loadTimer=setTimeout(()=>fail('数据加载较慢。请检查网络后重试；已取得的数据可在资料目录中查看。'),45000);
  try{
   manifest=await json('data/manifest.json');renderCatalog();
-  const keys=['boundary','land','water','roads','buildings','pois'];const loaded=await Promise.all(keys.map(k=>json(`data/${k}.geojson`)));data=Object.fromEntries(keys.map((k,i)=>[k,loaded[i]]));
+  const keys=['boundary','land','water','roads','buildings','pois'];const loaded=await Promise.all(keys.map(k=>json(`data/${k}.geojson`)));data=Object.fromEntries(keys.map((k,i)=>[k,loaded[i]]));data.buildings=prepareBuildingAppearance(data.buildings);
   objects=[...data.buildings.features,...data.pois.features,...data.land.features,...data.water.features,...data.roads.features];byId=new Map(objects.slice().reverse().map(f=>[f.properties.osm_id,f]));miniMap();$('#place-search').disabled=false;
   installLocalFonts(maplibregl);maplibregl.setWorkerCount(2);
   try{map=new maplibregl.Map({container:'map',style:makeStyle(data,state,base),center:[118.814,32.057],zoom:14.2,pitch:52,bearing:-22,minZoom:10.5,maxZoom:19,maxPitch:70,maxBounds:[[118.60,31.90],[119.08,32.25]],renderWorldCopies:false,attributionControl:false,localIdeographFontFamily:'-apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif',canvasContextAttributes:{antialias:true,preserveDrawingBuffer:true},fadeDuration:150});}
   catch(renderError){console.warn('WebGL unavailable; using geographic Canvas 2D.',renderError.message);state.mode='2d';state.terrain=false;$('#terrain-toggle').checked=false;$('#terrain-toggle').disabled=true;$('#pitch').disabled=true;const button=$('[data-mode="3d"]');button.disabled=true;button.title='当前浏览器未启用图形加速，已使用真实地图的 2D 兼容模式。';map=new CanvasAtlas({container:'map',style:makeStyle(data,state,base),center:[118.811,32.059],zoom:13.4,bounds:manifest.boundary.bbox,minZoom:10.5});$('.interaction-help').textContent='2D 兼容 · 右键详情 · 中键旋转 · Mac ⌥ 滑动';}
+  realismUI=installBuildingRealism({map,buildings:data.buildings,getState:()=>state,onError:error=>{state.realism=false;$('#realism-toggle').checked=false;toast('精细建筑暂不可用，已保留基础建筑');console.warn(error.message);}});if(map.fallback){$('#realism-toggle').disabled=true;$('#realism-toggle').title='外立面与屋顶需要 3D 图形加速';}
   map.scrollZoom?.setWheelZoomRate(1/180);map.scrollZoom?.setZoomRate(1/70);map.touchZoomRotate.enable();map.touchPitch.enable();installMapGestures(map,{onInteraction:()=>shellUI?.stopOrbit()});shellUI=installStudioShell({map,manifest,studio:()=>studio,toast,tab,openPanel});map.addControl(new maplibregl.ScaleControl({maxWidth:80,unit:'metric'}),'bottom-left');
   let movementEnd;
   const moving=()=>{clearTimeout(movementEnd);document.body.classList.add('is-map-moving');$('#map-hover-label').hidden=true;};
@@ -122,9 +126,10 @@ async function start(){loadTimer=setTimeout(()=>fail('数据加载较慢。请�
   const interrupt=e=>{if(e.type==='keydown'&&!['Escape','+','=','-','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;map.stop?.();shellUI?.stopOrbit();settled();};
   for(const type of ['pointerdown','wheel','keydown'])map.getCanvas().addEventListener(type,interrupt,{capture:true,passive:true});
   map.on('load',()=>{clearTimeout(loadTimer);state.ready=true;$('#map-loading').hidden=true;$('#map-failure').hidden=true;$('#export-map').disabled=false;$('#load-status').textContent=`${map.fallback?'2D 兼容模式 · ':''}OSM ${manifest.snapshotAt.slice(0,10)} · ${fmt(manifest.counts.buildings)} 个建筑与部件`;map.getCanvas().setAttribute('aria-label','玄武区地图。单击选中，右键或长按查看详情。方向键平移，加减键缩放。');updateCamera();studio?.mapLayers();});
-  Promise.all([json('data/services.geojson'),json('data/research-units.geojson'),json('data/value-evidence.json')]).then(([services,units,evidence])=>{
+  Promise.all([json('data/services.geojson'),json('data/research-units.geojson'),json('data/value-evidence.json'),json('data/population-grid.geojson')]).then(([services,units,evidence,populationGrid])=>{
+   data.populationGrid=populationGrid;applyPopulation();
    const drawing=installCustomArea({map,boundary:data.boundary.features[0].geometry,toast,onComplete:feature=>studio.acceptDrawnArea(feature),onActive:active=>{document.body.classList.toggle('is-drawing',active);if(active){shellUI?.stopOrbit();detailsUI?.close();$('#map-hover-label').hidden=true;if(state.measuring)$('#measure').click();openPanel(false);}}});
-   studio=new ValueStudio({data,services,units,evidence,adapter:{drawArea:mode=>ready(()=>drawing.start(mode)),cancelDrawing:()=>drawing.cancel(),tab,openPanel,toast,download,focus:focusFeature,getViewport,resetView,showObject:f=>select(f,{fly:true}),clearObjectSelection,layers:items=>{for(const [id,geo]of Object.entries(items))sourceData(id,geo);const visible=items.research?.features;if(visible&&state.selected&&(state.selected.properties.unit_id||state.selected.properties.category==='imported')&&!visible.some(f=>f.properties.unit_id===(state.selected.properties.unit_id||state.selected.properties.parcel_id)))clearObjectSelection();}}});new ProjectWorkspace(studio);refreshImportedSource();$('#study-hud').hidden=false;
+   studio=new ValueStudio({data,services,units,evidence,adapter:{population:mode=>{state.population=mode;applyPopulation();},drawArea:mode=>ready(()=>drawing.start(mode)),cancelDrawing:()=>drawing.cancel(),tab,openPanel,toast,download,focus:focusFeature,getViewport,resetView,showObject:f=>select(f,{fly:true}),clearObjectSelection,layers:items=>{for(const [id,geo]of Object.entries(items))sourceData(id,geo);const visible=items.research?.features;if(visible&&state.selected&&(state.selected.properties.unit_id||state.selected.properties.category==='imported')&&!visible.some(f=>f.properties.unit_id===(state.selected.properties.unit_id||state.selected.properties.parcel_id)))clearObjectSelection();}}});new ProjectWorkspace(studio);refreshImportedSource();$('#study-hud').hidden=false;
   }).catch(e=>{$('#panel-value').innerHTML='<div class="empty-state"><h2>研究资料暂未载入</h2><p>请刷新重试；地图与原始资料仍可使用。</p></div>';console.error(e);});
   map.on('move',updateCamera);
   map.on('pitchend',()=>{if(!state.ready)return;map.setPaintProperty('building-3d','fill-extrusion-height',state.mode==='2d'?0:state.schematic?['get','render_height']:['coalesce',['get','height_m'],0]);map.setPaintProperty('building-3d','fill-extrusion-base',state.mode==='2d'?0:['get','render_base']);if(state.terrain)map.setTerrain(state.mode==='3d'?{source:'dem',exaggeration:1}:null);});
@@ -156,9 +161,11 @@ document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)r
 $('#place-search').addEventListener('input',search);$('#place-search').addEventListener('keydown',e=>{if(e.key==='Escape')$('#search-results').hidden=true;if(e.key==='Enter')$('#search-results button')?.click();});
 $('#clear-search').onclick=()=>{$('#place-search').value='';search();$('#place-search').focus();};
 $('#layers-toggle').onclick=()=>{const open=$('#layers-popover').hidden;$('#layers-popover').hidden=!open;$('#layers-toggle').setAttribute('aria-expanded',String(open));};
-$$('[data-layer]').forEach(input=>input.addEventListener('change',()=>{state.layers[input.dataset.layer]=input.checked;if(state.ready)applyLayerVisibility();}));
-$('#terrain-toggle').onchange=e=>{state.terrain=e.target.checked;if(state.ready)map.setTerrain(state.terrain&&state.mode==='3d'?{source:'dem',exaggeration:1}:null);};
-$('#schematic-toggle').onchange=e=>{state.schematic=e.target.checked;if(state.ready)map.setPaintProperty('building-3d','fill-extrusion-height',state.mode==='2d'?0:state.schematic?['get','render_height']:['coalesce',['get','height_m'],0]);};
+$$('[data-layer]').forEach(input=>input.addEventListener('change',()=>{state.layers[input.dataset.layer]=input.checked;if(state.ready)applyLayerVisibility();realismUI?.sync();}));
+$('#terrain-toggle').onchange=e=>{state.terrain=e.target.checked;if(state.ready)map.setTerrain(state.terrain&&state.mode==='3d'?{source:'dem',exaggeration:1}:null);realismUI?.sync();};
+$('#schematic-toggle').onchange=e=>{state.schematic=e.target.checked;if(state.ready)map.setPaintProperty('building-3d','fill-extrusion-height',state.mode==='2d'?0:state.schematic?['get','render_height']:['coalesce',['get','height_m'],0]);realismUI?.sync();};
+$('#realism-toggle').onchange=e=>{state.realism=e.target.checked;realismUI?.sync();};
+$('#population-mode').onchange=e=>{state.population=e.target.value;applyPopulation();};
 $('#pitch').oninput=e=>ready(()=>map.setPitch(Number(e.target.value)));
 $('#north').onclick=()=>ready(()=>map.easeTo({bearing:0,duration:reduced?0:600}));$('#zoom-in').onclick=()=>ready(()=>map.zoomIn());$('#zoom-out').onclick=()=>ready(()=>map.zoomOut());
 $('#overview').onclick=()=>ready(resetView);

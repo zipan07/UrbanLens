@@ -19,7 +19,7 @@ function radius(point,meters=600){const r=6371008.8,lat=point[1]*Math.PI/180,lon
 export class ValueStudio{
  constructor({data,services,units,evidence,adapter}){
   this.data=data;this.services=services;this.units=units.features;this.evidence=evidence;this.adapter=adapter;this.analyses=new Map();this.units.forEach(u=>this.analyses.set(u.id,analyzeUnit(u,data,services)));
-  this.state={workflowVersion:'studio14',selected:this.units[0].id,mode:'hybrid',profile:'balanced',compared:[],runs:[],history:[],reports:[],uploaded:{},filter:defaultFilters(),view:'list',scope:'unit',scenario:{far:1.8,retain:70,publicShare:25},showContext:false};
+  this.state={workflowVersion:'studio15',auxiliary:{enabled:true,weight:.2,basis:'asking'},selected:this.units[0].id,mode:'hybrid',profile:'balanced',compared:[],runs:[],history:[],reports:[],uploaded:{},filter:defaultFilters(),view:'list',scope:'unit',scenario:{far:1.8,retain:70,publicShare:25},showContext:false};
 
   if(!this.units.some(u=>u.id===this.state.selected))this.state.selected=this.units[0].id;if(!MODE_NAMES[this.state.mode])this.state.mode='hybrid';if(!PROFILES[this.state.profile])this.state.profile='balanced';
   this.state.compared=this.state.compared.filter(id=>this.units.some(u=>u.id===id)).slice(0,3);this.state.history=this.state.history.slice(-30);this.state.reports=this.state.reports.slice(-8);
@@ -28,7 +28,7 @@ export class ValueStudio{
  persist(){this.cloud?.scheduleState();}
  current(){return this.units.find(u=>u.id===this.state.selected);}
  get canCalculate(){return this.cloud?.current?Boolean(this.cloud.canEdit):!this.cloud?.switching;}
- options(){return {mode:this.state.mode,profile:this.state.profile,uploaded:this.state.uploaded,evidenceRecords:this.cloud?.current?.data.evidence||{}};}
+ options(){return {mode:this.state.mode,profile:this.state.profile,uploaded:this.state.uploaded,evidenceRecords:this.cloud?.current?.data.evidence||{},populationGrid:this.data?.populationGrid,housing:this.cloud?.current?.data.housing||[],auxiliary:this.state.auxiliary};}
  result(unit=this.current()){if(!unit)return null;return computeAssessment(unit,this.analyses.get(unit.id),this.options());}
  run(unit=this.current()){if(!unit)return null;const r=this.result(unit);return [...this.state.runs].reverse().find(x=>x.unitId===unit.id&&x.fingerprint===r.fingerprint&&x.ruleVersion===r.ruleVersion&&(!this.cloud?.current||x.projectDataVersion===this.cloud.current.project.data_version));}
  latestRun(unit=this.current()){if(!unit)return null;return this.run(unit)||[...this.state.runs].reverse().find(r=>r.unitId===unit.id);}

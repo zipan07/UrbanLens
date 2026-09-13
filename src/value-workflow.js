@@ -47,6 +47,12 @@ export function comparisonPresentation(results, runs = []) {
     delete result.createdAt;
     delete result.review;
     result.total = null;
+    if ('baseTotal' in result) result.baseTotal = null;
+    if (result.auxiliary) {
+     result.auxiliary.score = null;
+     if (result.auxiliary.population) result.auxiliary.population.score = null;
+     if (result.auxiliary.housing) result.auxiliary.housing.score = null;
+    }
     result.scores = result.scores?.map(() => null) || [];
     result.dimensions = result.dimensions?.map(dimension => ({...dimension, score: null})) || [];
    }
