@@ -1,0 +1,338 @@
+{
+  "version": "BUILDING-REALISM-02",
+  "date": "2026-09-13",
+  "materials": [],
+  "landmarks": [
+    {
+      "osmId": "way/236944775",
+      "name": "东南大学大礼堂",
+      "photo": null,
+      "frontBearing": 182.66,
+      "facadeCorners": [
+        [
+          0.294,
+          0.883
+        ],
+        [
+          0.711,
+          0.883
+        ],
+        [
+          0.688,
+          0.464
+        ],
+        [
+          0.314,
+          0.464
+        ]
+      ],
+      "facadeRange": [
+        0.24,
+        0.76,
+        0,
+        1
+      ],
+      "model": "auditorium",
+      "center": [
+        118.7890542,
+        32.0580097
+      ],
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Auditorium_of_Southeast_University_01_2012-09.JPG",
+      "shapeSources": [
+        {
+          "summary": "欧洲古典主立面，二三层四根爱奥尼柱，上方山花；穹顶。当前OSM仅有绿色roof:colour，没有屋顶形状或实测总高。",
+          "sourceURL": "https://nci.seu.edu.cn/_upload/article/files/16/17/9d89443545c6a346784ce84a278f/eadc9ec2-8876-4d4f-bf4c-7d7637a23e15.pdf",
+          "source_type": "official_primary"
+        }
+      ],
+      "geometryNote": "沿用 OSM 轮廓，建筑体量、细节尺寸与立面方向为视觉推断；实景照片非当前状态保证。"
+    },
+    {
+      "osmId": "way/94327966",
+      "name": "南京图书馆",
+      "photo": null,
+      "frontBearing": 93.64,
+      "facadeCorners": [
+        [
+          0.004,
+          0.761
+        ],
+        [
+          0.207,
+          0.78
+        ],
+        [
+          0.215,
+          0.306
+        ],
+        [
+          0.073,
+          0.263
+        ]
+      ],
+      "facadeRange": [
+        0.02,
+        0.3,
+        0.1,
+        0.97
+      ],
+      "model": "library",
+      "center": [
+        118.7904824,
+        32.04410935
+      ],
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Nanjing_library_new1.jpg",
+      "shapeSources": [],
+      "geometryNote": "沿用 OSM 轮廓，建筑体量、细节尺寸与立面方向为视觉推断；实景照片非当前状态保证。"
+    },
+    {
+      "osmId": "way/321096461",
+      "name": "总统府门楼",
+      "photo": null,
+      "frontBearing": 181.66,
+      "facadeCorners": [
+        [
+          0.047,
+          0.631
+        ],
+        [
+          0.932,
+          0.636
+        ],
+        [
+          0.923,
+          0.286
+        ],
+        [
+          0.047,
+          0.277
+        ]
+      ],
+      "facadeRange": [
+        0,
+        1,
+        0,
+        1
+      ],
+      "model": "palace",
+      "center": [
+        118.7923523,
+        32.0448446
+      ],
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Entrance_to_the_Former_ROC_Presidents_Residence(5616558734).jpg",
+      "shapeSources": [],
+      "geometryNote": "沿用 OSM 轮廓，建筑体量、细节尺寸与立面方向为视觉推断；实景照片非当前状态保证。",
+      "plaqueCorners": [
+        [
+          0.286,
+          0.238
+        ],
+        [
+          0.683,
+          0.243
+        ],
+        [
+          0.683,
+          0.169
+        ],
+        [
+          0.286,
+          0.162
+        ]
+      ]
+    },
+    {
+      "osmId": "way/88507214",
+      "name": "南京站南站房",
+      "photo": null,
+      "frontBearing": 209.26,
+      "facadeCorners": [
+        [
+          0.016,
+          0.618
+        ],
+        [
+          0.987,
+          0.62
+        ],
+        [
+          0.987,
+          0.402
+        ],
+        [
+          0.016,
+          0.404
+        ]
+      ],
+      "facadeRange": [
+        0,
+        1,
+        0,
+        0.98
+      ],
+      "model": "station",
+      "center": [
+        118.7913519,
+        32.0884319
+      ],
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Nanjing_Railway_Station_South.jpg",
+      "shapeSources": [],
+      "geometryNote": "沿用 OSM 轮廓，建筑体量、细节尺寸与立面方向为视觉推断；实景照片非当前状态保证。"
+    },
+    {
+      "osmId": "way/91203399",
+      "name": "南京国际展览中心",
+      "photo": null,
+      "frontBearing": 246.3,
+      "facadeCorners": [
+        [
+          0.612,
+          0.697
+        ],
+        [
+          0.878,
+          0.784
+        ],
+        [
+          0.864,
+          0.624
+        ],
+        [
+          0.6,
+          0.409
+        ]
+      ],
+      "facadeRange": [
+        0.2,
+        0.55,
+        0.3,
+        0.9
+      ],
+      "model": "exhibition",
+      "center": [
+        118.8038255,
+        32.0766392
+      ],
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:%E5%8D%97%E4%BA%AC%E5%9B%BD%E9%99%85%E5%B1%95%E8%A7%88%E4%B8%AD%E5%BF%83_-_panoramio.jpg",
+      "shapeSources": [],
+      "geometryNote": "沿用 OSM 轮廓，建筑体量、细节尺寸与立面方向为视觉推断；实景照片非当前状态保证。"
+    },
+    {
+      "osmId": "way/319998729",
+      "name": "南京博物院老大殿",
+      "photo": null,
+      "frontBearing": 184.83,
+      "facadeCorners": [
+        [
+          0.187,
+          0.58
+        ],
+        [
+          0.712,
+          0.586
+        ],
+        [
+          0.709,
+          0.453
+        ],
+        [
+          0.189,
+          0.431
+        ]
+      ],
+      "facadeRange": [
+        0.02,
+        0.98,
+        0,
+        1
+      ],
+      "model": "museum",
+      "center": [
+        118.82049695,
+        32.04350675
+      ],
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Nanjing_Museum_Main_Exhibit_Hall_(10152219796).jpg",
+      "shapeSources": [
+        {
+          "summary": "官方馆方：九开间庑殿顶仿辽宋大殿。可建议长轴屋脊、四面坡庑殿顶，不应从该资料推成多层重檐。",
+          "sourceURL": "https://www.njmuseum.org.cn/zh/newsDetails?id=358014",
+          "source_type": "official_primary"
+        }
+      ],
+      "geometryNote": "沿用 OSM 轮廓，建筑体量、细节尺寸与立面方向为视觉推断；实景照片非当前状态保证。"
+    },
+    {
+      "osmId": "way/318198215",
+      "name": "江苏省美术馆新馆",
+      "model": "art",
+      "frontBearing": 108.32,
+      "center": [
+        118.79364165,
+        32.04356255
+      ],
+      "shapeSources": [
+        {
+          "summary": "设计者介绍：两个相互交叉的石头立方体，中间U形空间有轻质玻璃屋顶；中间空间高17米。17米不是整馆高度。",
+          "sourceURL": "https://www.ksp-engel.com/cn/projekte/nanjing-art-museum",
+          "source_type": "architect_primary"
+        }
+      ],
+      "geometryNote": "参考形态的程序化细节；非实测模型，无实景贴图。",
+      "photo": null
+    },
+    {
+      "osmId": "way/338667850",
+      "name": "美龄宫",
+      "model": "heritage",
+      "frontBearing": 183.55,
+      "center": [
+        118.84146765,
+        32.04768135
+      ],
+      "shapeSources": [
+        {
+          "summary": "管理局确认位于四方城以东且为原国民政府主席官邸。此页面没有屋顶尺寸或构造文字；屋面细节仍待专门来源。",
+          "sourceURL": "https://zschina.nanjing.gov.cn/fjms/jqjd/mlg/",
+          "source_type": "official_primary"
+        }
+      ],
+      "geometryNote": "参考形态的程序化细节；非实测模型，无实景贴图。",
+      "photo": null
+    },
+    {
+      "osmId": "way/704448441",
+      "name": "灵谷塔",
+      "model": "pagoda",
+      "frontBearing": 180,
+      "center": [
+        118.86209365,
+        32.06063345
+      ],
+      "shapeSources": [
+        {
+          "summary": "管理局给出60米高、九层八面，底层直径14米、顶层9米，各层绿色琉璃瓦披檐、外廊及石栏，塔尖相轮。此为引用高度，与OSM未知/default12米应分开保存。",
+          "sourceURL": "https://zschina.nanjing.gov.cn/fjms/jqjd/lgjq/",
+          "source_type": "official_primary"
+        }
+      ],
+      "geometryNote": "参考形态的程序化细节；非实测模型，无实景贴图。",
+      "photo": null
+    },
+    {
+      "osmId": "way/940335843",
+      "name": "玄武门",
+      "model": "gate",
+      "frontBearing": 258.45,
+      "center": [
+        118.78238505,
+        32.07261855
+      ],
+      "shapeSources": [],
+      "geometryNote": "参考形态的程序化细节；非实测模型，无实景贴图。",
+      "photo": null
+    }
+  ],
+  "note": "地标实景立面配合示意体量；通用扫描材质不代表南京现场实测。",
+  "releaseNote": "核心建筑形态版本；照片及扫描贴图暂缓发布。",
+  "profile": "procedural"
+}
