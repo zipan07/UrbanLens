@@ -27,14 +27,14 @@ export function objectDetails(f,manifest={}){
  if(p.category==='imported'&&p.use)facts.push(['导入用途',p.use]);
  if(p.boundary_source)facts.push(['边界来源',p.boundary_source]);
  facts.push(['数据日期',p.category==='imported'&&!p.source_date?'本次会话':String(p.source_date||manifest.snapshotAt||'未收录').slice(0,10)],['资料来源',p.category==='imported'?'用户导入 / 未复核':'OpenStreetMap']);
- const note=p.category==='imported'?'用户本机导入范围，来源、拓扑、面积及权属均待核实。':p.category==='building'?'面积来自开放轮廓；高度来自开放标注或楼层推算，未经测绘核验，不用于容积率或安全判断。缺失高度按类型、轮廓及邻近标注推算；外立面、颜色和屋顶为示意，不是实景重建。':f.geometry.type.includes('LineString')?'长度仅为选中 OSM 分段，非整条道路。缺失标签保留未知。':f.geometry.type.includes('Polygon')?'开放地图轮廓，不是登记宗地或法定更新边界；面积为投影计算参考。':'点位为开放地图参考位置，不保证入口和开放状态。';
+ const note=p.category==='imported'?'用户本机导入范围，来源、拓扑、面积及权属均待核实。':p.category==='building'?'面积来自开放轮廓；高度来自开放标注或楼层推算，未经测绘核验，不用于容积率或安全判断。缺失高度按类型、轮廓及邻近标注推算；开启实景图层可显示地标照片与扫描材质，来源见图层面板；其余立面、体量与细节为示意。':f.geometry.type.includes('LineString')?'长度仅为选中 OSM 分段，非整条道路。缺失标签保留未知。':f.geometry.type.includes('Polygon')?'开放地图轮廓，不是登记宗地或法定更新边界；面积为投影计算参考。':'点位为开放地图参考位置，不保证入口和开放状态。';
  return {kind,id,name:p.name||'未命名'+kind,facts,note,coordinates:c.map(x=>x.toFixed(6)).join(', ')+' · WGS84',url:/^(way|relation|node)\/\d+$/.test(p.osm_id||'')?'https://www.openstreetmap.org/'+p.osm_id:null};
 }
 
 // Query each visible layer independently: renderer draw order must not let a
 // research polygon hide a building or a road at the same screen location.
 export function pickMapObjects(map,point,resolve){
- const layers=['building-3d','building-footprints','roads','tunnels','rail','waterways','research-fill','imported-fill','poi-dots','station-dots','land','water'];
+ const layers=['building-realism-pick','building-3d','building-footprints','roads','tunnels','rail','waterways','research-fill','imported-fill','poi-dots','station-dots','land','water'];
  const hits=[],seen=new Set();
  for(const layer of layers){if(!map.getLayer(layer))continue;for(const hit of map.queryRenderedFeatures([[point.x-3,point.y-3],[point.x+3,point.y+3]],{layers:[layer]})){
   const f=resolve(hit,layer);if(!f)continue;const p=f.properties,key=p.unit_id?'research:'+p.unit_id:p.parcel_id?'imported:'+p.parcel_id:p.category+':'+p.osm_id;

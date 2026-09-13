@@ -301,3 +301,74 @@ Locally subset and renamed UrbanLens Grotesk. Full license: fonts/SpaceGrotesk-O
 Official source: https://github.com/floriankarsten/space-grotesk
 
 PDF.js 5.6.205 — Mozilla contributors — Apache License 2.0. Source: https://github.com/mozilla/pdf.js . Distribution license: vendor/pdfjs/LICENSE; character maps include their upstream notices.
+
+
+UrbanLens Studio 16 building realism assets
+==========================================
+Photos retain their listed licenses. Changes: JPEG resizing/compression; runtime planar UV cropping and perspective correction. CC BY-SA photo adaptations are offered under the same respective license. Geometry is illustrative, not a measured or photogrammetric model.
+
+灰色叠瓦（通用扫描材质） (grey_roof_tiles)
+Author: Rob Tuytel
+License: CC0-1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Source: https://polyhaven.com/a/grey_roof_tiles
+Local maps: assets/building-realism/grey_roof_tiles-basecolor.jpg, assets/building-realism/grey_roof_tiles-normal.jpg, assets/building-realism/grey_roof_tiles-roughness.jpg
+
+红褐陶瓦（通用扫描材质） (clay_roof_tiles)
+Author: Amal Kumar
+License: CC0-1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Source: https://polyhaven.com/a/clay_roof_tiles
+Local maps: assets/building-realism/clay_roof_tiles-basecolor.jpg, assets/building-realism/clay_roof_tiles-normal.jpg, assets/building-realism/clay_roof_tiles-roughness.jpg
+
+风化混凝土（通用扫描材质） (concrete_floor_02)
+Author: Rob Tuytel
+License: CC0-1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Source: https://polyhaven.com/a/concrete_floor_02
+Local maps: assets/building-realism/concrete_floor_02-basecolor.jpg, assets/building-realism/concrete_floor_02-normal.jpg, assets/building-realism/concrete_floor_02-roughness.jpg
+
+红砖墙（通用扫描材质） (red_brick_03)
+Author: Rob Tuytel
+License: CC0-1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Source: https://polyhaven.com/a/red_brick_03
+Local maps: assets/building-realism/red_brick_03-basecolor.jpg, assets/building-realism/red_brick_03-normal.jpg, assets/building-realism/red_brick_03-roughness.jpg
+
+石砌墙（通用扫描材质） (stone_brick_wall_001)
+Author: Dimitrios Savva (photography); Rico Cilliers (processing)
+License: CC0-1.0 — https://creativecommons.org/publicdomain/zero/1.0/
+Source: https://polyhaven.com/a/stone_brick_wall_001
+Local maps: assets/building-realism/stone_brick_wall_001-basecolor.jpg, assets/building-realism/stone_brick_wall_001-normal.jpg, assets/building-realism/stone_brick_wall_001-roughness.jpg
+
+东南大学大礼堂 (photo-auditorium)
+Author: 猫猫的日记本
+License: CC BY-SA 3.0 — https://creativecommons.org/licenses/by-sa/3.0/
+Source: https://commons.wikimedia.org/wiki/File:Auditorium_of_Southeast_University_01_2012-09.JPG
+Local maps: assets/building-realism/photo-auditorium.jpg
+
+南京图书馆 (photo-library)
+Author: 吴 骋孜 (Aether Woo)
+License: CC BY 2.0 — https://creativecommons.org/licenses/by/2.0/
+Source: https://commons.wikimedia.org/wiki/File:Nanjing_library_new1.jpg
+Local maps: assets/building-realism/photo-library.jpg
+
+总统府门楼 (photo-palace)
+Author: Ken Marshall
+License: CC BY 2.0 — https://creativecommons.org/licenses/by/2.0/
+Source: https://commons.wikimedia.org/wiki/File:Entrance_to_the_Former_ROC_Presidents_Residence(5616558734).jpg
+Local maps: assets/building-realism/photo-palace.jpg
+
+南京站南站房 (photo-station)
+Author: DKMcLaren
+License: CC BY-SA 4.0 — https://creativecommons.org/licenses/by-sa/4.0
+Source: https://commons.wikimedia.org/wiki/File:Nanjing_Railway_Station_South.jpg
+Local maps: assets/building-realism/photo-station.jpg
+
+南京国际展览中心 (photo-exhibition)
+Author: 东京村子
+License: CC BY-SA 3.0 — https://creativecommons.org/licenses/by-sa/3.0
+Source: https://commons.wikimedia.org/wiki/File:%E5%8D%97%E4%BA%AC%E5%9B%BD%E9%99%85%E5%B1%95%E8%A7%88%E4%B8%AD%E5%BF%83_-_panoramio.jpg
+Local maps: assets/building-realism/photo-exhibition.jpg
+
+南京博物院老大殿 (photo-museum)
+Author: Gary Todd from Xinzheng, China
+License: CC0 — https://creativecommons.org/publicdomain/zero/1.0/deed.en
+Source: https://commons.wikimedia.org/wiki/File:Nanjing_Museum_Main_Exhibit_Hall_(10152219796).jpg
+Local maps: assets/building-realism/photo-museum.jpg

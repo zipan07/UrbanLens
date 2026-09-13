@@ -1,5 +1,5 @@
 // Visual estimates stay separate from recorded height_m and assessment inputs.
-export const BUILDING_APPEARANCE_VERSION='BUILDING-VISUAL-01';
+export const BUILDING_APPEARANCE_VERSION='BUILDING-VISUAL-02';
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const positive=n=>n!==null&&n!==undefined&&String(n).trim()!==''&&Number.isFinite(Number(n))&&Number(n)>0;
 export function buildingHash(value){let h=2166136261;for(const c of String(value)){h^=c.codePointAt(0);h=Math.imul(h,16777619);}return h>>>0;}
@@ -27,6 +27,11 @@ const palettes={residential:['#d6cbbc','#c3cbd0','#d4d7cc','#c9b9ab'],lowrise:['
 const rgb=hex=>[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16));
 const mix=(hex,target,ratio)=>'#'+rgb(hex).map((c,i)=>Math.round(c*(1-ratio)+rgb(target)[i]*ratio).toString(16).padStart(2,'0')).join('');
 const landmarks=[
+ {id:'way/319998729',match:'南京博物院老大殿',height:17,roof:'gabled',roofColor:'#c49a49',color:'#ded9c7',facade:'classical'},
+ {id:'way/91203399',match:'南京国际展览中心',height:32,roof:'flat',roofColor:'#aebdc1',color:'#c8d2d3',facade:'curtain'},
+ {id:'way/704448441',match:'灵谷塔',height:60,roof:'flat',roofColor:'#4f7a68',color:'#c8b8a0',facade:'classical'},
+ {id:'way/321096461',match:'总统府门楼',height:12.4,roof:'flat',roofColor:'#b9b4a2',color:'#d1c6ab',facade:'stone'},
+ {id:'way/338667850',match:'美龄宫',height:15,roof:'gabled',roofColor:'#567c66',color:'#d9ceb7',facade:'classical'},
  {match:'东南大学大礼堂',height:25,roof:'dome',roofColor:'#62877c',color:'#d7cdb7',facade:'classical'},
  {match:'南京图书馆',height:30,roof:'flat',roofColor:'#9eaeb1',color:'#d6d5c7',facade:'curtain'},
  {match:'南京站',height:28,roof:'flat',roofColor:'#a4b7bd',color:'#c6d0cd',facade:'curtain'},
@@ -34,7 +39,7 @@ const landmarks=[
  {match:'孟芳图书馆',height:14,roof:'gabled',roofColor:'#71847c',color:'#d6c6ad',facade:'classical'},
  {match:'明孝陵博物馆',height:12,roof:'gabled',roofColor:'#626c69',color:'#d7d1c1',facade:'classical'}
 ];
-export function estimateBuildingAppearance(feature,{nearbyHeights=[]}={}){const p=feature.properties||{},facts=geometryFacts(feature.geometry),kind=kindOf(p,facts.area),key=p.osm_id||feature.id||JSON.stringify(feature.geometry),seed=buildingHash(key),block=buildingHash(`${Math.floor(facts.center[0]*370)}:${Math.floor(facts.center[1]*444)}:${kind}`),known=recordedHeight(p),landmark=landmarks.find(x=>String(p.name||'').includes(x.match));
+export function estimateBuildingAppearance(feature,{nearbyHeights=[]}={}){const p=feature.properties||{},facts=geometryFacts(feature.geometry),kind=kindOf(p,facts.area),key=p.osm_id||feature.id||JSON.stringify(feature.geometry),seed=buildingHash(key),block=buildingHash(`${Math.floor(facts.center[0]*370)}:${Math.floor(facts.center[1]*444)}:${kind}`),known=recordedHeight(p),landmark=landmarks.find(x=>x.id?x.id===p.osm_id:String(p.name||'').includes(x.match));
  const floorM=kind==='industrial'?4.8:kind==='civic'||kind==='station'?4:3.1;
  const ranges={lowrise:[1,3],heritage:[2,4],station:[4,7],industrial:[1,3],civic:[3,7],commercial:[7,22],residential:facts.area>750?[8,20]:[5,12],mixed:facts.area<300?[3,6]:[5,11]},[min,max]=ranges[kind];
  let floors=clamp(min+block%(max-min+1)+(seed%3-1),min,max),height=floors*floorM,method='建筑类别、轮廓面积与约 250m 街区规则推算';
@@ -42,7 +47,7 @@ export function estimateBuildingAppearance(feature,{nearbyHeights=[]}={}){const 
  if(nearby.length>=3&&!landmark){const median=nearby[Math.floor(nearby.length/2)];height=clamp(.65*height+.35*median,min*floorM,max*floorM);method+='，结合附近已标注建筑高度';}
  if(landmark&&!known){height=landmark.height;method='地标展示体量假设；未经实测复核';}
  height=known?.height??Math.round(height*10)/10;floors=positive(p['building:levels']??p.levels)?Number(p['building:levels']??p.levels):Math.max(1,Math.round(height/floorM));
- const palette=palettes[kind],wall=landmark?.color||palette[seed%palette.length],explicitRoof=String(p['roof:shape']||''),roof=explicitRoof==='flat'?'flat':['gabled','hipped','half-hipped','pyramidal'].includes(explicitRoof)?'gabled':explicitRoof==='dome'?'dome':landmark?.roof||(['lowrise','heritage'].includes(kind)||kind==='residential'&&height<26&&seed%3!==0?'gabled':'flat');
+ const palette=palettes[kind],wall=landmark?.color||palette[seed%palette.length],explicitRoof=String(p['roof:shape']||''),roof=explicitRoof==='flat'?'flat':['gabled','hipped','half-hipped','pyramidal'].includes(explicitRoof)?'gabled':explicitRoof==='dome'?'dome':landmark?.roof||(['lowrise','heritage'].includes(kind)||['residential','mixed'].includes(kind)&&height<29&&seed%3!==0?'gabled':'flat');
  const roofColors=['#8d7568','#747d7e','#758a83','#a48b75'];let roofColor=landmark?.roofColor||roofColors[seed%roofColors.length];if(/^#[0-9a-f]{6}$/i.test(p['roof:colour']||''))roofColor=p['roof:colour'];else if(/green|绿/i.test(p['roof:colour']||''))roofColor='#6f8b7d';
  return {render_height:height,render_height_source:known?.source||'estimated',render_base:clamp(Number(p.render_base)||0,0,height),height_estimate_method:known?'':method,appearance_version:BUILDING_APPEARANCE_VERSION,appearance_kind:kind,appearance_day:wall,appearance_night:mix(wall,'#284257',.55),appearance_ink:mix(wall,'#ddd8c8',.6),roof_form:roof,roof_source:explicitRoof?'OSM 标签':'程序化示意',roof_color:roofColor,facade_kind:landmark?.facade||(kind==='commercial'||kind==='station'?'curtain':kind==='heritage'?'classical':kind==='industrial'?'industrial':'windows'),facade_source:'程序化材质示意；非实景贴图',visual_landmark:landmark?.match||'',render_floors:floors};
 }
