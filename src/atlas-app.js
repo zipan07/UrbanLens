@@ -182,7 +182,7 @@ $('#overview').onclick=()=>ready(resetView);
 $('#measure').onclick=()=>ready(()=>{state.measuring=!state.measuring;$('#measure').setAttribute('aria-pressed',String(state.measuring));$('#measurement').hidden=!state.measuring;map.getCanvas().style.cursor=state.measuring?'crosshair':'';if(state.measuring)map.doubleClickZoom.disable();else map.doubleClickZoom.enable();});
 $('#clear-measure').onclick=()=>{state.measure=[];updateMeasure();};
 $('#about').onclick=()=>$('#about-dialog').showModal();$('#close-about').onclick=()=>$('#about-dialog').close();$('#retry').onclick=()=>location.reload();$('#export-map').onclick=exportMap;
-$('#mobile-panel').onclick=()=>openPanel(!$('#inspector').classList.contains('is-open'));$('#close-panel').onclick=()=>openPanel(false);
+$('#mobile-panel').onclick=()=>openPanel(!$('#inspector').classList.contains('is-open'));
 $('#geo-import').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(!studio?.cloud)throw Error('请等待项目服务载入');await studio.cloud.importFile(file,'geojson');}catch(err){toast(err.message);}finally{e.target.value='';}};
 $('#remove-import').onclick=()=>studio?.cloud?.clearData('boundaries');
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('#layers-popover').hidden=true;$('#layers-toggle').setAttribute('aria-expanded','false');$('#search-results').hidden=true;openPanel(false);}});

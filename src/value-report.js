@@ -1,3 +1,4 @@
+import {insightReportSections} from './assessment-insights.js';
 import {VALIDITY,CONSTRAINT_STATUS} from './assessment-evidence.js';
 import {zipSync,strToU8} from 'fflate';
 import {CREATOR,MODE_NAMES,PROFILES} from './value-domain.js';
@@ -24,7 +25,7 @@ export function reportModel(run,analysis,{note='',reviewer='',reviewNote='',comp
  analysis=run.analysisSnapshot||analysis;
  const status=review?.status==='reviewed'?'项目内已复核':review?.status==='changes'?'需补充资料':'未复核';
  const comparisonView=comparisonPresentation(comparison,comparison);
- return {analysisSnapshot:structuredClone({area:analysis.area,buildingCount:analysis.buildingCount,nearest:analysis.nearest,method:analysis.method}),title:'玄武区用地更新研究报告',subtitle:run.name+' '+run.unitId,run:structuredClone(run),createdAt:new Date().toISOString(),creator:CREATOR,note,reviewer:review?.actorName||'',reviewNote:review?.note||'',reviewId:review?.id||null,reviewRecord:review,status,comparison:structuredClone(comparison),sections:[
+ return {analysisSnapshot:structuredClone({area:analysis.area,buildingCount:analysis.buildingCount,nearest:analysis.nearest,method:analysis.method}),title:(run.studyContext?.district||'南京市')+'用地更新研究报告',subtitle:run.name+' '+run.unitId,run:structuredClone(run),createdAt:new Date().toISOString(),creator:CREATOR,note,reviewer:review?.actorName||'',reviewNote:review?.note||'',reviewId:review?.id||null,reviewRecord:review,status,comparison:structuredClone(comparison),sections:[
   {title:'研究摘要',paragraphs:[`本报告用于展示 ${run.name} 的空间条件与更新研究画像。数据口径为${MODE_NAMES[run.mode]}，使用${PROFILES[run.profile].name}演示权重。${run.total===null?'当前资料不足，不输出综合关注度。':'演示更新研究关注度为 '+run.total+' / 100。'}结果不代表土地市场价值或实施可行性。`,note||'建议优先核对研究边界、法定规划条件、计容面积、权属及建筑和经营调查。']},
   {title:'研究范围与数据',paragraphs:[`研究轮廓面积约 ${analysis.area} m²，采用 WGS84 / UTM 50N 投影计算；不是登记宗地面积。关联 ${analysis.buildingCount} 个已收录地上建筑主体参考对象（按包围盒中心落入研究范围筛选，非栋数普查）。`,`几何快照 ${run.geometryDate}；设施快照 ${run.spatialDate}。${analysis.method}`,`业务来源：${run.input.source}。业务日期：${run.input.date||'未提供'}。`]},
   {title:'多维评估',rows:[['维度','原始值','分值','权重','证据状态'],...run.dimensions.map(d=>[d.name,d.raw,d.score===null?'缺失':String(d.score),Math.round(d.weight*100)+'%',d.status])],paragraphs:[`有效指标加权覆盖率 ${run.coverage}%。缺失维度：${run.missing.join('、')||'当前演示指标无缺失'}。覆盖率是字段有效性，不是事实可信度。`,...run.dimensions.map(d=>`${d.name}：${d.method}。来源日期 ${d.date||'缺失'}。`)]},
@@ -35,6 +36,7 @@ export function reportModel(run,analysis,{note='',reviewer='',reviewNote='',comp
   {title:'周边配套',rows:[['类别','最近收录参考点','直线距离'],...Object.entries(analysis.nearest).map(([k,f])=>[({transit:'交通',education:'教育',health:'医疗',park:'公园',daily:'生活服务',heritage:'历史要素'})[k],f?.properties.name||'未收录',f?Math.round(f.distance)+' m':'未知'])],paragraphs:['点位可能是面对象包围盒中心；不代表入口、步行时间、开放时段或服务容量。']},
   ...(comparison.length? [{title:'研究单元比较',rows:[['对象 / 运行记录','数据口径','资料时点','关注度','覆盖率'],...comparison.map((r,i)=>[r.name+' / '+(comparisonView.items[i].runId||'即时原始指标'),MODE_NAMES[r.mode],'边界 '+r.geometryDate+'；设施 '+r.spatialDate+'；业务 '+(r.input.date||'未提供'),comparisonView.items[i].scoreText,r.coverage+'%'])],paragraphs:[comparisonView.reason,'仅在数据模式、评分规则、辅助权重与格网口径一致且指标完整时允许关注度排序；住宅样本日期另列，不构成项目投资排序。',...comparison.filter(r=>r.auxiliary).map(r=>`${r.name}：基础 ${comparisonView.canCompare?display(r.baseTotal):'暂不比较'} 分，辅助 ${comparisonView.canCompare?display(r.auxiliary.score):'暂不比较'} 分，辅助实际权重 ${display(r.auxiliary.effectiveWeight*100)}%，${r.auxiliary.basis==='transaction'?'成交':'挂牌'}；人口 ${r.auxiliary.population?.date||'未提供'}，售价 ${r.auxiliary.housing?.sale?.date||'未提供'}，租价 ${r.auxiliary.housing?.rent?.date||'未提供'}。`)]}]:[]),
   {title:'待核实事项与来源',paragraphs:[...run.limitations,...(evidence?.documents||[]).slice(0,3).map(d=>`${d.title}（${d.date}），${d.publisher}。${d.url}`),'OSM 来源与许可 https://www.openstreetmap.org/copyright']},
+  ...insightReportSections(run),
   {title:'版本与复核',paragraphs:[`${run.projectId?'项目编号 '+run.projectId+'；项目数据 V'+run.projectDataVersion+'；保存账户 '+(run.createdByName||run.createdBy)+'。':''}评估运行 ${run.id}；运行时间 ${run.createdAt}；规则 ${run.ruleVersion}；输入标识 ${run.fingerprint}。`,`复核状态：${status}。${review?'账户：'+review.actorName+' / '+review.actorId+'；时间：'+review.reviewedAt+'；意见：'+review.note:'尚无账户复核记录。'} 项目内复核不构成业务审批，规则仍为演示规则。`,CREATOR]}
  ]};
 }

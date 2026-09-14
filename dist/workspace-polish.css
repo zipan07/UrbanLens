@@ -1,0 +1,26 @@
+/* Studio 23: resizable workspace, compact landmarks and staged assessment. */
+.inspector .inspector-top .project-code{font-size:20px!important;color:#111;font-family:"PingFang SC","Microsoft YaHei","SimHei",sans-serif;font-weight:700;letter-spacing:.015em;line-height:1.5}
+.inspector-top{min-height:56px;height:auto;flex-shrink:0}
+#workspace-splitter{position:absolute;z-index:45;left:calc(var(--reading-map-width) - 5px);top:0;bottom:0;width:11px;cursor:col-resize;touch-action:none;outline:none}
+#workspace-splitter>span{position:absolute;left:4px;top:0;bottom:0;width:3px;transition:background 150ms,box-shadow 150ms;border-radius:3px}
+#workspace-splitter:hover>span,#workspace-splitter:focus-visible>span,.is-resizing-workspace #workspace-splitter>span{background:#7193b8;box-shadow:0 0 0 3px #7193b821}
+#workspace-splitter:after{content:"";position:absolute;top:40%;left:2px;width:7px;height:30px;border-radius:5px;background:#ffffffdd;border:1px solid #becbd9;box-shadow:0 2px 8px #24344a18}
+.is-resizing-workspace{cursor:col-resize;user-select:none}.is-resizing-workspace .map-workspace{transition:none!important}.is-resizing-workspace #map{pointer-events:none}
+.phone-ui #workspace-splitter,.reading-wide #workspace-splitter,.is-presenting:not(.present-panel) #workspace-splitter{display:none}
+@media(max-width:740px){#workspace-splitter{display:none}.inspector .inspector-top .project-code{font-size:18px!important}}
+body .landmark-options{width:min(210px,calc(100cqw - 28px));max-height:min(310px,52dvh);padding:6px;gap:3px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#a8b6c7 transparent;transform-origin:bottom left;background:#ffffffd9;border-color:#ffffffc9;backdrop-filter:blur(28px) saturate(1.3)}
+body .view-dock .landmark-options button{position:relative;min-height:40px;padding:9px 11px;border:1px solid transparent;white-space:normal;line-height:1.5;text-align:left;transition:background 180ms,box-shadow 180ms,border-color 180ms,transform 180ms}
+body .landmark-options button:hover,body .landmark-options button:focus-visible{background:linear-gradient(135deg,#ffffffea,#dfeaf5a8);border-color:#ffffff;box-shadow:inset 0 1px 0 #fff,0 3px 10px #4b689124;backdrop-filter:blur(12px);transform:translateX(2px);color:#142c47}
+.phone-ui .landmark-options{width:100%;max-height:290px}
+.assessment-release{margin:20px 0;padding:16px 18px;border:1px solid #cfdfef;border-radius:14px;background:#eff5fb;display:flex;align-items:center;flex-wrap:wrap;gap:12px;color:#284d70}
+.assessment-release>span{flex:1;min-width:180px;font-size:15px}.assessment-release button{font-size:14px!important;min-height:36px!important;background:white;border:1px solid #c5d5e5;border-radius:8px;padding:6px 12px;color:#244565}
+.assessment-release progress{height:4px;width:100%;accent-color:#527ca5}
+.assessment-insight-block{margin:24px 0;padding:22px;border:1px solid #dfe6ee;border-radius:16px;background:#fff}
+.assessment-insight-block h4{margin:0 0 12px}.assessment-insight-block>p{margin:8px 0 16px}
+.insight-table{width:100%;border-collapse:collapse}.insight-table th,.insight-table td{text-align:left;padding:12px 10px;border-bottom:1px solid #e5eaf0;font-size:15px!important;vertical-align:top}.insight-table th{font-weight:600;color:#283c52}
+.insight-table-wrap{overflow-x:auto}.insight-table small{display:block;margin-top:4px}
+.pathway-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:14px}.pathway-card{padding:18px;background:#f5f8fc;border:1px solid #e1e8f0;border-radius:12px}.pathway-card h4{margin:0 0 10px}.pathway-card p{margin:8px 0}.pathway-card strong{font-size:15px}
+.action-sequence{padding-left:23px}.action-sequence li{padding:8px 0 12px 5px}.action-sequence strong{display:block;margin-bottom:5px}.evidence-counts{display:flex;gap:12px;flex-wrap:wrap}.evidence-counts span{padding:8px 12px;background:#edf3fa;border-radius:8px;font-size:15px}
+.case-study-brief{padding:18px 20px;border-left:3px solid #7b9bbc;background:#f3f7fb;border-radius:0 12px 12px 0;margin:20px 0}.case-study-brief h4{margin:0 0 8px}.case-study-brief p{margin:0}
+@container assessment (min-width:650px){body .unit-list{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}body .analysis-grid{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}body .dimension-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}}
+@media(prefers-reduced-motion:reduce){.landmark-options button{transition:none!important;transform:none!important}}
