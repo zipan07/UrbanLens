@@ -39,7 +39,7 @@ export function revealSelection(origin){
 }
 export function installRefinedControls(){
  const area=document.querySelector('.map-workspace'),tools=area?.querySelector('.map-tools');if(!tools)return;
- const button=document.createElement('button');button.id='map-settings-toggle';button.className='tool-button';button.setAttribute('aria-expanded','false');button.setAttribute('aria-controls','map-settings-panel');button.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 17h16M8 4v6m8 4v6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span>视图</span>';tools.append(button);
+ const button=document.createElement('button');button.id='map-settings-toggle';button.className='tool-button';button.setAttribute('aria-expanded','false');button.setAttribute('aria-controls','map-settings-panel');button.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 17h16M8 4v6m8 4v6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span>视图</span>';tools.append(button);const fullscreen=document.querySelector('#presentation-toggle');if(fullscreen){fullscreen.className='tool-button';tools.append(fullscreen);}
  const panel=document.createElement('section');panel.id='map-settings-panel';panel.className='map-settings-panel';panel.setAttribute('aria-label','地图视图设置');panel.hidden=true;
  panel.innerHTML='<div class="map-settings-heading"><div><strong>地图视图</strong><small>方向、主题与保存的视角</small></div><button aria-label="关闭视图设置">×</button></div>';
  area.append(panel);

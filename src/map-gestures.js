@@ -1,4 +1,4 @@
-/** Desktop additions to MapLibre's native touchscreen / right-drag controls.
+/** Desktop pan and restrained orbit controls alongside native touchscreen gestures.
  * Safari exposes macOS trackpad rotation as GestureEvent; Chromium and Firefox
  * do not expose that rotation. Alt + two-finger scroll is the explicit fallback.
  * No plain wheel event is repurposed, so ordinary map scrolling and pinch zoom
@@ -10,7 +10,8 @@ export function installMapGestures(map, {platform, maxTouchPoints, onInteraction
  const nav=win.navigator||{};
  const isMac=/Mac/i.test(platform??nav.userAgentData?.platform??nav.platform??'')&&(maxTouchPoints??nav.maxTouchPoints??0)===0;
  const listeners=[];
- let drag=null,gesture=null,destroyed=false;
+ let drag=null,gesture=null,destroyed=false,rightMoved=false;
+ map.dragRotate?.disable();
  const listen=(target,type,fn,options={capture:true,passive:false})=>{target.addEventListener(type,fn,options);listeners.push(()=>target.removeEventListener(type,fn,options));};
  const consume=e=>{if(e.cancelable)e.preventDefault();e.stopImmediatePropagation();};
  const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
@@ -19,17 +20,19 @@ export function installMapGestures(map, {platform, maxTouchPoints, onInteraction
  const endDrag=()=>{if(!drag)return;const {pointerId,cursor}=drag;drag=null;canvas.style.cursor=cursor;try{if(canvas.hasPointerCapture?.(pointerId))canvas.releasePointerCapture(pointerId);}catch{/* Detached canvas or cancelled pointer. */}};
  const cancel=()=>{endDrag();gesture=null;};
  const middleDown=e=>{
-  if(e.button!==1||e.pointerType==='touch'||e.pointerType==='pen')return;
-  consume(e);cancel();begin('middle-rotate');
-  drag={pointerId:e.pointerId,x:e.clientX,y:e.clientY,bearing:map.getBearing(),pitch:map.getPitch(),cursor:canvas.style.cursor};
-  canvas.style.cursor='grabbing';try{canvas.setPointerCapture(e.pointerId);}catch{/* Window listeners also handle release outside the map. */}
+  if(![1,2].includes(e.button)||e.pointerType==='touch'||e.pointerType==='pen')return;
+  if(e.target&&e.target!==canvas&&!canvas.contains?.(e.target))return;
+  if(e.button===1)consume(e);cancel();begin(e.button===1?'middle-pan':'right-rotate');rightMoved=false;
+  drag={button:e.button,pointerId:e.pointerId,x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY,bearing:map.getBearing(),pitch:map.getPitch(),cursor:canvas.style.cursor};
+  canvas.style.cursor='grabbing';try{canvas.setPointerCapture(e.pointerId);}catch{}
  };
  const middleMove=e=>{
   if(!drag||e.pointerId!==drag.pointerId)return;
-  consume(e);if((e.buttons&4)===0){endDrag();return;}
-  const options={bearing:drag.bearing+(e.clientX-drag.x)*.4};
-  // Keep a 2D view flat; dragging up/down orbits the pitch of an existing 3D view.
-  if(drag.pitch>0&&!map.fallback)options.pitch=clamp(drag.pitch-(e.clientY-drag.y)*.3,map.getMinPitch?.()??0,map.getMaxPitch?.()??70);
+  if(drag.button===1)consume(e);if((e.buttons&(drag.button===1?4:2))===0){endDrag();return;}
+  if(drag.button===1){map.panBy([drag.lastX-e.clientX,drag.lastY-e.clientY],{duration:0});drag.lastX=e.clientX;drag.lastY=e.clientY;return;}
+  if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>5)rightMoved=true;
+  const options={bearing:drag.bearing+(e.clientX-drag.x)*.12};
+  if(drag.pitch>0&&!map.fallback)options.pitch=clamp(drag.pitch-(e.clientY-drag.y)*.10,map.getMinPitch?.()??0,map.getMaxPitch?.()??70);
   camera(options);
  };
  const middleUp=e=>{if(drag&&e.pointerId===drag.pointerId){consume(e);endDrag();}};
@@ -39,7 +42,8 @@ export function installMapGestures(map, {platform, maxTouchPoints, onInteraction
  listen(win,'pointercancel',middleUp);
  listen(canvas,'lostpointercapture',e=>{if(drag?.pointerId===e.pointerId)endDrag();});
  // Also suppress compatibility mouse events and Windows' middle autoscroll.
- for(const type of ['mousedown','auxclick'])listen(container,type,e=>{if(e.button===1)consume(e);});
+ for(const type of ['mousedown','auxclick'])listen(canvas,type,e=>{if(e.button===1||e.button===2)consume(e);});
+ listen(canvas,'contextmenu',e=>{if(rightMoved)consume(e);});
  listen(win,'blur',cancel);
  listen(doc,'visibilitychange',()=>{if(doc.hidden)cancel();});
  if(isMac){

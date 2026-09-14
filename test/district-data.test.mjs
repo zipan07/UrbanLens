@@ -1,4 +1,3 @@
-import {districtRings,projectBoundary} from '../src/district-flow.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -33,4 +32,11 @@ test('saved assessment data includes Gulou services and accepts a Gulou project 
  assert.ok(analysis);assert.ok(base.data.buildings.features.length>10000);
 });
 
-test('flow highlight follows the selected real boundary including all polygon rings',()=>{const x=JSON.parse(fs.readFileSync('dist/data/boundary.geojson'));const collection={features:[...x.features,...extra.data.boundary.features]};assert.equal(districtRings(collection,'不存在').length,0);for(const name of ['玄武区','鼓楼区']){const rings=districtRings(collection,name);assert.ok(rings.length>0);const path=projectBoundary(rings[0],p=>({x:p[0]*10,y:p[1]*10}));assert.ok(path.startsWith('M'));assert.ok(path.endsWith('Z'));assert.ok(!path.includes('NaN'));}assert.equal(districtRings(collection,null).length,districtRings(collection,'玄武区').length+districtRings(collection,'鼓楼区').length);});
+test('Qinhuai merge covers the southern city, deduplicates all three districts, and preserves service provenance',async()=>{
+ const pack=JSON.parse(fs.readFileSync('dist/packed/qinhuai.json')),bytes=gunzipSync(Buffer.from(pack.parts.map(n=>fs.readFileSync('dist/packed/'+n,'utf8')).join(''),'base64')),q=JSON.parse(bytes);
+ assert.equal(bytes.length,pack.bytes);assert.equal(q.manifest.divisionCode,'320104');assert.equal(q.data.boundary.features[0].properties.osm_id,'relation/2140011');assert.ok(q.data.buildings.features.length>10000);assert.ok(q.data.services.features.length>900);
+ const {loadStudyData}=await import('../server/district-data.js');const merged=await loadStudyData(p=>JSON.parse(fs.readFileSync('dist/'+p)),p=>fs.readFileSync('dist/'+p,'utf8'));
+ assert.ok(inGeometry([118.7835814,32.02036815],merged.boundary));assert.equal(merged.data.boundary.features.length,3);
+ for(const key of ['buildings','land','roads','pois'])assert.equal(new Set(merged.data[key].features.map(f=>f.properties.osm_id)).size,merged.data[key].features.length);
+ assert.ok(merged.services.features.some(f=>f.properties.district==='秦淮区'));assert.ok(q.data.buildings.features.every(f=>f.properties.district_name==='秦淮区'&&f.properties.source_date));
+});

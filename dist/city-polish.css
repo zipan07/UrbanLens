@@ -1,10 +1,4 @@
 /* Studio 21: geographic hierarchy and a reading canvas that uses its available width. */
-.district-flow{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;overflow:hidden;contain:paint}
-.district-flow path{fill:none;stroke-linecap:round;stroke-linejoin:round}
-.district-flow-glow{stroke:#4fafff;stroke-width:8;opacity:.18}.district-flow-edge{stroke:#438bd0;stroke-width:1.7;opacity:.82}
-.district-flow-stream{stroke:#b7efff;stroke-width:3.2;stroke-dasharray:125 875;stroke-dashoffset:0;animation:district-current 6s linear infinite;filter:drop-shadow(0 0 2px #1670c4)}
-@keyframes district-current{to{stroke-dashoffset:-1000}}
-.reading-wide .district-flow-stream,.district-flow.is-paused .district-flow-stream{animation-play-state:paused}
 .assessment-dashboard{display:contents}
 .map-settings-panel .map-legend{font-size:12px;line-height:1.6}
 @media(min-width:741px){
@@ -54,4 +48,3 @@
  body:not(.phone-ui).reading-wide .assessment-dashboard>.workflow-notice{grid-column:1;margin:0}
 }
 @container assessment (max-width:899px){body:not(.phone-ui).reading-wide #panel-value{display:block}body:not(.phone-ui).reading-wide .unit-title{display:block}body:not(.phone-ui).reading-wide .score-section{margin:20px 0}body:not(.phone-ui).reading-wide .dimension-list{margin:20px 0}}
-@media(prefers-reduced-motion:reduce){.district-flow-stream{animation:none;stroke-dasharray:none;opacity:.35}}

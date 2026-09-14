@@ -1,5 +1,5 @@
 export const PHONE_QUERY='(max-width:740px), (max-width:1100px) and (max-height:600px) and (pointer:coarse)';
-export const PHONE_TOOLS=['.map-search','.map-tools','#layers-popover','.district-control','.map-navigation','.view-dock','.view-memory','.rotation-dock','.map-bottom','#population-legend','#presentation-bar'];
+export const PHONE_TOOLS=['.map-search','.map-tools','#layers-popover','.map-navigation','.view-dock','.view-memory','.rotation-dock','.map-bottom','#population-legend','#presentation-bar'];
 export function installPhoneWorkspace({map,studio,openPanel}){
  const media=matchMedia(PHONE_QUERY),body=document.body,$=s=>document.querySelector(s),moved=new Map();let enabled=false,frame=0;
  const dock=document.createElement('nav');dock.className='phone-dock phone-only';dock.setAttribute('aria-label','手机主导航');

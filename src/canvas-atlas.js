@@ -45,12 +45,14 @@ export class CanvasAtlas {
   const zoom=clamp(options.zoom??this.zoom,this.minZoom,this.maxZoom),bearing=this.bearing+(((options.bearing??this.bearing)-this.bearing+540)%360+360)%360-180;
   const duration=options.animate===false||reducedMotion()?0:clamp(Number.isFinite(options.duration)?options.duration:300,0,2000),started=performance.now();
   this.stop();const animation={};this.cameraAnimation=animation;this.beginMove();
-  const apply=t=>{const eased=t*t*(3-2*t);this.center=from.center.map((v,i)=>v+(target[i]-v)*eased);this.zoom=from.zoom+(zoom-from.zoom)*eased;this.bearing=from.bearing+(bearing-from.bearing)*eased;this.constrain();this.emit('move');this.drawSoon();};
+  const around=options.around?(Array.isArray(options.around)?options.around:[options.around.lng,options.around.lat]):null,anchor=around?this.project(around):null;
+  const apply=t=>{const eased=options.easing?options.easing(t):t*t*(3-2*t);this.center=from.center.map((v,i)=>v+(target[i]-v)*eased);this.zoom=from.zoom+(zoom-from.zoom)*eased;this.bearing=from.bearing+(bearing-from.bearing)*eased;if(anchor){const a=mercator(around),b=mercator(this.unproject(anchor));this.center=[this.center[0]+a[0]-b[0],this.center[1]+a[1]-b[1]];}this.constrain();this.emit('move');this.drawSoon();};
   const finish=()=>{this.cameraFrame=0;this.cameraAnimation=null;this.emit('pitchend');this.endMove();};
   if(!duration){apply(1);finish();return this;}
   const frame=now=>{if(this.cameraAnimation!==animation)return;const t=clamp((now-started)/duration,0,1);apply(t);if(this.cameraAnimation!==animation)return;if(t<1)this.cameraFrame=requestAnimationFrame(frame);else finish();};
   this.cameraFrame=requestAnimationFrame(frame);return this;
  }
+ panBy(offset,options={}){return this.easeTo({...options,center:this.unproject([this.width/2+offset[0],this.height/2+offset[1]])});}
  flyTo(options){return this.easeTo(options);}zoomIn(){return this.easeTo({zoom:this.zoom+.6,duration:220});}zoomOut(){return this.easeTo({zoom:this.zoom-.6,duration:220});}
  fitBounds([a,b],options={}){if(![...a,...b].every(Number.isFinite))return this;const p=mercator(a),q=mercator(b),pad=typeof options.padding==='number'?{top:options.padding,right:options.padding,bottom:options.padding,left:options.padding}:options.padding||{},left=pad.left??30,right=pad.right??30,top=pad.top??30,bottom=pad.bottom??30,w=Math.max(80,this.container.clientWidth-left-right),h=Math.max(80,this.container.clientHeight-top-bottom),zoom=clamp(Math.log2(Math.min(w/Math.max(Math.abs(q[0]-p[0]),1e-12),h/Math.max(Math.abs(q[1]-p[1]),1e-12))/512),this.minZoom,this.maxZoom),scale=512*2**zoom,center=inverse([(p[0]+q[0])/2+(right-left)/(2*scale),(p[1]+q[1])/2+(bottom-top)/(2*scale)]);return this.easeTo({...options,center,zoom,bearing:options.bearing??0});}
  constrain(){const c=inverse(this.center);c[0]=Math.max(this.bounds[0]-.1,Math.min(this.bounds[2]+.1,c[0]));c[1]=Math.max(this.bounds[1]-.1,Math.min(this.bounds[3]+.1,c[1]));this.center=mercator(c);}
