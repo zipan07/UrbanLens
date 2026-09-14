@@ -11,7 +11,7 @@ const result=await build({entryPoints:['src/atlas-app.js'],bundle:true,minify:tr
 // Publish frontend code as inspectable UTF-8 text. Spatial datasets remain the
 // existing Xuanwu release; no new map data is included in this visual update.
 const runtime=result.outputFiles[0].text,hash=createHash('sha256').update(runtime).digest('hex').slice(0,12),parts=[];
-for(const file of readdirSync(dir).filter(f=>f.startsWith('atlas-')))unlinkSync(dir+'/'+file);
+// Keep content-addressed runtime parts: open tabs may still request an older release.
 for(let i=0;i<runtime.length;i+=90000){const file=`atlas-${hash}-${String(parts.length+1).padStart(2,'0')}.txt`;writeFileSync(dir+'/'+file,runtime.slice(i,i+90000));parts.push(file);}
 writeFileSync(dir+'/atlas.json',JSON.stringify({encoding:'utf-8',parts,bytes:Buffer.byteLength(runtime)}));
 // Tie the HTML bootstrap URL and manifest request to the exact runtime build.

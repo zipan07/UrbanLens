@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {parseHTML} from 'linkedom';
+import {installRefinedControls} from '../src/studio-refinement.js';
 import {installPhoneWorkspace,PHONE_QUERY,PHONE_TOOLS} from '../src/phone-workspace.js';
 test('phone defaults to map; every tool moves once, drawers switch, and desktop restores original nodes',async()=>{
  const {window,document}=parseHTML(readFileSync('dist/index.html','utf8'));
@@ -10,6 +11,8 @@ test('phone defaults to map; every tool moves once, drawers switch, and desktop 
  window.HTMLElement.prototype.getBoundingClientRect=()=>({height:48,width:390});
  Object.assign(globalThis,{window,document,Event:window.Event,matchMedia:()=>media,MutationObserver:window.MutationObserver,ResizeObserver:class{observe(){}},requestAnimationFrame:f=>{frames.set(++next,f);return next;},cancelAnimationFrame:id=>frames.delete(id)});
  const panel=document.querySelector('#inspector'),openPanel=on=>panel.classList.toggle('is-open',on);
+ installRefinedControls();
+ const viewToggle=document.querySelector('#map-settings-toggle'),viewPanel=document.querySelector('#map-settings-panel');viewToggle.click();assert.equal(viewPanel.hidden,false);assert.equal(viewToggle.getAttribute('aria-expanded'),'true');document.querySelector('#layers-toggle').click();assert.equal(viewPanel.hidden,true);
  const original=PHONE_TOOLS.map(s=>document.querySelector(s)).filter(Boolean).map(el=>[el,el.parentNode,el.nextSibling]);
  const click=action=>document.querySelector(`[data-phone="${action}"]`).click();
  const settle=async()=>{await new Promise(r=>setTimeout(r,0));for(const [id,f]of [...frames]){frames.delete(id);f();}await new Promise(r=>setTimeout(r,0));};

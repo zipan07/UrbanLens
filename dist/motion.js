@@ -13,14 +13,14 @@ let lastIntent = -Infinity;
 let destroyed = false;
 
 const surfaceSelectors = {
-  '#layers-popover': 'menu', '#search-results': 'menu', '#map-details': 'popup',
+  '#map-settings-panel': 'menu', '#layers-popover': 'menu', '#search-results': 'menu', '#map-details': 'popup',
   '#inspector': 'inspector', '#panel-value': 'panel', '#panel-overview': 'panel',
   '#panel-object': 'panel', '#panel-data': 'panel', '#value-list': 'panel',
   '#value-detail': 'panel', '#value-chat': 'panel', '#value-tour': 'menu',
   '#study-hud': 'menu', '#measurement': 'menu', '#presentation-bar': 'menu',
   '#toast': 'toast', 'dialog': 'dialog'
 };
-const contentIds = new Set(['map-details', 'panel-object', 'value-detail', 'value-dialog-content', 'value-source-content']);
+const contentIds = new Set(['map-details', 'panel-object', 'value-source-content']);
 const tabSelector = '.segmented, .value-tabs, .inspector-tabs, .theme-options';
 
 function visible(element) {
@@ -172,7 +172,7 @@ function discover(root) {
   }
   if (root.matches(tabSelector)) registerGroup(root);
   for (const group of root.querySelectorAll(tabSelector)) registerGroup(group);
-  for (const id of ['value-dialog-content', 'value-source-content']) {
+  for (const id of ['value-source-content']) {
     const content = root.id === id ? root : root.querySelector(`#${id}`);
     if (content) surfaceObserver.observe(content, {childList: true});
   }

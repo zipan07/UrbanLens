@@ -1,3 +1,4 @@
+import {installRefinedControls} from './studio-refinement.js';
 import {installReadingView} from './assessment-reading.js';
 import {installHomeTransition} from './home-transition.js';
 import {installPhoneWorkspace} from './phone-workspace.js';
@@ -45,6 +46,7 @@ export function installStudioShell({map,manifest,studio,toast,tab,openPanel}){
  window.addEventListener('keydown',e=>{if(document.body.classList.contains('is-drawing'))return;const editing=e.target.closest?.('input,textarea,select,[contenteditable=true]');if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();e.stopPropagation();commandDialog.open?commandDialog.close():commands();return;}if(e.key==='Escape'&&commandDialog.open){e.preventDefault();e.stopPropagation();commandDialog.close();return;}if(e.key==='Escape'&&document.querySelector('dialog[open]')){e.stopPropagation();return;}if(e.key==='Escape'&&presenting&&!document.querySelector('dialog[open]')){e.preventDefault();e.stopPropagation();presentation(false);return;}if(editing||document.querySelector('dialog[open]')||e.metaKey||e.ctrlKey||e.altKey)return;if(e.key==='?'){e.preventDefault();helpDialog.showModal();}if(e.key.toLowerCase()==='q'||e.key.toLowerCase()==='e'){e.preventDefault();$('#'+(e.key.toLowerCase()==='q'?'rotate-left':'rotate-right')).click();}},true);
  // A small identity cue stays visible while the rest of the interface yields to the map.
 
+ installRefinedControls();
  installReadingView(map);
  installPhoneWorkspace({map,studio,openPanel});
  installHomeTransition(()=>{document.dispatchEvent(new Event('urbanlens:home'));if(presenting)presentation(false);document.querySelectorAll('dialog[open]').forEach(d=>d.close());$('#layers-popover').hidden=true;$('#layers-toggle').setAttribute('aria-expanded','false');studio()?.setView('list');focusView('city');});

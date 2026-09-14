@@ -13,12 +13,6 @@ export function installReadingView(map){
 }
 export function revealAssessment(root){
  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
- const animations=[];let delay=0;
- const cards=[...root.querySelectorAll('.stage-intro,.score-section,.analysis-card,.budget-card,.evidence-table,.constraint-grid,.dimension-list')];
- for(const card of cards){animations.push(card.animate([{opacity:0,transform:'translateY(8px)'},{opacity:1,transform:'translateY(0)'}],{duration:300,delay:Math.min(delay,900),fill:'backwards'}));delay+=85;}
- for(const p of root.querySelectorAll('.analysis-card p,.stage-intro p')){
-  if(p.childElementCount)continue;const text=p.textContent;p.textContent='';const pieces=Array.from(text).join('').match(/.{1,8}/gu)||[];
-  pieces.forEach((part,i)=>{const span=document.createElement('span');span.textContent=part;p.append(span);animations.push(span.animate([{opacity:0},{opacity:1}],{duration:90,delay:Math.min(i*24,1400),fill:'backwards'}));});
- }
- const skip=root.querySelector('[data-reveal-skip]');if(skip){skip.hidden=false;skip.onclick=()=>{animations.forEach(a=>a.finish());skip.hidden=true;};Promise.allSettled(animations.map(a=>a.finished)).then(()=>{skip.hidden=true;});}
+ const cards=root.querySelectorAll('.stage-intro,.score-section,.analysis-card,.budget-card,.evidence-table,.constraint-grid,.dimension-list');
+ cards.forEach((card,i)=>{card.getAnimations().forEach(a=>a.cancel());card.animate([{opacity:.35,translate:'0 10px'},{opacity:1,translate:'0 0'}],{duration:360,delay:Math.min(i*45,180),easing:'cubic-bezier(.22,.7,.2,1)',fill:'backwards'});});
 }
