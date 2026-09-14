@@ -1,3 +1,4 @@
+import {districtRings,projectBoundary} from '../src/district-flow.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -31,3 +32,5 @@ test('saved assessment data includes Gulou services and accepts a Gulou project 
  const analysis=analyzeUnit(preview.candidate.units[0],base.data,base.services);
  assert.ok(analysis);assert.ok(base.data.buildings.features.length>10000);
 });
+
+test('flow highlight follows the selected real boundary including all polygon rings',()=>{const x=JSON.parse(fs.readFileSync('dist/data/boundary.geojson'));const collection={features:[...x.features,...extra.data.boundary.features]};assert.equal(districtRings(collection,'不存在').length,0);for(const name of ['玄武区','鼓楼区']){const rings=districtRings(collection,name);assert.ok(rings.length>0);const path=projectBoundary(rings[0],p=>({x:p[0]*10,y:p[1]*10}));assert.ok(path.startsWith('M'));assert.ok(path.endsWith('Z'));assert.ok(!path.includes('NaN'));}assert.equal(districtRings(collection,null).length,districtRings(collection,'玄武区').length+districtRings(collection,'鼓楼区').length);});

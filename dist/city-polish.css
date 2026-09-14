@@ -1,0 +1,57 @@
+/* Studio 21: geographic hierarchy and a reading canvas that uses its available width. */
+.district-flow{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;overflow:hidden;contain:paint}
+.district-flow path{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.district-flow-glow{stroke:#4fafff;stroke-width:8;opacity:.18}.district-flow-edge{stroke:#438bd0;stroke-width:1.7;opacity:.82}
+.district-flow-stream{stroke:#b7efff;stroke-width:3.2;stroke-dasharray:125 875;stroke-dashoffset:0;animation:district-current 6s linear infinite;filter:drop-shadow(0 0 2px #1670c4)}
+@keyframes district-current{to{stroke-dashoffset:-1000}}
+.reading-wide .district-flow-stream,.district-flow.is-paused .district-flow-stream{animation-play-state:paused}
+.assessment-dashboard{display:contents}
+.map-settings-panel .map-legend{font-size:12px;line-height:1.6}
+@media(min-width:741px){
+ body:not(.phone-ui) .inspector{container-type:inline-size;container-name:assessment}
+ body:not(.phone-ui).reading-wide .inspector-scroll{max-width:none;width:100%;margin:0;padding:8px clamp(22px,2.6vw,48px) 40px}
+ body:not(.phone-ui).reading-wide #panel-value{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,1fr);gap:0 24px}
+ body:not(.phone-ui).reading-wide #panel-value>*{min-width:0;grid-column:1/-1}
+ body:not(.phone-ui).reading-wide #panel-value>.value-heading{grid-column:1;margin:0;padding:18px 0}
+ body:not(.phone-ui).reading-wide #panel-value>.value-mode{grid-column:2;align-self:center;width:100%;max-width:none}
+ body:not(.phone-ui).reading-wide .value-tabs{max-width:none;width:100%;margin:12px 0 0}
+ body:not(.phone-ui).reading-wide .value-heading h2{font-size:28px}
+ body:not(.phone-ui).reading-wide .value-summary{grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+ body:not(.phone-ui).reading-wide .unit-list{grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));align-items:stretch;gap:20px}
+ body:not(.phone-ui).reading-wide .unit-card{height:100%;padding:22px}
+ body:not(.phone-ui).reading-wide .unit-card h3{font-size:21px}
+ body:not(.phone-ui).reading-wide .unit-card p{font-size:16px;line-height:1.7}
+ body:not(.phone-ui).reading-wide .unit-title{padding:22px 0;display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:24px}
+ body:not(.phone-ui).reading-wide .unit-title>span{grid-column:1}
+ body:not(.phone-ui).reading-wide .unit-title h2{grid-column:1;margin:8px 0}
+ body:not(.phone-ui).reading-wide .unit-title-actions{grid-column:2;grid-row:1/3;align-self:center;margin:0}
+ body:not(.phone-ui).reading-wide .stage-intro p{font-size:16px;line-height:1.85;column-width:36rem;column-gap:32px}
+ body:not(.phone-ui).reading-wide .evaluation-rule{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px 24px;padding:18px 22px}
+ body:not(.phone-ui).reading-wide .evaluation-rule strong{font-size:17px}
+ body:not(.phone-ui).reading-wide .evaluation-rule small{font-size:14px}
+ body:not(.phone-ui).reading-wide .urban-metrics{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px}
+ body:not(.phone-ui).reading-wide .score-section{width:100%;max-width:none;margin:0;min-height:250px;gap:18px;padding:24px;flex-wrap:wrap}
+ body:not(.phone-ui).reading-wide .score-section>div{min-width:140px}
+ body:not(.phone-ui).reading-wide .score-number{font-size:clamp(56px,5vw,82px)}
+ body:not(.phone-ui).reading-wide .value-radar{width:clamp(160px,16cqw,260px);height:auto;aspect-ratio:170/154}
+ body:not(.phone-ui).reading-wide .dimension-list{grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin:0}
+ body:not(.phone-ui).reading-wide .dimension{background:#fff;border:1px solid #e2e7ee;border-radius:12px;padding:18px}
+ body:not(.phone-ui).reading-wide .dimension summary>span{font-size:16px}
+ body:not(.phone-ui).reading-wide .dimension p{font-size:15px}
+ body:not(.phone-ui).reading-wide .analysis-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:20px}
+ body:not(.phone-ui).reading-wide .analysis-card p{font-size:16px;line-height:1.85}
+ body:not(.phone-ui).reading-wide .constraint-grid{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+ body:not(.phone-ui).reading-wide .evidence-table table{width:100%;table-layout:auto}
+ body:not(.phone-ui).reading-wide .evidence-table th,body:not(.phone-ui).reading-wide .evidence-table td{font-size:15px;padding:16px 20px}
+ body:not(.phone-ui).reading-wide .assessment-analysis{margin-top:28px}
+ body:not(.phone-ui).reading-wide .value-quick-actions{justify-content:flex-end}
+}
+@container assessment (min-width:900px){
+ body:not(.phone-ui).reading-wide .assessment-dashboard{display:grid;grid-template-columns:minmax(330px,.9fr) minmax(0,1.3fr);gap:18px 24px;margin:22px 0;align-items:start}
+ body:not(.phone-ui).reading-wide .assessment-dashboard>.score-section{grid-column:1;grid-row:1}
+ body:not(.phone-ui).reading-wide .assessment-dashboard>.run-assessment{grid-column:1;grid-row:2;margin:0}
+ body:not(.phone-ui).reading-wide .assessment-dashboard>.dimension-list{grid-column:2;grid-row:1/4}
+ body:not(.phone-ui).reading-wide .assessment-dashboard>.workflow-notice{grid-column:1;margin:0}
+}
+@container assessment (max-width:899px){body:not(.phone-ui).reading-wide #panel-value{display:block}body:not(.phone-ui).reading-wide .unit-title{display:block}body:not(.phone-ui).reading-wide .score-section{margin:20px 0}body:not(.phone-ui).reading-wide .dimension-list{margin:20px 0}}
+@media(prefers-reduced-motion:reduce){.district-flow-stream{animation:none;stroke-dasharray:none;opacity:.35}}

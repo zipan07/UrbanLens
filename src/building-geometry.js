@@ -1,10 +1,10 @@
 import {ShapeUtils} from 'three/src/extras/ShapeUtils.js';
 import {Vector2} from 'three/src/math/Vector2.js';
-import {facadeVariation} from './facade-variation.js';
+import {facadeGrid,facadeVariation} from './facade-variation.js';
 import {buildingBounds,buildingHash} from './building-appearance.js';
 import {materialIndex,landmarkIndex,photoTransform,transformPhotoUV} from './building-materials.js';
 export const REALISM_LIMITS=Object.freeze({buildings:4000,vertices:650000,minZoom:12.4});
-const WORLD=40030228.88407185,RAD=Math.PI/180,STRIDE=15;
+const WORLD=40030228.88407185,RAD=Math.PI/180,STRIDE=19;
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const mercator=([lng,lat])=>[(lng+180)/360,(1-Math.asinh(Math.tan(lat*RAD))/Math.PI)/2];
 const polygons=g=>g.type==='Polygon'?[g.coordinates]:g.type==='MultiPolygon'?g.coordinates:[];
@@ -19,8 +19,8 @@ export function buildBuildingMesh(features,{origin=[118.81,32.055],theme='day',t
  const originMercator=mercator(origin),unit=1/(WORLD*Math.cos(origin[1]*RAD)),vertices=[],shadowData=[],decorations=[],decorationGroups=[],included=[],materials=materialIndex(manifest),landmarks=landmarkIndex(manifest);let overflow=false,decorating=false,decorStart=0,detailedCount=0;
  const local=p=>{const m=mercator(p);return [(m[0]-originMercator[0])/unit,(originMercator[1]-m[1])/unit];};
  const mat=id=>materials.get(id)?.layer||0,scale=id=>materials.get(id)?.physicalSizeM||1;
- const emit=(tri,color,kind=8,uv=null,material=0,ao=null,target=vertices)=>{if(decorating&&target===vertices){if((decorations.length-decorStart)/STRIDE+3>960||decorations.length/STRIDE+3>135000)return;target=decorations;}else if((vertices.length+shadowData.length)/STRIDE+3>vertexLimit){overflow=true;return;}const n=cross(...tri);if(Math.hypot(...n)<.5)return;for(let i=0;i<3;i++)target.push(...tri[i],...n,...color,...(uv?.[i]||[tri[i][0],tri[i][1],1]),kind,material,ao?.[i]??1);};
- const quad=(p,c,k=8,m=0,uv=null,ao=null)=>{for(const ids of [[0,1,2],[0,2,3]])emit(ids.map(i=>p[i]),c,k,uv&&ids.map(i=>uv[i]),m,ao&&ids.map(i=>ao[i]));};
+ const emit=(tri,color,kind=8,uv=null,material=0,ao=null,target=vertices,facadeUV=null)=>{if(decorating&&target===vertices){if((decorations.length-decorStart)/STRIDE+3>960||decorations.length/STRIDE+3>135000)return;target=decorations;}else if((vertices.length+shadowData.length)/STRIDE+3>vertexLimit){overflow=true;return;}const n=cross(...tri);if(Math.hypot(...n)<.5)return;for(let i=0;i<3;i++)target.push(...tri[i],...n,...color,...(uv?.[i]||[tri[i][0],tri[i][1],1]),kind,material,ao?.[i]??1,...(facadeUV?.[i]||[-1,-1,-1,-1]));};
+ const quad=(p,c,k=8,m=0,uv=null,ao=null,facadeUV=null)=>{for(const ids of [[0,1,2],[0,2,3]])emit(ids.map(i=>p[i]),c,k,uv&&ids.map(i=>uv[i]),m,ao&&ids.map(i=>ao[i]),vertices,facadeUV&&ids.map(i=>facadeUV[i]));};
  for(const f of features){const p=f.properties||{},h=schematic?Number(p.render_height):Number(p.height_m);if(!Number.isFinite(h)||h<=0)continue;const bounds=buildingBounds(f.geometry);if(!bounds)continue;const id=p.osm_id||f.id,landmark=landmarks.get(id),model=landmark?.model,center=[(bounds[0]+bounds[2])/2,(bounds[1]+bounds[3])/2],ground=Number(terrainElevation(center,f))||0,base=ground+Math.min(Number(p.render_base)||0,h),bodyH=model==='auditorium'?h*.58:model==='museum'?h*.65:h,top=ground+bodyH+.18,start=vertices.length,shadowStart=shadowData.length,wall=rgb(p[`appearance_${theme}`]||p.appearance_day),facade=['palace','museum','gate'].includes(model)?8:({windows:1,curtain:2,classical:3,industrial:4,stone:5}[p.facade_kind]||1),wallId=landmark||facade===2?'':p.appearance_kind==='heritage'||p.appearance_kind==='lowrise'?'red_brick_03':facade===5?'stone_brick_wall_001':'concrete_floor_02',wallMat=mat(wallId),wallScale=scale(wallId),photo=landmark?.photo?materials.get(landmark.photo):null,ordinary=!landmark&&!p.visual_landmark,layout=facadeVariation(p,id),encodedFacade=ordinary?layout.packedKind(facade):facade,nearDetail=detail&&(!!landmark||detailedCount<220);decorStart=decorations.length;if(nearDetail&&ordinary)detailedCount++;
   for(const polygon of polygons(f.geometry)){
    const rings=polygon.map((r,i)=>{const out=r.slice(0,r.length>1&&r[0][0]===r.at(-1)[0]&&r[0][1]===r.at(-1)[1]?-1:undefined).map(local);if((signedArea(out)>0)!==(i===0))out.reverse();return out;});if(rings[0].length<3||rings.flat().length>2000)continue;
@@ -41,7 +41,7 @@ export function buildBuildingMesh(features,{origin=[118.81,32.055],theme='day',t
     for(let j=0;j<cuts.length-1;j++){const t0=cuts[j],t1=cuts[j+1],aa=a.map((v,k)=>v+(b[k]-v)*t0),bb=a.map((v,k)=>v+(b[k]-v)*t1),u0=ua+(ub-ua)*t0,u1=ua+(ub-ua)*t1,um=(u0+u1)/2,za=roofZ(aa),zb=roofZ(bb),photoHere=eligible&&um>=rangePhoto[0]-1e-6&&um<=rangePhoto[1]+1e-6;
      const zcuts=photoHere?[base,base+(top-base)*rangePhoto[2],base+(top-base)*rangePhoto[3],Math.max(za,zb)]:[base,Math.max(za,zb)];
      for(let z=0;z<zcuts.length-1;z++){const low=zcuts[z],high=zcuts[z+1];if(high-low<.01)continue;const zA=Math.min(high,za),zB=Math.min(high,zb),pts=[[...aa,low],[...bb,low],[...bb,zB],[...aa,zA]],isPhoto=photoHere&&z===1,uv=isPhoto?[[u0,0],[u1,0],[u1,1],[u0,1]].map(([u,v])=>transformPhotoUV(landmark.transform,(u-rangePhoto[0])/(rangePhoto[1]-rangePhoto[0]),v)):[[(wallStart+len*t0)/wallScale,(low-base)/wallScale,1],[(wallStart+len*t1)/wallScale,(low-base)/wallScale,1],[(wallStart+len*t1)/wallScale,(zB-base)/wallScale,1],[(wallStart+len*t0)/wallScale,(zA-base)/wallScale,1]];
-      quad(pts,wall,isPhoto?6:encodedFacade,isPhoto?photo.layer:wallMat,uv,[(low-base)/h,(low-base)/h,(zB-base)/h,(zA-base)/h]);
+      quad(pts,wall,isPhoto?6:encodedFacade,isPhoto?photo.layer:wallMat,uv,[(low-base)/h,(low-base)/h,(zB-base)/h,(zA-base)/h],isPhoto?null:[[len*t0,low-base,len,top-base],[len*t1,low-base,len,top-base],[len*t1,zB-base,len,top-base],[len*t0,zA-base,len,top-base]]);
      }
     }
     // Roof edge thickness and a low parapet catch sunlight even at district scale.
@@ -90,16 +90,16 @@ export function buildBuildingMesh(features,{origin=[118.81,32.055],theme='day',t
     const light=wall.map(x=>Math.min(1,x*1.07)),slab=wall.map(x=>x*.87),glass=rgb(layout.variation%2?'#5d777c':'#7d8a7f');let edgeCount=0,units=0;
     for(let ei=0;ei<rings[0].length&&edgeCount<2;ei++){
      const a=rings[0][ei],b=rings[0][(ei+1)%rings[0].length],len=Math.hypot(b[0]-a[0],b[1]-a[1]);if(len<11)continue;const dir=[(b[0]-a[0])/len,(b[1]-a[1])/len],n=[dir[1],-dir[0]];if(Math.abs(proj(n,front))<.78)continue;edgeCount++;
-     const point=(u,v,z)=>[a[0]+dir[0]*u+n[0]*v,a[1]+dir[1]*u+n[1]*v,z],startU=proj(a,dir)-proj(midpointXY,dir),floor=layout.floor;
+     const point=(u,v,z)=>[a[0]+dir[0]*u+n[0]*v,a[1]+dir[1]*u+n[1]*v,z],grid=facadeGrid(len,top-base,layout),startU=-grid.margin,bayPitch=grid.bay,floor=grid.floor;
      // Alternate solid floor bands and projecting slabs, not a universal glass grid.
      if([2,3,5,7,8].includes(layout.style))for(let z=base+floor;z<top-.5;z+=floor*(layout.style===3?1:2)){quad([point(0,.02,z-.13),point(len,.02,z-.13),point(len,.18,z+.03),point(0,.18,z+.03)],slab);quad([point(0,.18,z+.03),point(len,.18,z+.03),point(len,.02,z+.03),point(0,.02,z+.03)],light);}
      if([7,8].includes(layout.style)){
       for(let z=base+floor;z<top-floor*.6&&units<20;z+=floor){
        const offset=layout.style===8&&Math.round((z-base)/floor)%2?1:0;
-       for(let bay=Math.ceil((startU+1)/layout.bay);bay*layout.bay-startU<len-layout.bay&&units<20;bay++){
-        if((bay+offset+layout.seed)%3===0)continue;const centerU=(bay+.5)*layout.bay-startU,w=layout.bay*layout.openingW*.5,u0=centerU-w,u1=centerU+w;if(u0<.6||u1>len-.6)continue;const d=layout.style===7?.82:.48,low=z+.12,high=low+.16;
+       for(let bay=0;bay<grid.columns&&units<20;bay++){
+        if((bay+offset+layout.seed)%3===0)continue;const centerU=(bay+.5)*bayPitch-startU,w=bayPitch*layout.openingW*.5,u0=centerU-w,u1=centerU+w;if(u0<.6||u1>len-.6)continue;const d=layout.style===7?.5:.32,low=z+.12,high=low+.16;
         quad([point(u0,0,high),point(u1,0,high),point(u1,d,high),point(u0,d,high)],light);quad([point(u0,d,low),point(u1,d,low),point(u1,d,high),point(u0,d,high)],slab);quad([point(u0,0,low),point(u0,d,low),point(u0,d,high),point(u0,0,high)],slab);quad([point(u1,d,low),point(u1,0,low),point(u1,0,high),point(u1,d,high)],slab);
-        quad([point(u0,d,high+.1),point(u1,d,high+.1),point(u1,d,high+.88),point(u0,d,high+.88)],glass);quad([point(u0,d+.035,high+.86),point(u1,d+.035,high+.86),point(u1,d+.035,high+.92),point(u0,d+.035,high+.92)],light);units++;
+        quad([point(u0,d,high+.1),point(u1,d,high+.1),point(u1,d,high+.72),point(u0,d,high+.72)],glass);quad([point(u0,d+.035,high+.70),point(u1,d+.035,high+.70),point(u1,d+.035,high+.75),point(u0,d+.035,high+.75)],light);units++;
        }
       }
      }

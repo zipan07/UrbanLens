@@ -2,3 +2,6 @@ import {buildingHash} from './building-appearance.js';
 // Display assumptions, stable per building. Shared pitches keep solid details aligned with shader windows.
 const families=[null,[3.0,3.05,.48,.61],[3.9,3.25,.64,.65],[5.0,3.8,.88,.43],[3.5,3.9,.42,.76],[2.9,3.9,.93,.83],[5.8,4.8,.72,.35],[3.6,3.1,.72,.74],[3.3,3.2,.66,.67]];
 export function facadeVariation(properties,id){const seed=buildingHash(id),kind=properties.appearance_kind,choices=kind==='industrial'?[6,3]:kind==='commercial'?[3,5,4]:kind==='civic'?[1,3,4,5]:kind==='heritage'?[4,1]:[1,2,7,8],style=choices[seed%choices.length],variation=(seed>>>5)%5,scale=.92+variation*.04,[w,h,openingW,openingH]=families[style];return {seed,style,variation,bay:w*scale,floor:h*scale,openingW,openingH,packedKind:facade=>facade+16*style+256*variation};}
+
+// Fit whole bays and floors inside each facade, preserving blank corners and eaves.
+export function facadeGrid(width,height,layout){const margin=.6,columns=Math.max(1,Math.floor(Math.max(0,width-2*margin)/layout.bay)),floors=Math.max(1,Math.round(Math.max(0,height-.55)/layout.floor));return {margin,columns,floors,bay:Math.max(.1,width-2*margin)/columns,floor:Math.max(.1,height-.55)/floors};}
