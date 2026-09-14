@@ -104,13 +104,14 @@ export class ValueStudio{
  beginDrawing(mode){if(!this.canCalculate)return this.adapter.toast('当前项目只读');this.drawContext={pid:this.cloud?.pid,epoch:this.cloud?.epoch};this.adapter.drawArea(mode);}
  async acceptDrawnArea(feature){
   if(!this.canCalculate||this.drawContext?.pid!==this.cloud?.pid||this.drawContext?.epoch!==this.cloud?.epoch)throw Error('项目或权限已变化，请重新绘制');
+  const district=this.data.boundary?.features.find(f=>inGeometry(centerOf(feature.geometry),f.geometry));if(district)feature.properties.district=district.properties.name;
   const text=JSON.stringify({type:'FeatureCollection',features:[feature]}),uid=feature.properties.parcel_id;
   if(this.cloud?.current){await this.cloud.flush();const pid=this.cloud.pid,epoch=this.cloud.epoch;
    const check=await this.cloud.api(`projects/${pid}/imports/preflight`,{kind:'geojson',name:feature.properties.name+'.geojson',text,revision:this.cloud.current.project.revision});
    if(pid!==this.cloud.pid||epoch!==this.cloud.epoch||!this.cloud.canEdit)throw Error('项目或权限已变化');
    if(!check.canCommit||check.conflicts.length)throw Error(check.errors.map(e=>e.message).join('；')||'范围编号已存在，请重新绘制');
    await this.cloud.mutation('imports/commit',{token:check.token,decisions:{}},true);
-  }else{const check=previewImport({kind:'geojson',text},{units:this.units,uploaded:this.state.uploaded},this.data.boundary.features[0].geometry);if(!check.canCommit)throw Error(check.errors.map(e=>e.message).join('；'));this.units=check.candidate.units;const u=this.units.find(u=>u.id===uid);this.analyses.set(uid,analyzeUnit(u,this.data,this.services));}
+  }else{const check=previewImport({kind:'geojson',text},{units:this.units,uploaded:this.state.uploaded},this.adapter.studyBoundary||this.data.boundary.features[0].geometry);if(!check.canCommit)throw Error(check.errors.map(e=>e.message).join('；'));this.units=check.candidate.units;const u=this.units.find(u=>u.id===uid);this.analyses.set(uid,analyzeUnit(u,this.data,this.services));}
   this.state.mode='hybrid';this.state.filter=defaultFilters();this.select(uid,{fly:false});this.assessmentUI.step=3;await this.evaluateCurrent();this.adapter.toast(this.cloud?.current?'范围与评估已保存 · 旧版本保留':'范围试算完成 · 连接项目可保存');
  }
  mapLayers(){if(!this.units.length){this.adapter.layers({research:EMPTY(),studySelected:EMPTY(),context:EMPTY(),radius:EMPTY()});return;}const visible=this.visibleUnits(),selectedVisible=visible.some(u=>u.id===this.state.selected),contextVisible=this.state.showContext&&selectedVisible;this.adapter.layers({research:fc(visible.map(u=>({...u,properties:{...u.properties,label:u.id,name:u.properties.name,score:this.run(u)?.total??-1}}))),studySelected:selectedVisible?fc([this.current()]):EMPTY(),context:contextVisible?fc(this.analyses.get(this.state.selected).nearby.map(({distance,...f})=>f)):EMPTY(),radius:contextVisible?fc([radius(this.analyses.get(this.state.selected).point)]):EMPTY()});}

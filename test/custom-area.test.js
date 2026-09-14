@@ -25,7 +25,7 @@ test('district hole excludes a drawing entirely inside the hole', () => {
   assert.equal(geometriesOverlap(donut, rectangle([2, 2], [3, 3])), false);
 });
 test('drawings outside the district are rejected', () => {
-  assert.throws(() => validateDrawnGeometry([[118.90, 32.04], [118.91, 32.05]], { mode: 'rectangle', boundary }), /玄武区/);
+  assert.throws(() => validateDrawnGeometry([[118.90, 32.04], [118.91, 32.05]], { mode: 'rectangle', boundary }), /已覆盖研究区/);
 });
 test('crossings, shared nonadjacent endpoints and backtracking are rejected', () => {
   assert.ok(ringSelfIntersects([[0, 0], [2, 2], [0, 2], [2, 0]]));

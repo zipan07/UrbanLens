@@ -2,6 +2,7 @@ import {reportModel} from '../src/value-report.js';
 import {FIELD_DEFS,evidenceBasis,VALIDITY,CONSTRAINTS,CONSTRAINT_STATUS} from '../src/assessment-evidence.js';
 import {analyzeUnit,businessInput,createRun,normalizeAuxiliary,PROFILES,MODE_NAMES} from '../src/value-domain.js';
 import {previewImport,resolveImport} from '../src/project-import.js';
+import {loadStudyData} from './district-data.js';
 
 class HttpError extends Error{constructor(status,message){super(message);this.status=status;}}
 const fail=(status,message)=>{throw new HttpError(status,message);};
@@ -24,7 +25,7 @@ async function commit(env,p,user,kind,summary,operations=[],update={}){
 async function artifact(env,p,aid,kind){const a=await stmt(env,'SELECT * FROM artifacts WHERE project_id=? AND id=?',p.id,aid).first();if(!a||kind&&a.kind!==kind)fail(404,'记录不存在或未获授权');return a;}
 async function addRecord(env,p,user,kind,value,name,metadata={},dataVersion=p.data_version){const key=await putObject(env,p.id,kind,value),aid=value.id||id();return {id:aid,query:stmt(env,'INSERT INTO artifacts (id,project_id,kind,name,object_key,data_version,metadata,created_by,created_at) VALUES (?,?,?,?,?,?,?,?,?)',aid,p.id,kind,name,key,dataVersion,json(metadata),user.id,now())};}
 async function staticJSON(env,path,origin){const response=await env.ASSETS.fetch(new Request(origin+'/'+path));if(!response.ok)fail(503,'基础空间资料暂不可用');return response.json();}
-async function assessmentData(env,origin){const [buildings,land,services,populationGrid]=await Promise.all(['data/buildings.geojson','data/land.geojson','data/services.geojson','data/population-grid.geojson'].map(p=>staticJSON(env,p,origin)));return {data:{buildings,land,populationGrid},services};}
+async function assessmentData(env,origin){return loadStudyData(p=>staticJSON(env,p,origin),async p=>{const response=await env.ASSETS.fetch(new Request(origin+'/'+p));if(!response.ok)fail(503,'基础空间资料暂不可用');return response.text();});}
 const decode=s=>{try{return decodeURIComponent(s);}catch{fail(400,'地址无效');}};
 export async function projectAPI(request,env){
  const url=new URL(request.url),headers={'Content-Type':'application/json; charset=utf-8','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Vary':'oai-authenticated-user-id'},reply=(v,status=200)=>new Response(json(v),{status,headers});
@@ -62,7 +63,7 @@ export async function projectAPI(request,env){
   if(route==='versions'&&method==='GET'){const v=Number(path[3]);if(!Number.isInteger(v))fail(400,'版本无效');return reply(await dataAt(env,p,v));}
   if(route==='restore'&&method==='POST'){const b=await body(request);expected(p,b);if(!Number.isInteger(b.version)||b.version<1)fail(400,'版本无效');const {data}=await dataAt(env,p,b.version),key=await putObject(env,pid,'data',data),next=p.data_version+1;return reply(await commit(env,p,user,'restore',`恢复数据 V${b.version} 为新版本 V${next}`,[stmt(env,'INSERT INTO data_versions (id,project_id,version,object_key,summary,created_by,created_at) VALUES (?,?,?,?,?,?,?)',id(),pid,next,key,`恢复 V${b.version}`,user.id,now())],{dataVersion:next}));}
   if(route==='imports'&&path[3]==='preflight'&&method==='POST'){
-   const b=await body(request);expected(p,b);const {data}=await dataAt(env,p),boundary=(await staticJSON(env,'data/boundary.geojson',url.origin)).features[0].geometry,preview=previewImport(b,data,boundary);
+   const b=await body(request);expected(p,b);const {data}=await dataAt(env,p),{boundary}=await assessmentData(env,url.origin),preview=previewImport(b,data,boundary);
    const token=id(),key=await putObject(env,pid,'imports',{...preview,original:{name:b.name,text:b.text,mapping:b.mapping,areaUnit:b.areaUnit,vacancyUnit:b.vacancyUnit}});await stmt(env,'INSERT INTO preflights (id,project_id,actor_id,revision,object_key,expires_at,committed) VALUES (?,?,?,?,?,?,0)',token,pid,user.id,p.revision,key,new Date(Date.now()+3600000).toISOString()).run();const {candidate,...summary}=preview;return reply({...summary,token,revision:p.revision});
   }
   if(route==='imports'&&path[3]==='commit'&&method==='POST'){

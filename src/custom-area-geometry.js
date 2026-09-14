@@ -75,7 +75,7 @@ export function validateDrawnGeometry(points, { mode = 'polygon', boundary } = {
   if (ringSelfIntersects(open)) throw Error('边界有交叉或重叠，请撤销后调整');
   if (!(previewAreaM2(open) > 0)) throw Error('范围面积为零，请重新选点');
   const geometry = { type: 'Polygon', coordinates: [[...open.map(p => [...p]), [...open[0]]]] };
-  if (boundary && !geometriesOverlap(geometry, boundary)) throw Error('绘制范围须与玄武区相交');
+  if (boundary && !geometriesOverlap(geometry, boundary)) throw Error('绘制范围须与已覆盖研究区相交');
   return geometry;
 }
 
