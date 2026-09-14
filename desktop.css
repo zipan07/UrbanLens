@@ -1,8 +1,4 @@
 /* Studio 19: desktop reading transitions; handheld layout remains independent. */
-.district-control{position:absolute;z-index:12;top:78px;left:24px;display:flex;align-items:center;gap:10px;padding:9px 13px;border:1px solid #ffffffb3;border-radius:14px;background:#ffffffb8;backdrop-filter:blur(22px);box-shadow:0 4px 18px #2634480d;font-size:12px;color:#647185}
-.district-control select{min-height:30px;border:0;background:transparent;font:inherit;font-size:14px;font-weight:600;color:#24364a;cursor:pointer}
-.phone-ui .district-control{position:static;display:flex;flex-wrap:wrap;box-shadow:none;flex:0 0 auto}
-.phone-ui .district-control select{min-height:44px;flex:1}
 @media(min-width:741px){
 body:not(.phone-ui) .workspace{overflow:hidden}
 body:not(.phone-ui) .workspace .map-workspace{display:block;flex:0 0 var(--reading-map-width,calc(100% - 424px));width:var(--reading-map-width,calc(100% - 424px));min-width:0;margin-left:0;transition:margin-left 1s cubic-bezier(.22,.7,.2,1);will-change:margin-left}

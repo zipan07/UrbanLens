@@ -1,0 +1,47 @@
+/* Studio 22: stronger typography across the complete working surface. */
+:root{--ui-ink:#1d1d1f;--ui-muted:#4b5563;--ink:#1d1d1f;--muted:#4b5563}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;color:#1d1d1f;font-size:16px}
+.inspector{color:#1d1d1f;font-size:16px}
+.inspector :is(p,li,dd,dt,td,th,input,select,textarea){font-size:1rem!important;line-height:1.75}
+.inspector :is(p,li,dd,dt){color:#424750}
+.inspector :is(button,label,small,.section-eyebrow,.unit-card-top,.unit-card-bottom,.filter-meta,.catalog-meta,.value-small-note,.analysis-basis,.evaluation-rule span,.preview-status,.score-label,.mode-note,.value-summary span,.value-kpis span,.urban-metrics span,.constraint-grid span,.coverage-labels span,.project-code){font-size:.9375rem!important;line-height:1.55}
+.inspector :is(small,.section-eyebrow,.filter-meta,.analysis-basis,.catalog-meta,.value-small-note,.unit-card-top,.unit-card-bottom,.score-label,.value-summary span){color:#505866}
+.inspector :is(h2,h3,h4,strong){color:#1d1d1f}
+.inspector h2{line-height:1.4;letter-spacing:0}.inspector h3{font-size:1.25rem;line-height:1.5}.inspector h4{font-size:1.125rem;line-height:1.5}
+.inspector .section-eyebrow{letter-spacing:.08em}
+.inspector .value-heading>p,.inspector .unit-card p,.inspector .stage-intro p,.inspector .analysis-card p{font-size:1.0625rem!important;color:#424750;line-height:1.8}
+.inspector .unit-card h3{font-size:1.25rem}.inspector .value-heading h2{font-size:1.875rem}
+.inspector :is(button,input,select){min-height:42px}.inspector button{white-space:normal;overflow-wrap:anywhere}
+.inspector .unit-card-top{flex-wrap:wrap;gap:8px}.inspector .unit-card-top i{font-size:.875rem;line-height:1.5}
+.inspector .unit-card-bottom{flex-wrap:wrap;gap:8px 14px}.inspector .unit-card-bottom>span:first-child{font-size:1.375rem}
+.inspector .score-section{flex-wrap:wrap;gap:12px}.inspector .value-radar{min-width:150px;min-height:160px}
+.inspector .assessment-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.inspector .assessment-steps button{padding:10px 5px;min-width:0;height:auto}
+.inspector .inspector-tabs{gap:4px;overflow-x:auto;flex-shrink:0}.inspector .inspector-tabs button{white-space:nowrap;padding:14px 8px;flex-shrink:0}
+.inspector .value-tabs{overflow-x:auto}.inspector .value-tabs button{white-space:nowrap;min-width:max-content;padding:10px}
+.inspector .value-mode{grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr))}
+.inspector .value-mode select{min-width:0}.inspector .catalog-row{column-gap:10px}.inspector .catalog-row>span{font-size:1rem;min-width:0}
+.inspector .creator{height:auto;flex-shrink:0}.inspector .creator span,.inspector .creator small{font-size:.875rem!important;color:#505866;line-height:1.5}
+.inspector .dimension summary>span{font-size:1rem}.inspector .dimension summary small{white-space:normal}
+.inspector .evidence-table{overflow-x:auto}.inspector .evidence-table :is(td,th){font-size:.9375rem!important}
+.inspector .budget-fields{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+.map-tools #presentation-toggle{font-size:14px;padding:10px 12px;white-space:nowrap;color:#1d1d1f;min-height:44px}
+body:not(.phone-ui) .map-tools{top:20px;left:auto;right:20px;max-width:calc(100% - 40px);gap:6px;flex-wrap:wrap;justify-content:flex-end}
+body:not(.phone-ui) .map-search{top:80px;left:20px;width:min(320px,calc(100% - 40px))}
+body:not(.phone-ui) :is(.layers-popover,.map-settings-panel){top:78px;left:auto;right:20px;max-height:calc(100% - 120px)}
+body:not(.phone-ui) .map-workspace{container-type:inline-size;container-name:mapcanvas}
+.view-dock{overflow:visible!important}.view-dock #view-caption{position:absolute!important}
+#landmark-card{position:relative}#landmark-card summary{display:flex;align-items:center;gap:20px;cursor:pointer;list-style:none;font-size:15px;line-height:1.5;padding:10px 14px;color:#242a33;border-radius:9px;user-select:none}
+#landmark-card summary::-webkit-details-marker{display:none}#landmark-card[open] summary{background:#eaf0f8}#landmark-card[open] summary>span{rotate:180deg}
+.landmark-options{position:absolute;bottom:calc(100% + 14px);left:-66px;width:min(260px,calc(100cqw - 28px));max-height:min(480px,60dvh);overflow-y:auto;padding:8px;display:grid;grid-template-columns:1fr;gap:2px;background:#fffffff0;backdrop-filter:blur(24px);border:1px solid #dce2e9;border-radius:16px;box-shadow:0 12px 36px #26344826}
+.view-dock .landmark-options button{font-size:15px;line-height:1.5;min-height:43px;text-align:left;padding:10px 14px;border-radius:9px;color:#242a33}
+.landmark-options button:hover,.landmark-options button:focus-visible{background:#eaf0f8;color:#174e86}.view-dock>button{font-size:15px;min-height:44px}
+.phone-ui .landmark-options{position:static;width:100%;max-height:340px;box-shadow:none;margin-top:8px}.phone-ui #landmark-card[open]{width:100%}
+.phone-ui .map-tools #presentation-toggle{display:inline-flex!important;min-height:44px}
+@media(min-width:741px) and (max-width:1000px){body:not(.phone-ui) .map-tools{right:12px;top:14px;max-width:calc(100% - 24px)}body:not(.phone-ui) .map-search{top:76px;left:12px;width:calc(100% - 24px)}}
+@media(max-width:740px){.inspector .value-heading h2{font-size:1.75rem}.inspector .assessment-steps{grid-template-columns:repeat(2,minmax(0,1fr))}.inspector .creator{display:none}.inspector .inspector-tabs button{font-size:.875rem!important}.inspector .value-mode{grid-template-columns:minmax(0,1fr)}}
+@container mapcanvas (max-width:360px){body:not(.phone-ui) .map-tools{display:grid;grid-template-columns:auto auto;right:12px;left:12px;justify-content:space-between}body:not(.phone-ui) .map-tools .tool-button span{display:inline}body:not(.phone-ui) .map-search{top:124px}body:not(.phone-ui) :is(.layers-popover,.map-settings-panel){top:182px;left:12px;right:12px;width:auto;max-height:calc(100% - 206px)}}
+
+.inspector .value-radar{width:200px;height:auto;min-width:200px;aspect-ratio:170/154}.inspector .value-radar text{font-size:12px;fill:#424750}
+
+body:not(.phone-ui).is-presenting .view-dock{display:flex;left:24px;bottom:108px}
+body .view-dock button{font-size:15px!important}
